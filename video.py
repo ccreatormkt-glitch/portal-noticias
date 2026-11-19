@@ -176,9 +176,11 @@ def montar(card: dict, image_path, out_mp4: Path, audio=None, total=None) -> Pat
          "-vf", f"fps={FPS},format=yuv420p", "-fps_mode", "cfr", "-r", str(FPS),
          # perfil conservador aceito pelo Instagram (H.264 High, sem B-frames, GOP fechado,
          # AAC 128 kbps 48 kHz, cabeçalho no início do arquivo)
-         "-c:v", "libx264", "-preset", "veryfast", "-crf", "20",
+         # imagem parada: "stillimage" e quadro-chave a cada 4 s (o Instagram pede GOP de 2 a 5 s)
+         # deixam o arquivo com metade do tamanho, o que facilita o envio para a Meta
+         "-c:v", "libx264", "-preset", "veryfast", "-crf", "22", "-tune", "stillimage",
          "-profile:v", "high", "-level", "4.1", "-pix_fmt", "yuv420p", "-bf", "0",
-         "-g", str(FPS * 2), "-keyint_min", str(FPS * 2), "-sc_threshold", "0",
+         "-g", str(FPS * 4), "-keyint_min", str(FPS * 4), "-sc_threshold", "0",
          "-c:a", "aac", "-b:a", "128k", "-ar", "48000", "-ac", "2",
          "-movflags", "+faststart", "-use_editlist", "0", str(out_mp4)])
     return Path(out_mp4)

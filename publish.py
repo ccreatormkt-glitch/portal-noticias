@@ -125,28 +125,8 @@ def post(image_paths: list, caption: str) -> str:
     return _publish(cid)
 
 
-def post_reel(video_path: Path, caption: str, cover_url: str = None, thumb_ms: int = 1500) -> str:
-    """Publica um Reels enviando o arquivo direto para a Meta (upload "resumable"),
-    sem precisar hospedar o vídeo em outro lugar. Aparece também no feed."""
-    _need_creds()
-    if GRAPH_HOST != "graph.facebook.com":
-        raise RuntimeError("upload direto de vídeo só existe no login pelo Facebook (graph.facebook.com)")
-    video_path = Path(video_path)
-    extra = {"cover_url": cover_url} if cover_url else {"thumb_offset": str(thumb_ms)}
-    dados = video_path.read_bytes()
-    for tentativa in range(4):  # o servidor de upload da Meta às vezes falha à toa: tenta de novo
-        cid = _container(media_type="REELS", upload_type="resumable", caption=caption,
-                         share_to_feed="true", **extra)
-        r = requests.post(f"https://rupload.facebook.com/ig-api-upload/{GRAPH_VERSION}/{cid}",
-                          headers={"Authorization": f"OAuth {IG_ACCESS_TOKEN}", "offset": "0",
-                                   "file_size": str(len(dados))},
-                          data=dados, timeout=300)
-        if r.status_code < 400:
-            break
-        print(f"[reels] upload recusado (tentativa {tentativa + 1}/4): {_sem_segredos(r.text[:200])}")
-        if tentativa == 3:
-            _check(r)
-        time.sleep(30 * (tentativa + 1))  # 30 s, 60 s, 90 s
+def _esperar_processar(cid: str) -> str:
+    """Espera a Meta processar o vídeo e publica. Erro no processamento levanta RuntimeError."""
     for _ in range(60):  # vídeo demora mais para processar (até ~5 min)
         st = _check(_ig().get(f"{BASE}/{cid}", params={"fields": "status_code,status"}, timeout=30))
         if st.get("status_code") == "FINISHED":
@@ -155,6 +135,54 @@ def post_reel(video_path: Path, caption: str, cover_url: str = None, thumb_ms: i
             raise RuntimeError(f"Reels com erro no processamento: {st.get('status', '')}")
         time.sleep(5)
     raise RuntimeError("o Instagram não terminou de processar o vídeo a tempo")
+
+
+def post_reel(video_path: Path, caption: str, cover_url: str = None, thumb_ms: int = 1500) -> str:
+    """Publica um Reels. 1º caminho: envia o arquivo direto para a Meta (upload "resumable").
+    Se o servidor de upload da Meta recusar, 2º caminho: põe o vídeo num link público
+    temporário (ramo "midia" do repositório) e a Meta baixa por lá. Aparece também no feed."""
+    _need_creds()
+    if GRAPH_HOST != "graph.facebook.com":
+        raise RuntimeError("upload direto de vídeo só existe no login pelo Facebook (graph.facebook.com)")
+    video_path = Path(video_path)
+    extra = {"cover_url": cover_url} if cover_url else {"thumb_offset": str(thumb_ms)}
+    dados = video_path.read_bytes()
+    recusa = None
+    for tentativa in range(2):  # o servidor de upload da Meta às vezes falha à toa: tenta de novo
+        cid = _container(media_type="REELS", upload_type="resumable", caption=caption,
+                         share_to_feed="true", **extra)
+        r = requests.post(f"https://rupload.facebook.com/ig-api-upload/{GRAPH_VERSION}/{cid}",
+                          headers={"Authorization": f"OAuth {IG_ACCESS_TOKEN}", "offset": "0",
+                                   "file_size": str(len(dados))},
+                          data=dados, timeout=300)
+        if r.status_code < 400:
+            return _esperar_processar(cid)
+        recusa = r
+        print(f"[reels] envio direto recusado (tentativa {tentativa + 1}/2, {len(dados) // 1024} KB): "
+              f"{_sem_segredos(r.text[:160])}")
+        if tentativa == 0:
+            time.sleep(20)
+    # 2º caminho: link público
+    try:
+        import hospedar
+        links = hospedar.links_publicos(video_path)
+    except Exception as e:
+        print(f"[reels] sem link público para o vídeo ({str(e)[:160]})")
+        _check(recusa)
+        raise RuntimeError("envio do vídeo recusado pela Meta")
+    erro = None
+    for url in links:
+        try:
+            cid = _container(media_type="REELS", video_url=url, caption=caption, share_to_feed="true", **extra)
+            media_id = _esperar_processar(cid)
+            print(f"[reels] enviado por link público ({url.split('/')[2]})")
+            return media_id
+        except Exception as e:
+            if "OAuthException" in str(e):  # token/permissão: não é instabilidade, avisa de verdade
+                raise
+            erro = e
+            print(f"[reels] link público {url.split('/')[2]} não deu certo: {_sem_segredos(str(e)[:160])}")
+    raise RuntimeError(f"ProcessingFailedError: envio direto e por link falharam ({erro})")
 
 
 def testar_upload(video_path: Path) -> str:

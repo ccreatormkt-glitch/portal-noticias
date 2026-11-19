@@ -78,7 +78,8 @@ PIPER_VOICE = env("PIPER_VOICE", "pt_BR-faber-medium")   # reserva offline: pt_B
 # voz: "gemini" (voz neural do Google, padrão) ou "clonada" (voz do Arthur via Chatterbox)
 VOZ_MOTOR = env("VOZ_MOTOR", "gemini")  # "clonada" só com máquina mais forte (na CPU grátis passa de 5 min)
 # reserva: TTS do Gemini (neural, português do Brasil, mesma chave do Google)
-TTS_MODEL = env("TTS_MODEL", "gemini-3.8-flash-tts,gemini-3.1-flash-tts-preview,gemini-2.5-flash-preview-tts")
+# a primeira da lista é a voz da 1ª postagem (gemini-3.1-flash-tts-preview, voz Charon); as outras são reserva
+TTS_MODEL = env("TTS_MODEL", "gemini-3.1-flash-tts-preview,gemini-3.8-flash-tts,gemini-2.5-flash-preview-tts")
 TTS_VOICE = env("TTS_VOICE", "Charon")  # voz de biblioteca, tom informativo; outras: Kore, Orus, Puck
 
 # ---- Imagem ilustrativa por IA (opcional) --------------------------------------

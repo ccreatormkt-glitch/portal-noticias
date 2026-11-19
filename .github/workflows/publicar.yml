@@ -41,6 +41,7 @@ jobs:
           cache: pip
       - run: pip install -r requirements.txt
       - name: Guardar o modelo da voz clonada entre execuções
+        if: vars.VOZ_MOTOR == 'clonada'   # sem isso, cada rodada baixava 2,9 GB à toa
         uses: actions/cache@v4
         with:
           path: ~/.cache/huggingface

@@ -2,6 +2,7 @@ name: testes
 # Roda a suíte de testes a cada mudança no código. Se algo quebrar, o GitHub avisa por e-mail.
 on:
   push:
+    branches: [main]   # os ramos "previa" e "midia" só guardam imagens e vídeos
     paths-ignore: ["state/**", "queue/**"]
   pull_request:
   workflow_dispatch:

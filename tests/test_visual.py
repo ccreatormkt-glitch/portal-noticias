@@ -60,6 +60,21 @@ def test_video_reels_no_padrao_do_instagram(tmp_path):
     assert '"has_b_frames": 0' in info and '"sample_rate": "48000"' in info
 
 
+@pytest.mark.skipif(not shutil.which("ffmpeg"), reason="ffmpeg não instalado")
+def test_video_leve_com_quadro_chave_a_cada_4s(tmp_path):
+    """Arquivo leve facilita o envio à Meta; o Instagram pede GOP fechado de 2 a 5 s."""
+    c = card()
+    audio = tmp_path / "a.m4a"
+    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-f", "lavfi", "-i", "anullsrc=r=48000:cl=stereo",
+                    "-t", "12", "-c:a", "aac", str(audio)], check=True)
+    out = video.montar(c, None, tmp_path / "r.mp4", audio=audio, total=12.0)
+    chaves = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v", "-skip_frame", "nokey",
+                             "-show_entries", "frame=pts_time", "-of", "csv=p=0", str(out)],
+                            capture_output=True, text=True).stdout.split()
+    assert [round(float(t.strip(","))) for t in chaves if t.strip(",")] == [0, 4, 8]
+    assert out.stat().st_size < 1_500_000  # 12 s de imagem parada + voz
+
+
 def test_licencas_de_foto():
     import illustrate
     assert illustrate._licenca_ok("CC BY-SA 4.0") and illustrate._licenca_ok("CC0")

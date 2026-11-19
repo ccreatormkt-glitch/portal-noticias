@@ -79,8 +79,8 @@ def _publish(card, paths) -> str:
         if not card.get("_video"):
             raise RuntimeError("vídeo não foi gerado")
         card["_reels"] = True
-        cover_url = None
-        if card.get("_capa_reels"):
+        cover_url = None  # sem hospedagem de imagem, a capa é o próprio quadro do vídeo (a arte é a mesma)
+        if card.get("_capa_reels") and config.IMGBB_API_KEY:
             try:
                 cover_url = publish.host_image(Path(card["_capa_reels"]))
             except Exception as e:
