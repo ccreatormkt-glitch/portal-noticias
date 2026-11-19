@@ -376,6 +376,22 @@ def cmd_check(_):
         print("  ERRO:", e)
 
 
+def cmd_teste_upload(args):
+    """Diagnóstico do Reels: envia um vídeo curto e um longo (arte parada), SEM publicar."""
+    import subprocess
+    import tempfile
+    import publish
+    import video
+    pasta = Path(tempfile.mkdtemp())
+    card = {"titulo": "Teste de envio do PB Minuto", "chapeu": "SERVIÇO", "cidade": "Campina Grande"}
+    for seg in (6, 70):
+        som = pasta / f"som_{seg}.m4a"
+        subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-f", "lavfi", "-i", f"sine=f=220:d={seg}",
+                        "-c:a", "aac", "-b:a", "128k", "-ar", "48000", "-ac", "2", str(som)], check=True)
+        mp4 = video.montar(card, None, pasta / f"teste_{seg}.mp4", audio=som, total=float(seg))
+        print(f"[teste-upload] {seg}s ({mp4.stat().st_size // 1024} KB): {publish.testar_upload(mp4)}")
+
+
 def cmd_modelos(args):
     """Lista os modelos do Gemini que a chave pode usar (só nomes; a chave não aparece)."""
     import requests
@@ -440,6 +456,7 @@ def main():
     sub.add_parser("list").set_defaults(fn=cmd_list)
     sub.add_parser("check-feeds").set_defaults(fn=cmd_check_feeds)
     sub.add_parser("modelos").set_defaults(fn=cmd_modelos)
+    sub.add_parser("teste-upload").set_defaults(fn=cmd_teste_upload)
     sub.add_parser("check").set_defaults(fn=cmd_check)
     sub.add_parser("insights").set_defaults(fn=cmd_insights)
     e = sub.add_parser("errata")

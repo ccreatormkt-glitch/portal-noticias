@@ -157,6 +157,25 @@ def post_reel(video_path: Path, caption: str, cover_url: str = None, thumb_ms: i
     raise RuntimeError("o Instagram não terminou de processar o vídeo a tempo")
 
 
+def testar_upload(video_path: Path) -> str:
+    """Diagnóstico: cria um contêiner de Reels e envia o vídeo, SEM publicar. Devolve o resultado."""
+    _need_creds()
+    dados = Path(video_path).read_bytes()
+    cid = _container(media_type="REELS", upload_type="resumable", caption="teste", thumb_offset="1000")
+    r = requests.post(f"https://rupload.facebook.com/ig-api-upload/{GRAPH_VERSION}/{cid}",
+                      headers={"Authorization": f"OAuth {IG_ACCESS_TOKEN}", "offset": "0",
+                               "file_size": str(len(dados))}, data=dados, timeout=300)
+    out = f"upload HTTP {r.status_code}: {_sem_segredos(r.text[:200])}"
+    if r.status_code < 400:
+        for _ in range(24):
+            st = _check(_ig().get(f"{BASE}/{cid}", params={"fields": "status_code,status"}, timeout=30))
+            if st.get("status_code") in ("FINISHED", "ERROR", "EXPIRED"):
+                break
+            time.sleep(5)
+        out += f" | processamento: {st.get('status_code')} {st.get('status', '')}"
+    return out
+
+
 def comentar(media_id: str, texto: str) -> str:
     """Comenta no próprio post (usado para correções públicas)."""
     _need_creds()
