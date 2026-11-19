@@ -44,8 +44,11 @@ FEEDS = {
     "gn_tv": gnews('"TV Tambaú" OR "TV Arapuan" OR "CBN João Pessoa" OR "CBN Campina Grande"'),
     # 1. portais estaduais e Grande João Pessoa
     "g1_pb": "https://g1.globo.com/rss/g1/pb/paraiba/",
-    # reserva: notícias gerais do Brasil (usadas só quando não houver nada novo da Paraíba)
+    # Brasil: 1 a cada 3 posts (e reserva quando não houver nada novo da Paraíba). Do G1 só entram
+    # as editorias nacionais (política, economia, saúde...); as manchetes principais do Google
+    # Notícias Brasil servem para medir a relevância (o mesmo fato em vários veículos).
     "g1_brasil": "https://g1.globo.com/rss/g1/",
+    "gn_brasil_top": "https://news.google.com/rss?hl=pt-BR&gl=BR&ceid=BR:pt-419",
     "portalcorreio": "https://portalcorreio.com.br/feed/",
     "clickpb": "https://www.clickpb.com.br/feed/",
     "jornaldaparaiba": "https://jornaldaparaiba.com.br/feed",
@@ -333,3 +336,16 @@ def mesma_historia(titulo_a: str, titulo_b: str) -> bool:
     if jac >= 0.45:
         return True
     return bool(nomes_proprios(titulo_a) & nomes_proprios(titulo_b)) and jac >= 0.12
+
+
+# primeira parte do endereço das matérias do G1 que são regionais (sigla do estado)
+UFS = set("ac al am ap ba ce df es go ma mg ms mt pa pb pe pi pr rj rn ro rr rs sc se sp to".split())
+
+
+def g1_nacional(item) -> bool:
+    """Matéria do G1 de editoria nacional (política, economia, saúde...), não de outro estado."""
+    from urllib.parse import urlsplit
+    if item.feed != "g1_brasil":
+        return False
+    partes = [x for x in urlsplit(item.link or "").path.split("/") if x]
+    return bool(partes) and partes[0] not in UFS

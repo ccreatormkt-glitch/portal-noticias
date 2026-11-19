@@ -156,7 +156,9 @@ def _candidatos(clusters, quantos, mode) -> list:
     locais = [c for c in clusters if c.is_local]
     # notícias relevantes do Brasil (G1): 1 a cada BRASIL_A_CADA posts e, de reserva, quando
     # não houver nada novo da Paraíba
-    brasil = [c for c in clusters if not c.is_local and any(i.feed == "g1_brasil" for i in c.items)]
+    brasil = [c for c in clusters if not c.is_local and any(sources.g1_nacional(i) for i in c.items)]
+    # mais relevante primeiro: o mesmo fato em mais veículos e nas manchetes principais do país
+    brasil.sort(key=lambda c: (any(i.feed == "gn_brasil_top" for i in c.items), c.n_sources), reverse=True)
     vez_brasil = config.BRASIL_A_CADA > 0 and db.vez_do_brasil(config.BRASIL_A_CADA)
     if vez_brasil and brasil:
         print("[run] vez de uma notícia do Brasil (G1)")
@@ -209,6 +211,7 @@ def _candidatos(clusters, quantos, mode) -> list:
             continue
         card.update(fp=c.fingerprint, stems=sorted(c.stems), source_line=source_line(c.sources),
                     titulo_fonte=c.rep.title, regiao="paraiba" if c.is_local else "brasil",
+                    **({} if c.is_local else {"cidade": "Brasil"}),
                     links=[i.link for i in c.items[:4]], cluster_score=c.score, _ts=time.time())
         cards.append(card)
     for card in cards:

@@ -147,7 +147,7 @@ def test_sem_novidade_da_paraiba_publica_noticia_do_brasil(ambiente, monkeypatch
     nacional = "Governo federal anuncia novo calendário de pagamento do Bolsa Família em dezembro"
 
     def clusters():
-        return sources.cluster_items([item(nacional, "g1", feed="g1_brasil")])
+        return sources.cluster_items([item(nacional, "g1", feed="g1_brasil", link="https://g1.globo.com/economia/noticia/2026/11/19/bolsa.ghtml")])
     monkeypatch.setattr(sources, "build_clusters", clusters)
 
     def fake(prompt, system=None):
@@ -164,7 +164,7 @@ def test_um_a_cada_tres_posts_e_do_brasil(ambiente, monkeypatch):
     locais = sources.build_clusters
 
     def clusters():
-        return locais() + sources.cluster_items([item(nacional, "g1", feed="g1_brasil")])
+        return locais() + sources.cluster_items([item(nacional, "g1", feed="g1_brasil", link="https://g1.globo.com/economia/noticia/2026/11/19/bolsa.ghtml")])
     monkeypatch.setattr(sources, "build_clusters", clusters)
     gerar = editor.generate
 
@@ -181,3 +181,13 @@ def test_um_a_cada_tres_posts_e_do_brasil(ambiente, monkeypatch):
     rodar()
     assert len(ambiente) == 3 and ambiente[2] == "POLÍTICA" and "POLÍTICA" not in ambiente[:2]
     assert db.vez_do_brasil(3) is False
+
+
+def test_brasil_so_editorias_nacionais_do_g1():
+    """Matéria regional de outro estado (ex.: Amazonas) não conta como notícia relevante do Brasil."""
+    nac = item("Governo anuncia novo salário mínimo", "g1", feed="g1_brasil",
+               link="https://g1.globo.com/economia/noticia/2026/11/19/salario.ghtml")
+    reg = item("Palhaço leva arte a escolas", "g1", feed="g1_brasil",
+               link="https://g1.globo.com/am/amazonas/noticia/2026/11/19/palhaco.ghtml")
+    pb = item("Chuva em João Pessoa", "g1", feed="g1_pb", link="https://g1.globo.com/pb/paraiba/noticia/x.ghtml")
+    assert sources.g1_nacional(nac) and not sources.g1_nacional(reg) and not sources.g1_nacional(pb)
