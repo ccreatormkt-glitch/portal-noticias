@@ -145,6 +145,9 @@ NAO_E_FOTO = _re.compile(r"\b(map|mapa|carta|planta|brasao|bandeira|flag|coat of
                          # imagens com texto (o Arthur pediu arte sem imagem com texto)
                          r"cartaz|poster|banner|placa|sign|signage|letreiro|outdoor|billboard|panfleto|"
                          r"flyer|screenshot|captura|infografico|infographic|texto|text|jornal|newspaper|"
+                         # montagens de várias fotos (ficam bagunçadas como fundo)
+                         r"compilation|compilacao|montage|montagem|collage|colagem|mosaic|mosaico|"
+                         r"composite|composicao|panel|grid|"
                          r"1[5-8]\d\d)\b")
 
 
@@ -173,7 +176,8 @@ def buscar_commons(busca: str, out_path: Path, exigir=(), repetir=False, sem=Non
                 continue
             if (sem is not None and sem.search(onde)) or LETREIRO.search(onde):
                 continue
-            if NAO_E_FOTO.search(_fold(p.get("title", ""))) or info.get("mime") not in (None, "image/jpeg"):
+            if NAO_E_FOTO.search(_fold(p.get("title", ""))) or NAO_E_FOTO.search(onde) and _re.search(
+                    r"compilation|montage|montagem|collage|colagem|mosaic", onde) or info.get("mime") not in (None, "image/jpeg"):
                 continue  # mapas, brasões, bandeiras, desenhos antigos: não servem de foto de notícia
             img = None
             for url in (info.get("thumburl"), info.get("url")):  # miniatura padrão; se falhar, o original

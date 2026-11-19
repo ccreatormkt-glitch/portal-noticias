@@ -389,3 +389,10 @@ def test_capa_uma_fonte_so_e_onda_centralizada(monkeypatch, tmp_path):
     assert "InstrumentSerif-Italic.ttf" not in usadas  # a serifada fica só na legenda do vídeo
     x, _, w, _ = audiograma.ONDA
     assert x + w / 2 == audiograma.W / 2
+
+
+def test_montagem_de_fotos_fica_de_fora():
+    import illustrate
+    assert illustrate.NAO_E_FOTO.search("joao pessoa (compilation) heitor carvalho jorge")
+    assert illustrate.NAO_E_FOTO.search("montagem de joao pessoa")
+    assert not illustrate.NAO_E_FOTO.search("praia de tambau ao entardecer")
