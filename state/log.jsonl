@@ -75,3 +75,5 @@
 {"ts": "2026-11-19T23:18:27", "event": "falha_publicacao", "headline": "Procon-CG mobiliza equipe e abre plantão no Natal Iluminado 2026", "source": "Prefeitura de Campina Grande, Página 1 PB", "ig_id": "", "note": "voz padrão indisponível agora (limite do Gemini); a notícia volta na próxima rodada"}
 {"ts": "2026-11-19T23:22:46", "event": "gerado", "headline": "Procon de Campina Grande reforça fiscalização no Natal Iluminado 2026", "source": "Prefeitura de Campina Grande, Página 1 PB", "ig_id": "", "note": ""}
 {"ts": "2026-11-19T23:24:28", "event": "published", "headline": "Procon-CG mobiliza equipe e abre plantão no Natal Iluminado 2026", "source": "Prefeitura de Campina Grande, Página 1 PB", "ig_id": "17956221927291259", "note": ""}
+{"ts": "2026-11-19T23:31:01", "event": "gerado", "headline": "Dólar comercial sobe e encerra o dia cotado a R$ 5,93", "source": "Agência Brasil", "ig_id": "", "note": ""}
+{"ts": "2026-11-19T23:32:41", "event": "published", "headline": "Dólar comercial sobe e encerra o dia cotado a R$ 5,93", "source": "Agência Brasil", "ig_id": "18123875354064964", "note": ""}
