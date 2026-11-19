@@ -286,3 +286,10 @@ def test_audiograma_completo(tmp_path):
     assert (audiograma.VW, audiograma.VH) == ((1440, 2560) if audiograma.VIDEO_2K else (1080, 1920))
     assert abs(float(json.loads(info)["format"]["duration"]) - 9.0) < 0.3
     assert (tmp_path / "quadro.jpg").exists() and (tmp_path / "legenda.ass").exists()
+
+
+def test_foto_com_letreiro_fica_de_fora():
+    import illustrate
+    assert illustrate.LETREIRO.search("manaira shopping joao pessoa")
+    assert illustrate.LETREIRO.search("fachada do hotel tambau")
+    assert not illustrate.LETREIRO.search("acude velho campina grande ao entardecer")

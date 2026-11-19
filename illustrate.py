@@ -171,7 +171,7 @@ def buscar_commons(busca: str, out_path: Path, exigir=(), repetir=False, sem=Non
             onde = _fold(p.get("title", "") + " " + _texto((meta.get("ImageDescription") or {}).get("value", "")))
             if exigir and not any(_fold(x) in onde for x in exigir):
                 continue
-            if sem is not None and sem.search(onde):
+            if (sem is not None and sem.search(onde)) or LETREIRO.search(onde):
                 continue
             if NAO_E_FOTO.search(_fold(p.get("title", ""))) or info.get("mime") not in (None, "image/jpeg"):
                 continue  # mapas, brasões, bandeiras, desenhos antigos: não servem de foto de notícia
@@ -285,6 +285,10 @@ def foto_semelhante(card: dict, base: Path):
 
 
 RETRATO = _re.compile(r"\b(retrato|portrait|selfie|deputad|vereador|prefeit|governador|senador|candidat)")
+# fachadas comerciais quase sempre têm letreiro/logo (texto na imagem): fora da arte
+LETREIRO = _re.compile(r"\b(shopping|mall|loja|store|fachada|facade|letreiro|logo|marca|supermercado|"
+                       r"atacad|farmacia|pharmacy|hotel|banco do|caixa economica|bradesco|itau|santander|"
+                       r"agencia|outdoor|placa|totem|posto de combustivel|gas station|restaurante|restaurant)")
 
 
 def foto_da_cidade(card: dict, base: Path):

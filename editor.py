@@ -84,8 +84,10 @@ PADRÃO DE REDAÇÃO (o mesmo dos grandes portais de notícia)
   lugar (ex.: "shopping bags", "empty office desk", "flooded street rain", "school classroom empty").
   Nunca nomes de pessoas ou lugares específicos.
 - foto_local: lugar REAL e conhecido da cidade da notícia que tenha a ver com o fato, para buscar
-  foto do próprio lugar (ex.: "Câmara Municipal de João Pessoa", "Parque do Povo Campina Grande",
-  "Partage Shopping Campina Grande", "Hospital de Trauma Campina Grande"); "" se não houver.
+  foto do próprio lugar SEM letreiros nem marcas (praças, parques, prédios públicos, ruas, orla,
+  paisagens). Ex.: "Câmara Municipal de João Pessoa", "Parque do Povo Campina Grande",
+  "Açude Velho Campina Grande", "Busto de Tamandaré João Pessoa". Nunca shopping, loja, banco,
+  hotel ou fachada comercial (têm letreiro). "" se não houver.
 - imagem_prompt: 1 frase em inglês descrevendo uma ILUSTRAÇÃO da cena da notícia (ambiente,
   objetos, luz, enquadramento), sem pessoas reconhecíveis, sem texto, letreiros, números ou
   logotipos, e que NÃO pareça foto do acontecimento (ex.: "empty city council chamber with
