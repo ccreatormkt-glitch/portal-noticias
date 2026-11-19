@@ -223,3 +223,12 @@ def test_mesclar_historico_de_duas_rodadas(tmp_path):
     c = sqlite3.connect(db.DB_PATH)
     assert sorted(r[0] for r in c.execute("SELECT headline FROM posts")) == ["Notícia A", "Notícia B"]
     assert c.execute("SELECT regiao FROM regiao WHERE fp='fpB'").fetchone()[0] == "brasil"
+
+
+def test_cnn_brasil_e_agencia_brasil_contam_como_brasil():
+    cnn = item("Senado aprova reforma do setor elétrico", "CNN Brasil", feed="gn_cnnbrasil")
+    ebc = item("Prazo do Simples acaba nesta sexta", "Agência Brasil", feed="agenciabrasil",
+               link="https://agenciabrasil.ebc.com.br/economia/noticia/2026-11/prazo")
+    local = item("Chuva em Campina Grande", "ParaibaOnline")
+    assert sources.nacional(cnn) and sources.nacional(ebc) and not sources.nacional(local)
+    assert "gn_cnnbrasil" in sources.FEEDS and "cnnbrasil.com.br" in sources.FEEDS["gn_cnnbrasil"]

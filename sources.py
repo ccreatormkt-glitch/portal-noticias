@@ -55,6 +55,10 @@ FEEDS = {
     # Notícias Brasil servem para medir a relevância (o mesmo fato em vários veículos).
     "g1_brasil": "https://g1.globo.com/rss/g1/",
     "gn_brasil_top": "https://news.google.com/rss?hl=pt-BR&gl=BR&ceid=BR:pt-419",
+    # outros portais nacionais (pedido do Arthur): CNN Brasil não tem RSS aberto, entra pela busca
+    # filtrada pelo site; Agência Brasil (EBC) tem RSS oficial
+    "gn_cnnbrasil": gnews("site:cnnbrasil.com.br"),
+    "agenciabrasil": "https://agenciabrasil.ebc.com.br/rss/ultimasnoticias/feed.xml",
     "portalcorreio": "https://portalcorreio.com.br/feed/",
     "clickpb": "https://www.clickpb.com.br/feed/",
     "jornaldaparaiba": "https://jornaldaparaiba.com.br/feed",
@@ -77,7 +81,7 @@ FEEDS = {
 
 # nome amigável usado no crédito interno quando o item vem de RSS direto
 FEED_SOURCE_NAME = {
-    "g1_pb": "g1 Paraíba", "g1_brasil": "g1", "paraibaonline": "ParaibaOnline", "portalcorreio": "Portal Correio",
+    "g1_pb": "g1 Paraíba", "g1_brasil": "g1", "agenciabrasil": "Agência Brasil", "paraibaonline": "ParaibaOnline", "portalcorreio": "Portal Correio",
     "clickpb": "ClickPB", "pbagora": "PB Agora", "jornaldaparaiba": "Jornal da Paraíba",
     "maispb": "MaisPB", "polemicaparaiba": "Polêmica Paraíba", "fonte83": "Fonte 83",
     "correioparaibano": "Correio Paraibano", "rotapb": "RotaPB", "marciorangel": "Blog do Márcio Rangel",
@@ -348,6 +352,9 @@ def mesma_historia(titulo_a: str, titulo_b: str) -> bool:
 UFS = set("ac al am ap ba ce df es go ma mg ms mt pa pb pe pi pr rj rn ro rr rs sc se sp to".split())
 
 
+FEEDS_NACIONAIS = {"gn_cnnbrasil", "agenciabrasil"}  # portais nacionais além do G1
+
+
 def g1_nacional(item) -> bool:
     """Matéria do G1 de editoria nacional (política, economia, saúde...), não de outro estado."""
     from urllib.parse import urlsplit
@@ -355,3 +362,8 @@ def g1_nacional(item) -> bool:
         return False
     partes = [x for x in urlsplit(item.link or "").path.split("/") if x]
     return bool(partes) and partes[0] not in UFS
+
+
+def nacional(item) -> bool:
+    """Notícia de portal nacional que pode entrar na cota do Brasil (G1, CNN Brasil, Agência Brasil)."""
+    return g1_nacional(item) or item.feed in FEEDS_NACIONAIS

@@ -157,9 +157,9 @@ def _candidatos(clusters, quantos, mode) -> list:
     tentativas = fails = 0
     prazo = time.monotonic() + 7 * 60  # rodada a cada 10 min: escrever rápido e publicar
     locais = [c for c in clusters if c.is_local]
-    # notícias relevantes do Brasil (G1): 1 a cada BRASIL_A_CADA posts e, de reserva, quando
+    # notícias relevantes do Brasil (G1, CNN Brasil, Agência Brasil): 1 a cada BRASIL_A_CADA posts e, de reserva, quando
     # não houver nada novo da Paraíba
-    brasil = [c for c in clusters if not c.is_local and any(sources.g1_nacional(i) for i in c.items)]
+    brasil = [c for c in clusters if not c.is_local and any(sources.nacional(i) for i in c.items)]
     # mais relevante primeiro: o mesmo fato em mais veículos e nas manchetes principais do país
     brasil.sort(key=lambda c: (any(i.feed == "gn_brasil_top" for i in c.items), c.n_sources), reverse=True)
     vez_brasil = config.BRASIL_A_CADA > 0 and db.vez_do_brasil(config.BRASIL_A_CADA)
