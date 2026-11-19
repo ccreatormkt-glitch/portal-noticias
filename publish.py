@@ -220,6 +220,14 @@ def comentar(media_id: str, texto: str) -> str:
                                 timeout=30))["id"]
 
 
+def legendas_recentes(limite: int = 60) -> list:
+    """Legendas dos últimos posts do perfil (para não repetir notícia mesmo se o histórico falhar)."""
+    _need_creds()
+    dados = _check(_ig().get(f"{BASE}/{IG_USER_ID}/media", params={"fields": "caption,timestamp", "limit": limite},
+                             timeout=30)).get("data", [])
+    return [d.get("caption", "") for d in dados if d.get("caption")]
+
+
 def account_info() -> dict:
     _need_creds()
     return _check(_ig().get(f"{BASE}/{IG_USER_ID}", params={

@@ -232,3 +232,19 @@ def test_cnn_brasil_e_agencia_brasil_contam_como_brasil():
     local = item("Chuva em Campina Grande", "ParaibaOnline")
     assert sources.nacional(cnn) and sources.nacional(ebc) and not sources.nacional(local)
     assert "gn_cnnbrasil" in sources.FEEDS and "cnnbrasil.com.br" in sources.FEEDS["gn_cnnbrasil"]
+
+
+def test_banco_de_noticias_ja_postadas_barra_repeticao(ambiente, monkeypatch):
+    """Publicou -> entra no banco (SQLite + planilha CSV). A mesma notícia, de outro portal e com
+    outras palavras, não sai de novo; e uma notícia que já está no Instagram também é barrada."""
+    monkeypatch.setattr(config, "CANDIDATOS", 1)
+    rodar()
+    assert len(ambiente) == 1
+    csv = db.banco_csv().read_text(encoding="utf-8")
+    assert "Agência abre centenas de postos para vendedores" in csv and "IG1" in csv
+    outra = {"titulo": "Sine de CG oferece 900 postos para vendedores",
+             "titulo_fonte": "Sine de Campina Grande divulga 900 vagas de emprego para vendedores", "links": []}
+    assert db.ja_publicada(outra)
+    nova = {"titulo": "Temporal deixa ruas da Torre alagadas em João Pessoa", "titulo_fonte": "Chuva na Torre", "links": []}
+    assert not db.ja_publicada(nova)
+    assert db.ja_publicada(nova, ["🌧️ Temporal deixa ruas da Torre alagadas em João Pessoa\n\nTexto..."])

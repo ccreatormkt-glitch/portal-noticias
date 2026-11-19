@@ -147,6 +147,21 @@ def _cache_save(itens):
     CACHE.write_text(json.dumps(itens, ensure_ascii=False, indent=1), encoding="utf-8")
 
 
+_IG_LEGENDAS = {}
+
+
+def _legendas_ig(atualizar=False) -> list:
+    """Legendas dos últimos posts do Instagram (uma consulta por rodada; atualiza antes de publicar)."""
+    if atualizar or "lista" not in _IG_LEGENDAS:
+        try:
+            import publish
+            _IG_LEGENDAS["lista"] = publish.legendas_recentes()
+        except Exception as e:
+            print(f"[run] não consegui ler os últimos posts do Instagram ({str(e)[:80]}); sigo pelo banco")
+            _IG_LEGENDAS["lista"] = []
+    return _IG_LEGENDAS["lista"]
+
+
 def _candidatos(clusters, quantos, mode) -> list:
     """Escreve até `quantos` posts válidos (reaproveitando os do cache) para escolher o melhor."""
     import editor
@@ -211,6 +226,14 @@ def _candidatos(clusters, quantos, mode) -> list:
         if parecida:
             db.record(c.fingerprint, c.stems, c.rep.title, "", "pulado", note="repetida: " + parecida[:80])
             print(f"[run] pulado (já publicamos algo igual: {parecida[:60]})")
+            continue
+        # banco de notícias já postadas (+ legendas do próprio Instagram)
+        motivo = db.ja_publicada({**card, "fp": c.fingerprint, "titulo_fonte": c.rep.title,
+                                  "links": [i.link for i in c.items[:4]]},
+                                 _legendas_ig() if mode == "auto" else ())
+        if motivo:
+            db.record(c.fingerprint, c.stems, c.rep.title, "", "pulado", note=motivo[:120])
+            print(f"[run] pulado ({motivo})")
             continue
         card.update(fp=c.fingerprint, stems=sorted(c.stems), source_line=source_line(c.sources),
                     titulo_fonte=c.rep.title, regiao="paraiba" if c.is_local else "brasil",
@@ -330,6 +353,12 @@ def cmd_run(args):
             print("[run] voz padrão ocupada: a notícia volta na próxima rodada")
             continue
         else:
+            # última conferência, logo antes de soltar (outra rodada pode ter postado o mesmo fato)
+            motivo = db.ja_publicada(card, _legendas_ig(atualizar=True))
+            if motivo:
+                db.update_status(fp, "pulado", note=motivo[:120])
+                print(f"[run] não publicado ({motivo})")
+                continue
             try:
                 mid = _publish(card, paths)
             except Exception as e:
@@ -342,6 +371,7 @@ def cmd_run(args):
                 continue
             db.update_status(fp, "published", ig_id=mid)
             db.marcar_regiao(fp, card.get("regiao", "paraiba"))
+            db.registrar_publicada(card, mid)  # entra no banco de notícias já postadas
             print(f"[publicado] {mid}  {card['titulo']}")
         made += 1
     print(f"[run] fim: {made} post(s) {'gerados' if mode != 'auto' else 'publicados'}")

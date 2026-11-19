@@ -2,6 +2,7 @@
 import json
 import sqlite3
 import time
+from pathlib import Path
 
 from config import DB_PATH, DEDUPE_HOURS, LOG_PATH
 
@@ -14,6 +15,9 @@ def _conn():
     c.execute("""CREATE TABLE IF NOT EXISTS meta (
         fp TEXT PRIMARY KEY, chapeu TEXT, gatilho TEXT, potencial INTEGER, formato TEXT)""")
     c.execute("""CREATE TABLE IF NOT EXISTS regiao (fp TEXT PRIMARY KEY, regiao TEXT)""")
+    c.execute("""CREATE TABLE IF NOT EXISTS publicadas (
+        ig_id TEXT PRIMARY KEY, ts REAL, titulo TEXT, titulo_fonte TEXT, texto TEXT,
+        cidade TEXT, chapeu TEXT, links TEXT)""")
     c.execute("""CREATE TABLE IF NOT EXISTS metricas (
         ig_id TEXT PRIMARY KEY, ts REAL, reach INTEGER, saved INTEGER, shares INTEGER,
         likes INTEGER, comments INTEGER, score REAL)""")
@@ -78,14 +82,14 @@ def seen(fp: str, stems: set) -> bool:
                for old_fp, old, st in rows)
 
 
-def manchete_repetida(titulo: str) -> str:
+def manchete_repetida(titulo: str, ignorar_fp: str = "") -> str:
     """Compara uma manchete com as que já saíram nos últimos dias (o mesmo fato vindo de outro
     portal, com outras palavras). Devolve a manchete parecida, ou ''."""
     from sources import mesma_historia
     cutoff = time.time() - DEDUPE_HOURS * 3600
     with _conn() as c:
-        rows = c.execute("SELECT headline FROM posts WHERE ts > ? AND status IN ('published','gerado','na_fila')",
-                         (cutoff,)).fetchall()
+        rows = c.execute("SELECT headline FROM posts WHERE ts > ? AND status IN ('published','gerado','na_fila') "
+                         "AND fp != ?", (cutoff, ignorar_fp or "")).fetchall()
     for (h,) in rows:
         if h and mesma_historia(titulo, h):
             return h
@@ -148,3 +152,68 @@ def vez_do_brasil(cada: int) -> bool:
         rows = c.execute("SELECT r.regiao FROM posts p LEFT JOIN regiao r ON r.fp = p.fp "
                          "WHERE p.status='published' ORDER BY p.ts DESC LIMIT ?", (cada - 1,)).fetchall()
     return len(rows) == cada - 1 and all((r[0] or "paraiba") != "brasil" for r in rows)
+
+
+# ------------------------------------------------------------ banco de notícias já postadas
+JANELA_REPETICAO_H = 7 * 24  # compara com tudo que saiu nos últimos 7 dias
+
+
+def banco_csv() -> Path:
+    """Planilha legível do banco (fica no repositório, ao lado do histórico)."""
+    return Path(DB_PATH).parent / "noticias_publicadas.csv"
+
+
+def registrar_publicada(card: dict, ig_id: str):
+    """Guarda a notícia publicada no banco (SQLite) e numa planilha legível (CSV no repositório)."""
+    import csv
+    texto = " ".join([card.get("titulo", ""), card.get("linha_fina", ""), str(card.get("resumo", ""))])
+    linha = (str(ig_id), time.time(), card.get("titulo", ""), card.get("titulo_fonte", ""), texto,
+             card.get("cidade", ""), card.get("chapeu", ""), " ".join(card.get("links", []) or []))
+    with _conn() as c:
+        c.execute("INSERT OR REPLACE INTO publicadas VALUES (?,?,?,?,?,?,?,?)", linha)
+    arq = banco_csv()
+    novo = not arq.exists()
+    arq.parent.mkdir(parents=True, exist_ok=True)
+    with open(arq, "a", newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        if novo:
+            w.writerow(["data_hora", "post_instagram", "manchete", "manchete_da_fonte", "cidade", "editoria", "links"])
+        w.writerow([time.strftime("%Y-%m-%d %H:%M"), str(ig_id), linha[2], linha[3], linha[5], linha[6], linha[7]])
+
+
+def ja_publicada(card: dict, recentes_ig=()) -> str:
+    """Antes de soltar uma notícia: ela (ou o mesmo fato com outras palavras) já foi postada?
+    Confere 1) o banco de publicadas (manchete, manchete da fonte, links e texto), 2) o histórico
+    antigo e 3) as legendas dos últimos posts do próprio Instagram. Devolve o motivo, ou ''."""
+    from sources import mesma_historia, stems_of
+    desde = time.time() - JANELA_REPETICAO_H * 3600
+    meus = [x for x in (card.get("titulo", ""), card.get("titulo_fonte", "")) if x]
+    meus_links = set(card.get("links", []) or [])
+    meu_texto = set(stems_of(" ".join([card.get("titulo", ""), card.get("linha_fina", ""),
+                                        str(card.get("resumo", ""))])))
+    with _conn() as c:
+        rows = c.execute("SELECT ig_id, titulo, titulo_fonte, texto, links FROM publicadas WHERE ts > ?",
+                         (desde,)).fetchall()
+    for ig_id, tit, tit_f, texto, links in rows:
+        if meus_links & set((links or "").split()):
+            return f"mesmo link de uma notícia já postada ({tit[:60]})"
+        for a in meus:
+            for b in (tit, tit_f):
+                if b and mesma_historia(a, b):
+                    return f"mesmo fato já postado: {tit[:60]}"
+        outro = set(stems_of(texto or ""))
+        if meu_texto and outro and len(meu_texto & outro) / len(meu_texto | outro) >= 0.42:
+            return f"texto quase igual a uma notícia já postada ({tit[:60]})"
+    for a in meus:
+        h = manchete_repetida(a, ignorar_fp=card.get("fp", ""))  # sem contar a própria notícia
+        if h:
+            return f"mesmo fato já postado: {h[:60]}"
+    for legenda in recentes_ig:
+        primeira = legenda.strip().split("\n")[0]
+        primeira = "".join(ch for ch in primeira if ch.isalnum() or ch.isspace() or ch in "-,.%$")
+        if any(mesma_historia(a, primeira) for a in meus):
+            return f"já está no Instagram: {primeira[:60]}"
+        outro = set(stems_of(legenda[:400]))
+        if meu_texto and outro and len(meu_texto & outro) / len(meu_texto | outro) >= 0.42:
+            return f"já está no Instagram (texto parecido): {primeira[:60]}"
+    return ""
