@@ -317,11 +317,11 @@ def test_video_usa_a_mesma_foto_com_efeito_vermelho(tmp_path):
     import audiograma
     from PIL import Image
     foto = tmp_path / "f.jpg"
-    Image.new("RGB", (1600, 1200), (20, 200, 60)).save(foto)
+    Image.new("RGB", (1600, 1200), (128, 128, 128)).save(foto)  # foto neutra (cinza)
     out = audiograma.quadro(card(), tmp_path / "q.jpg", foto)
     im = Image.open(out).convert("RGB")
     r, g, b = im.getpixel((im.width // 2, audiograma.z(600)))
-    assert r > g and r > b  # foto tingida de vermelho (duotone da marca)
+    assert r > g + 30 and r > b + 30  # a foto ganhou o tom vermelho da marca
 
 
 def test_sem_redundancia_na_narracao():
