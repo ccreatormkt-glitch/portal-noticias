@@ -20,7 +20,7 @@ VW, VH, FPS = 1080, 1920, 30
 PAUSA = 0.28  # usado pelo boletim
 VOZ_DIR = STATE_DIR.parent / "voices"
 HF = "https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/pt/pt_BR"  # versão fixa
-MAX_SEG = 88.0  # Reels aceita até 90 s
+MAX_SEG = 58.0  # vídeos curtos: o upload da Meta recusou os de 60 a 88 s
 DIRECAO = ("Leia como um locutor de telejornal brasileiro: português do Brasil, voz firme e "
            "acolhedora, ritmo natural e claro, sem pressa e sem exageros. Texto:\n\n")
 
@@ -71,12 +71,12 @@ def roteiro(card: dict) -> list:
         if p:
             frases.append(p + ".")
     frases.append(f"Siga o {render.PORTAL_NAME} para mais notícias da Paraíba.")
-    # sem repetir frase igual e sem passar de ~85 s (cerca de 2,6 palavras por segundo)
+    # sem repetir frase igual e sem passar de ~55 s (cerca de 2,6 palavras por segundo)
     vistas, out, palavras = set(), [], 0
     for f in frases:
         chave = f.lower()
         n = len(f.split())
-        if chave in vistas or (palavras + n > 215 and not f.startswith("Siga o")):
+        if chave in vistas or (palavras + n > 135 and not f.startswith("Siga o")):
             continue
         vistas.add(chave)
         out.append(f)
@@ -176,7 +176,7 @@ def montar(card: dict, image_path, out_mp4: Path, audio=None, total=None) -> Pat
          "-vf", f"fps={FPS},format=yuv420p", "-fps_mode", "cfr", "-r", str(FPS),
          # perfil conservador aceito pelo Instagram (H.264 High, sem B-frames, GOP fechado,
          # AAC 128 kbps 48 kHz, cabeçalho no início do arquivo)
-         "-c:v", "libx264", "-preset", "veryfast", "-tune", "stillimage", "-crf", "20",
+         "-c:v", "libx264", "-preset", "veryfast", "-crf", "20",
          "-profile:v", "high", "-level", "4.1", "-pix_fmt", "yuv420p", "-bf", "0",
          "-g", str(FPS * 2), "-keyint_min", str(FPS * 2), "-sc_threshold", "0",
          "-c:a", "aac", "-b:a", "128k", "-ar", "48000", "-ac", "2",

@@ -35,7 +35,7 @@ def test_roteiro_de_narracao_le_a_noticia_inteira():
     assert frases[0].endswith(".") and frases[-1].startswith("Siga o")
     texto = " ".join(frases)
     assert "Prazo vai até sexta." in texto and "Inscrição pela internet." in texto
-    assert len(texto.split()) <= 230  # cabe nos 90 s do Reels
+    assert len(texto.split()) <= 150  # cabe em ~55 s
 
 
 def test_fala_le_valores_siglas_e_horas():
