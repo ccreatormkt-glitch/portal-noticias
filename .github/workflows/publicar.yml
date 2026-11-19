@@ -26,7 +26,8 @@ permissions:
   actions: write   # para a rodada chamar a próxima
 
 concurrency:
-  group: portal-noticias
+  # a rodada de pauta (assunto pedido pelo Arthur) tem fila própria: não é cancelada pela sequência normal
+  group: portal-noticias${{ github.event.inputs.pauta && '-pauta' || '' }}
   cancel-in-progress: false
 
 env:
@@ -165,4 +166,8 @@ jobs:
           if [ "$outras" -gt 0 ]; then echo "já existe rodada na fila ($outras)"; exit 0; fi
           espera=$(( 480 - ($(date +%s) - INICIO) ))   # uma rodada a cada ~8 min
           if [ "$espera" -gt 0 ]; then sleep "$espera"; fi
+          # confere de novo depois da espera (alguém pode ter disparado uma rodada nesse meio-tempo)
+          outras=$(gh run list -R "$GITHUB_REPOSITORY" --workflow publicar.yml --json databaseId,status \
+            --jq "[.[] | select((.status==\"queued\" or .status==\"in_progress\" or .status==\"waiting\" or .status==\"pending\") and .databaseId != $GITHUB_RUN_ID)] | length")
+          if [ "$outras" -gt 0 ]; then echo "já existe rodada na fila ($outras)"; exit 0; fi
           gh workflow run publicar.yml -R "$GITHUB_REPOSITORY" -f modo=auto
