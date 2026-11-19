@@ -1,0 +1,37 @@
+name: corrigir-noticia
+# Correção pública. No GitHub (até pelo celular): Actions > corrigir-noticia > Run workflow.
+# O ID do post aparece no log da publicação ("[publicado] 1789...") e no comando historico.
+on:
+  workflow_dispatch:
+    inputs:
+      post_id:
+        description: "ID do post no Instagram"
+        required: true
+      texto:
+        description: "O que estava errado e qual é a informação correta"
+        required: true
+permissions:
+  contents: write
+env:
+  PYTHONUNBUFFERED: "1"  # mostra cada etapa no registro na hora
+
+jobs:
+  errata:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - env:
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          POST_ID: ${{ github.event.inputs.post_id }}
+          TEXTO: ${{ github.event.inputs.texto }}
+        run: python main.py errata "$POST_ID" "$TEXTO"
+      - run: |
+          git config user.name "pbminuto-bot"
+          git config user.email "pbminuto-bot@users.noreply.github.com"
+          git add state
+          git diff --cached --quiet || (git commit -m "errata $(date -u +%F_%H%M)" && git pull --rebase && git push)

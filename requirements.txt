@@ -1,0 +1,7 @@
+feedparser>=6.0
+requests>=2.31
+Pillow>=10.0
+tzdata>=2024.1
+# boto3 só é necessário se usar S3/Cloudflare R2 em vez do ImgBB
+trafilatura>=2.0
+piper-tts>=1.3

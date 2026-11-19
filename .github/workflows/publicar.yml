@@ -1,0 +1,141 @@
+name: publicar-noticias
+
+# Ritmo: uma rodada a cada ~10 minutos, das 06h às 23h50 (horário de Fortaleza/João Pessoa).
+# Como o agendamento do GitHub costuma atrasar ou pular execuções, cada rodada automática
+# chama a próxima no fim (passo "Próxima rodada"). O agendamento abaixo só (re)liga a sequência:
+# às 06h05 e, de reserva, a cada hora (se a sequência já estiver rodando, ele não duplica).
+# Limites: MAX_POSTS_PER_DAY (padrão 90) e o limite da API do Instagram (100 posts em 24h).
+on:
+  schedule:
+    - cron: "5 9 * * *"
+    - cron: "35 9-23 * * *"
+  workflow_dispatch:
+    inputs:
+      modo:
+        description: "auto (publica), review (só fila) ou dry (só teste)"
+        type: choice
+        options: [auto, review, dry]
+        default: "auto"
+
+permissions:
+  contents: write
+  actions: write   # para a rodada chamar a próxima
+
+concurrency:
+  group: portal-noticias
+  cancel-in-progress: false
+
+env:
+  PYTHONUNBUFFERED: "1"  # mostra cada etapa no registro na hora
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - run: echo "INICIO=$(date +%s)" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Guardar o modelo da voz clonada entre execuções
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: chatterbox-mtl-0.1.7
+      - name: Instalar a voz clonada (Chatterbox, CPU)
+        if: vars.VOZ_MOTOR == 'clonada'
+        continue-on-error: true   # se falhar, a narração usa a voz do Gemini
+        run: |
+          pip install torch==2.6.0 torchaudio==2.6.0 --index-url https://download.pytorch.org/whl/cpu
+          pip install chatterbox-tts==0.1.7
+      - name: Instalar FFmpeg (vídeos)
+        run: which ffmpeg || (sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends ffmpeg)
+      - name: Guardar a voz do Piper entre execuções
+        uses: actions/cache@v4
+        with:
+          path: voices
+          key: piper-${{ vars.PIPER_VOICE || 'pt_BR-faber-medium' }}
+      - name: Coletar, escrever e publicar
+        env:
+          POST_MODE: ${{ (github.event.inputs.modo != 'dry' && github.event.inputs.modo) || vars.POST_MODE || 'auto' }}
+          POSTS_PER_RUN: ${{ vars.POSTS_PER_RUN }}
+          MAX_POSTS_PER_DAY: ${{ vars.MAX_POSTS_PER_DAY }}
+          SENSITIVE_MODE: ${{ vars.SENSITIVE_MODE }}
+          IMAGE_MODE: ${{ vars.IMAGE_MODE }}
+          PORTAL_NAME: ${{ vars.PORTAL_NAME }}
+          PORTAL_HANDLE: ${{ vars.PORTAL_HANDLE }}
+          LLM_PROVIDER: ${{ vars.LLM_PROVIDER }}
+          GEMINI_MODEL: ${{ vars.GEMINI_MODEL }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          IMGBB_API_KEY: ${{ secrets.IMGBB_API_KEY }}
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          CANDIDATOS: ${{ vars.CANDIDATOS }}
+          FORMATO: ${{ vars.FORMATO }}
+          PIPER_VOICE: ${{ vars.PIPER_VOICE }}
+          TTS_VOICE: ${{ vars.TTS_VOICE }}
+          TTS_MODEL: ${{ vars.TTS_MODEL }}
+          VOZ_MOTOR: ${{ vars.VOZ_MOTOR }}
+          VOZ_REFERENCIA_B64: ${{ secrets.VOZ_REFERENCIA_B64 }}
+          MODO: ${{ github.event.inputs.modo }}
+        run: |
+          if [ "$(date -u +%M)" -lt 10 ]; then python main.py insights || echo "métricas indisponíveis nesta rodada"; fi  # métricas 1x por hora
+          if [ "$MODO" = "dry" ]; then
+            python main.py run --dry-run --count 3
+          else
+            python main.py run
+          fi
+      - name: Prévia do teste (capas e quadros dos vídeos no ramo "previa")
+        if: github.event.inputs.modo == 'dry'
+        run: |
+          shopt -s nullglob
+          git worktree add --orphan -b previa /tmp/previa
+          for v in out/*.mp4; do
+            b=$(basename "$v" .mp4)
+            for s in 1 4 9; do
+              ffmpeg -loglevel error -y -ss $s -i "$v" -frames:v 1 -vf scale=540:-1 "/tmp/previa/${b}_${s}s.jpg" || true
+            done
+          done
+          for c in out/*_capa_reels.jpg; do ffmpeg -loglevel error -y -i "$c" -vf scale=540:-1 "/tmp/previa/$(basename "$c")"; done
+          cd /tmp/previa
+          git add -A
+          git -c user.name="pbminuto-bot" -c user.email="pbminuto-bot@users.noreply.github.com" commit -qm "prévia $(date -u +%F_%H%M)" || exit 0
+          git push -f origin previa
+      - name: Guardar cards do teste
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cards
+          path: |
+            out/*.jpg
+            out/*.mp4
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Salvar histórico (para não repetir notícia)
+        if: always()
+        run: |
+          git config user.name "pbminuto-bot"
+          git config user.email "pbminuto-bot@users.noreply.github.com"
+          git add state queue
+          git diff --cached --quiet || (git commit -m "histórico $(date -u +%F_%H%M)" && git pull --rebase && git push)
+      - name: Próxima rodada (a cada ~10 min, das 06h às 23h50)
+        if: always() && github.event.inputs.modo != 'dry' && github.event.inputs.modo != 'review'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          h=$(TZ=America/Fortaleza date +%H)
+          if [ "$h" -lt 6 ] || [ "$h" -gt 23 ]; then echo "fora do horário"; exit 0; fi
+          # trava: se já houver outra rodada na fila ou rodando, não cria uma segunda sequência
+          outras=$(gh run list -R "$GITHUB_REPOSITORY" --workflow publicar.yml --json databaseId,status \
+            --jq "[.[] | select((.status==\"queued\" or .status==\"in_progress\" or .status==\"waiting\" or .status==\"pending\") and .databaseId != $GITHUB_RUN_ID)] | length")
+          if [ "$outras" -gt 0 ]; then echo "já existe rodada na fila ($outras)"; exit 0; fi
+          espera=$(( 600 - ($(date +%s) - INICIO) ))
+          if [ "$espera" -gt 0 ]; then sleep "$espera"; fi
+          gh workflow run publicar.yml -R "$GITHUB_REPOSITORY" -f modo=auto

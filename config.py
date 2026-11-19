@@ -1,0 +1,114 @@
+"""Configurações centrais. Tudo vem de variáveis de ambiente (GitHub Secrets/Variables)
+ou de um arquivo .env local (nunca suba o .env para o GitHub)."""
+import os
+from pathlib import Path
+
+ROOT = Path(__file__).parent
+
+
+def _load_env_file():
+    p = ROOT / ".env"
+    if not p.exists():
+        return
+    for line in p.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        k, v = line.split("=", 1)
+        os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
+
+
+_load_env_file()
+
+
+def env(key: str, default: str = "") -> str:
+    # valor vazio (ex.: variável do GitHub não preenchida) conta como "não definido"
+    return os.environ.get(key) or default
+
+
+def env_bool(key: str, default: bool) -> bool:
+    return env(key, "true" if default else "false").lower() in ("1", "true", "sim", "yes")
+
+
+# ---- Marca do portal ----------------------------------------------------------
+PORTAL_NAME = env("PORTAL_NAME", "PB Minuto")
+PORTAL_HANDLE = env("PORTAL_HANDLE", "@pbminuto")
+# cor principal da marca (hex). Cada editoria tem sua própria cor de destaque.
+BRAND_COLOR = env("BRAND_COLOR", "#DC2626")  # vermelho da marca (antes: verde #10B981)
+TIMEZONE = env("TIMEZONE", "America/Fortaleza")
+
+# ---- Comportamento ------------------------------------------------------------
+# auto   = publica sozinho (padrão)
+# review = deixa os cards na fila queue/pending esperando aprovação
+POST_MODE = env("POST_MODE", "auto")
+POSTS_PER_RUN = int(env("POSTS_PER_RUN", "1"))
+MAX_POSTS_PER_DAY = int(env("MAX_POSTS_PER_DAY", "90"))  # rodada a cada 10 min; a API do Instagram aceita 100 em 24h
+MIN_SOURCES = int(env("MIN_SOURCES", "2"))       # veículos diferentes dando a mesma notícia
+# notícia vinda de 1 só veículo é aceita se ele estiver nesta lista (veículos grandes/oficiais)
+TRUSTED_SINGLE_SOURCE = env_bool("TRUSTED_SINGLE_SOURCE", True)
+# como tratar polícia/tragédia: "careful" = publica com regras de cuidado, "skip" = não publica
+SENSITIVE_MODE = env("SENSITIVE_MODE", "careful")
+DEDUPE_HOURS = int(env("DEDUPE_HOURS", "168"))  # 7 dias de memória contra repetição
+MAX_STORY_AGE_HOURS = int(env("MAX_STORY_AGE_HOURS", "12"))
+# carrossel de 2 lâminas (capa + detalhes). Desligado: o post é só a capa + legenda completa
+# quantas notícias a IA avalia por rodada para escolher a de maior potencial
+CANDIDATOS = int(env("CANDIDATOS", "1"))  # 1 = mais rápido (uma notícia por rodada de 10 min)
+CAROUSEL = env_bool("CAROUSEL", False)  # padrão: só a capa; detalhes vão na legenda
+
+# ---- IA que escreve (Gemini tem plano gratuito) --------------------------------
+GEMINI_API_KEY = env("GEMINI_API_KEY")
+# lista separada por vírgula: se o primeiro modelo não existir mais, tenta o próximo
+# modelos do plano grátis (nov/2026); se o 1º for aposentado, o bot tenta o próximo
+GEMINI_MODEL = env("GEMINI_MODEL", "gemini-3.5-flash,gemini-2.5-flash,gemini-3.1-flash-lite,gemini-2.5-flash-lite,gemini-flash-latest")  # verificados na chave em 19/11/2026
+ANTHROPIC_API_KEY = env("ANTHROPIC_API_KEY")
+CLAUDE_MODEL = env("CLAUDE_MODEL", "claude-sonnet-5-5")
+OPENAI_API_KEY = env("OPENAI_API_KEY")
+OPENAI_MODEL = env("OPENAI_MODEL", "gpt-5.4-mini,gpt-5-mini")  # em ordem; cai para o próximo se um sair do ar
+LLM_PROVIDER = env("LLM_PROVIDER") or ("openai" if OPENAI_API_KEY else "gemini" if GEMINI_API_KEY else "anthropic")
+
+# ---- Foto de banco gratuito (Pexels: chave grátis em pexels.com/api) --------
+PEXELS_API_KEY = env("PEXELS_API_KEY")
+
+# ---- Formato do post ----------------------------------------------------------
+# reels  = vídeo animado com narração (Piper + FFmpeg); se falhar, publica a imagem
+# imagem = só a capa estática
+FORMATO = env("FORMATO", "reels")
+PIPER_VOICE = env("PIPER_VOICE", "pt_BR-faber-medium")   # reserva offline: pt_BR-cadu-medium, pt_BR-jeff-medium
+# voz: "gemini" (voz neural do Google, padrão) ou "clonada" (voz do Arthur via Chatterbox)
+VOZ_MOTOR = env("VOZ_MOTOR", "gemini")  # "clonada" só com máquina mais forte (na CPU grátis passa de 5 min)
+# reserva: TTS do Gemini (neural, português do Brasil, mesma chave do Google)
+TTS_MODEL = env("TTS_MODEL", "gemini-3.8-flash-tts,gemini-3.1-flash-tts-preview,gemini-2.5-flash-preview-tts")
+TTS_VOICE = env("TTS_VOICE", "Charon")  # voz de biblioteca, tom informativo; outras: Kore, Orus, Puck
+
+# ---- Imagem ilustrativa por IA (opcional) --------------------------------------
+# none = card só tipográfico (padrão, custo zero)
+# gemini = gera uma ilustração de fundo (nunca pessoas reais nem "foto" do fato).
+#          ATENÇÃO: modelos de imagem do Gemini são pagos; o padrão grátis é a foto do Pexels.
+IMAGE_MODE = env("IMAGE_MODE", "none")  # desligado: a regra é usar só foto real da cidade citada
+GEMINI_IMAGE_MODEL = env("GEMINI_IMAGE_MODEL", "gemini-3.1-flash-image")
+
+# ---- Instagram (API oficial da Meta) --------------------------------------------
+IG_USER_ID = env("IG_USER_ID")
+IG_ACCESS_TOKEN = env("IG_ACCESS_TOKEN")
+GRAPH_VERSION = env("GRAPH_VERSION", "v26.0")
+# graph.facebook.com (conta ligada a Página) ou graph.instagram.com (login do Instagram)
+GRAPH_HOST = env("GRAPH_HOST", "graph.facebook.com")
+
+# ---- Hospedagem pública da imagem (o Instagram baixa a imagem de um link) -------
+IMGBB_API_KEY = env("IMGBB_API_KEY")          # opção simples e gratuita
+S3_ENDPOINT = env("S3_ENDPOINT")               # opção alternativa (Cloudflare R2 etc.)
+S3_BUCKET = env("S3_BUCKET")
+S3_ACCESS_KEY = env("S3_ACCESS_KEY")
+S3_SECRET_KEY = env("S3_SECRET_KEY")
+S3_PUBLIC_BASE_URL = env("S3_PUBLIC_BASE_URL")
+
+# ---- Pastas ---------------------------------------------------------------------
+STATE_DIR = ROOT / "state"
+QUEUE_PENDING = ROOT / "queue" / "pending"
+QUEUE_PUBLISHED = ROOT / "queue" / "published"
+OUT_DIR = ROOT / "out"
+FONT_DIR = ROOT / "fonts"
+for _d in (STATE_DIR, QUEUE_PENDING, QUEUE_PUBLISHED, OUT_DIR):
+    _d.mkdir(parents=True, exist_ok=True)
+DB_PATH = STATE_DIR / "posts.db"
+LOG_PATH = STATE_DIR / "log.jsonl"

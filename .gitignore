@@ -1,0 +1,6 @@
+.env
+__pycache__/
+out/
+*.pyc
+voices/
+brand/voz_referencia.*

@@ -1,0 +1,58 @@
+name: boletim-bom-dia
+# Todo dia às 06h40 (horário de CG/JP = UTC-3): Reels "Bom dia, Paraíba" com o tempo e os destaques.
+on:
+  schedule:
+    - cron: "40 9 * * *"
+  workflow_dispatch:
+    inputs:
+      teste:
+        description: "true = só gera o vídeo (baixe em Artifacts), não publica"
+        type: boolean
+        default: false
+permissions:
+  contents: write
+concurrency:
+  group: portal-noticias
+  cancel-in-progress: false
+env:
+  PYTHONUNBUFFERED: "1"  # mostra cada etapa no registro na hora
+
+jobs:
+  boletim:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: which ffmpeg || (sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends ffmpeg)
+      - uses: actions/cache@v4
+        with:
+          path: voices
+          key: piper-${{ vars.PIPER_VOICE || 'pt_BR-faber-medium' }}
+      - env:
+          PORTAL_NAME: ${{ vars.PORTAL_NAME }}
+          PORTAL_HANDLE: ${{ vars.PORTAL_HANDLE }}
+          PIPER_VOICE: ${{ vars.PIPER_VOICE }}
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          IMGBB_API_KEY: ${{ secrets.IMGBB_API_KEY }}
+          TESTE: ${{ github.event.inputs.teste }}
+        run: |
+          if [ "$TESTE" = "true" ]; then python main.py boletim --dry-run; else python main.py boletim; fi
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: boletim
+          path: out/boletim_*/boletim.mp4
+          if-no-files-found: ignore
+          retention-days: 7
+      - if: always()
+        run: |
+          git config user.name "pbminuto-bot"
+          git config user.email "pbminuto-bot@users.noreply.github.com"
+          git add state
+          git diff --cached --quiet || (git commit -m "boletim $(date -u +%F)" && git pull --rebase && git push)

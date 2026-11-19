@@ -1,0 +1,36 @@
+name: aprovar-fila
+# Só é usado no modo review: publica tudo que estiver em queue/pending.
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: portal-noticias
+  cancel-in-progress: false
+env:
+  PYTHONUNBUFFERED: "1"  # mostra cada etapa no registro na hora
+
+jobs:
+  approve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - env:
+          PORTAL_NAME: ${{ vars.PORTAL_NAME }}
+          PORTAL_HANDLE: ${{ vars.PORTAL_HANDLE }}
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          IMGBB_API_KEY: ${{ secrets.IMGBB_API_KEY }}
+        run: python main.py approve --all
+      - if: always()
+        run: |
+          git config user.name "pbminuto-bot"
+          git config user.email "pbminuto-bot@users.noreply.github.com"
+          git add -A state queue
+          git diff --cached --quiet || (git commit -m "fila aprovada $(date -u +%F_%H%M)" && git pull --rebase && git push)

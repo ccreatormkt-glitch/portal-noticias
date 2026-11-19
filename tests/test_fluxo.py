@@ -1,0 +1,143 @@
+"""Fluxo completo (sem rede): escolha por potencial, publicação, repetição, novas tentativas e aprendizado."""
+import argparse
+import json
+import time
+
+import pytest
+from conftest import card, item
+
+import config
+import db
+import editor
+import main
+import publish
+import sources
+
+TEMAS = {
+    "EMPREGO": ("Sine de Campina Grande divulga 900 vagas de emprego para vendedores", "utilidade", 5),
+    "CLIMA": ("Chuva forte alaga ruas do bairro da Torre em João Pessoa nesta tarde", "identificacao", 3),
+    "ESPORTE": ("Atleta pessoense conquista ouro inédito em campeonato nacional de judô", "emocao", 4),
+}
+
+
+@pytest.fixture
+def ambiente(monkeypatch):
+    def clusters():
+        its = []
+        for k, (t, _, _) in enumerate(TEMAS.values()):
+            its += [item(t, "ParaibaOnline", rank=k), item(t, "Jornal da Paraíba", rank=k)]
+        return sources.cluster_items(its)
+    monkeypatch.setattr(sources, "build_clusters", clusters)
+
+    def fake(prompt, system=None):
+        for ch, (t, g, p) in TEMAS.items():
+            if t[:25] in prompt:
+                return json.dumps(card(chapeu=ch, titulo={"EMPREGO": "Agência abre centenas de postos para vendedores", "CLIMA": "Temporal deixa vias da Torre debaixo d'água", "ESPORTE": "Judoca pessoense fica com medalha dourada no Brasileiro"}[ch], gatilho=g,
+                                       potencial=p, resumo="Fatos.", legenda="a\n\nb\n\nc",
+                                       pontos=[], linha_fina="x"), ensure_ascii=False)
+    monkeypatch.setattr(editor, "generate", fake)
+    monkeypatch.setattr(editor, "texto_completo", lambda c: "")
+    import illustrate
+    monkeypatch.setattr(illustrate, "imagem_de_fundo", lambda c, b: None)
+    monkeypatch.setattr(main, "_gerar_video", lambda c, bg, s: ("video.mp4", "capa.jpg"))
+    monkeypatch.setattr(config, "POST_MODE", "auto")
+    monkeypatch.setattr(config, "CANDIDATOS", 3)  # escolha entre 3 candidatas (o padrão rápido é 1)
+    for k in ("GEMINI_API_KEY", "IG_USER_ID", "IG_ACCESS_TOKEN"):
+        monkeypatch.setattr(config, k, "teste")
+    monkeypatch.setattr(publish, "quota_left", lambda: 50)
+    publicados = []
+
+    def fake_publish(card, paths):
+        publicados.append(card["chapeu"])
+        return f"IG{len(publicados)}"
+    monkeypatch.setattr(main, "_publish", fake_publish)
+    return publicados
+
+
+def rodar():
+    main.cmd_run(argparse.Namespace(dry_run=False, count=1))
+
+
+def test_escolhe_maior_potencial_e_nao_repete(ambiente):
+    rodar()
+    rodar()
+    rodar()
+    assert ambiente == ["EMPREGO", "ESPORTE", "CLIMA"]  # 5, 4, 3 — e cada uma uma vez só
+    rodar()
+    assert len(ambiente) == 3
+
+
+def test_falha_tenta_de_novo_ate_3_vezes(ambiente, monkeypatch):
+    def quebra(card, paths):
+        raise RuntimeError("instagram fora")
+    monkeypatch.setattr(main, "_publish", quebra)
+    for _ in range(3):
+        with pytest.raises(SystemExit):  # rodada fica vermelha no GitHub
+            rodar()
+    with sqlite_conn() as c:
+        falhas = c.execute("SELECT COUNT(*) FROM posts WHERE status='falha_publicacao'").fetchone()[0]
+    assert falhas >= 3
+    fp = sources.build_clusters()[0].fingerprint
+    assert db.seen(fp, set())  # depois de 3 falhas, desiste dessa notícia
+
+
+def test_limite_diario(ambiente, monkeypatch):
+    monkeypatch.setattr(config, "MAX_POSTS_PER_DAY", 1)
+    rodar()
+    rodar()
+    assert len(ambiente) == 1
+
+
+def test_aprendizado_favorece_o_que_engaja():
+    con = db._conn()
+    dados = [("ESPORTE", "emocao", 260)] * 3 + [("EMPREGO", "utilidade", 60)] * 3
+    for i, (ch, g, sc) in enumerate(dados):
+        con.execute("INSERT INTO posts (ts,fp,stems,headline,source,status,ig_id,note) VALUES (?,?,?,?,?,?,?,?)",
+                    (time.time() - 90000, f"f{i}", "", "h", "s", "published", f"IG{i}", ""))
+        con.execute("INSERT INTO meta VALUES (?,?,?,?,?)", (f"f{i}", ch, g, 4, "noticia"))
+        con.execute("INSERT INTO metricas VALUES (?,?,?,?,?,?,?,?)", (f"IG{i}", time.time(), 1000, 0, 0, 0, 0, sc))
+    con.commit()
+    bom = main._bonus_desempenho({"chapeu": "ESPORTE", "gatilho": "emocao"})
+    ruim = main._bonus_desempenho({"chapeu": "EMPREGO", "gatilho": "utilidade"})
+    novo = main._bonus_desempenho({"chapeu": "POLÍTICA", "gatilho": "debate"})
+    assert bom > 0 > ruim and novo == 0
+
+
+def test_metricas_salvas_e_score():
+    s = db.save_metrics("IGx", {"reach": 1000, "saved": 10, "shares": 5, "likes": 50, "comments": 3})
+    assert s == pytest.approx(63.0)
+
+
+def sqlite_conn():
+    import sqlite3
+    return sqlite3.connect(db.DB_PATH)
+
+
+def test_sem_configuracao_sai_sem_erro(monkeypatch, capsys):
+    monkeypatch.setattr(config, "POST_MODE", "auto")
+    monkeypatch.setattr(config, "CANDIDATOS", 3)  # escolha entre 3 candidatas (o padrão rápido é 1)
+    monkeypatch.setattr(config, "IG_ACCESS_TOKEN", "")
+    rodar()
+    assert "aguardando configuração" in capsys.readouterr().out
+
+
+def test_manchete_parecida_de_outra_fonte_nao_volta():
+    import db
+    import sources
+    db.record("fp1", sources.stems_of("Câmara de João Pessoa elege Corujinha presidente"),
+              "Corujinha é eleito presidente da Câmara de João Pessoa", "", "published")
+    assert db.manchete_repetida("Unanimidade elege João Corujinha à frente do Legislativo pessoense")
+    assert not db.manchete_repetida("Natal Iluminado começa em Campina Grande")
+
+
+def test_gpt_primeiro_e_gemini_de_reserva(monkeypatch):
+    import editor
+    monkeypatch.setattr(editor, "OPENAI_API_KEY", "x")
+    monkeypatch.setattr(editor, "GEMINI_API_KEY", "y")
+    monkeypatch.setattr(editor, "LLM_PROVIDER", "openai")
+
+    def gpt_fora(p, s):
+        raise RuntimeError("fora do ar")
+    monkeypatch.setattr(editor, "_openai", gpt_fora)
+    monkeypatch.setattr(editor, "_gemini", lambda p, s: '{"ok": true}')
+    assert editor.generate("p") == '{"ok": true}'
