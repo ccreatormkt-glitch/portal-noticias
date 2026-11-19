@@ -36,8 +36,8 @@ def z(v):
     """Coordenada do desenho (1080x1920) -> pixel do vídeo (2K)."""
     return round(v * ESCALA)
 M = 80                                   # margem esquerda (área segura do Instagram)
-ONDA = ((W - 800) // 2, 990, 800, 120)   # x, y, largura, altura do visualizador da voz (centralizado)
-LEG_Y = 1300                             # centro da legenda: logo abaixo da onda (mesmo eixo central)
+ONDA = ((W - 800) // 2, 1190, 800, 104)  # x, y, largura, altura do visualizador da voz (centralizado)
+LEG_Y = 1420                             # centro da legenda: logo abaixo da onda (mesmo eixo central)
 LEG_W = 820                              # largura máxima da legenda (x 130 a 950, longe dos botões)
 VERMELHO = tuple(int(BRAND_COLOR.lstrip("#")[i:i + 2], 16) for i in (0, 2, 4))
 VERMELHO_ESCURO = tuple(int(c * 0.78) for c in VERMELHO)
@@ -225,7 +225,7 @@ def quadro(card: dict, out_path: Path, image_path=None) -> Path:
     else:
         img = _sem_foto(card, VW, VH)
     img = _degrade(img, 0, z(560), 140, 0)          # topo: identificação legível
-    img = _degrade(img, z(640), z(1000), 0, 245)    # embaixo: vermelho sólido para voz e legenda
+    img = _degrade(img, z(860), z(1170), 0, 245)    # faixa vermelha mais baixa: mais foto à mostra
     d = ImageDraw.Draw(img)
     lg = logo(z(66))
     img.paste(lg, (z(M), z(300)), lg)
