@@ -270,3 +270,31 @@ def test_pauta_pedida_busca_e_refaz_noticia_descartada(ambiente, monkeypatch):
     monkeypatch.setattr(editor, "generate", fake)
     main.cmd_run(argparse.Namespace(dry_run=False, count=None, pauta="Natal Iluminado"))
     assert ambiente == ["CULTURA"]
+
+
+def test_ia_barra_mesmo_fato_escrito_de_outro_jeito(ambiente, monkeypatch):
+    """Ex. real de 19/11: 4 posts de "horários no feriado" com manchetes diferentes. A IA barra o repetido."""
+    db.record("velho", set(), "Shoppings e bancos alteram funcionamento no feriado em João Pessoa", "", "published", ig_id="9")
+    gerar = editor.generate
+    perguntas = []
+
+    def fake(prompt, system=None):
+        if system == editor.MESMA_NOTICIA:
+            perguntas.append(prompt)
+            repetida = "Agência abre centenas" in prompt  # só a de emprego "repete"
+            return json.dumps({"repetida": repetida, "igual_a": "Shoppings e bancos..." if repetida else ""})
+        return gerar(prompt, system)
+    monkeypatch.setattr(editor, "generate", fake)
+    monkeypatch.setattr(config, "CANDIDATOS", 1)
+    rodar()
+    assert perguntas and "Shoppings e bancos alteram funcionamento" in perguntas[0]
+    assert ambiente and ambiente[0] != "EMPREGO"  # a repetida ficou de fora; saiu outra
+
+
+def test_pauta_exige_o_assunto_na_manchete(monkeypatch):
+    monkeypatch.setattr(sources, "fetch_items", lambda verbose=False, extra=None: [
+        item("Dia da Consciência Negra: veja o que abre e fecha no feriadão", "ParaibaOnline",
+             resumo="Comércio funciona; Natal Iluminado segue com programação"),
+        item("Natal Iluminado de Campina Grande abre com show e milhares de pessoas", "ParaibaOnline")])
+    grupos = sources.build_clusters("Natal Iluminado")
+    assert [c.rep.title[:13] for c in grupos] == ["Natal Ilumina"]

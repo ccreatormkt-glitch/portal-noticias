@@ -225,3 +225,27 @@ def ja_publicada(card: dict, recentes_ig=()) -> str:
         if meu_texto and outro and len(meu_texto & outro) / len(meu_texto | outro) >= 0.42:
             return f"já está no Instagram (texto parecido): {primeira[:60]}"
     return ""
+
+
+def titulos_publicados(horas: int = 48) -> list:
+    """Manchetes publicadas nas últimas `horas` (banco de notícias postadas + histórico)."""
+    desde = time.time() - horas * 3600
+    with _conn() as c:
+        a = [r[0] for r in c.execute("SELECT titulo FROM publicadas WHERE ts > ? ORDER BY ts DESC", (desde,))]
+        b = [r[0] for r in c.execute("SELECT headline FROM posts WHERE status='published' AND ts > ? "
+                                     "ORDER BY ts DESC", (desde,))]
+    vistos, out = set(), []
+    for t in a + b:
+        if t and t.lower() not in vistos:
+            vistos.add(t.lower())
+            out.append(t)
+    return out
+
+
+def ja_postado(fp: str, stems: set) -> bool:
+    """Como seen(), mas só conta o que foi publicado/gerado (descartes antigos podem ser refeitos)."""
+    cutoff = time.time() - DEDUPE_HOURS * 3600
+    with _conn() as c:
+        rows = c.execute("SELECT fp, stems FROM posts WHERE ts > ? AND status IN ('published','gerado','na_fila')",
+                         (cutoff,)).fetchall()
+    return any(old_fp == fp or _jaccard(stems, set(old.split())) >= 0.45 for old_fp, old in rows)

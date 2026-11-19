@@ -321,10 +321,10 @@ def build_clusters(pauta: str = "") -> list:
     if not pauta:
         return cluster_items(fetch_items())
     extra = {"gn_pauta": gnews(pauta), "gn_pauta_pb": gnews(f"{pauta} Paraíba")}
-    palavras = [fold(w) for w in pauta.split() if len(w) >= 3]
+    frase = " ".join(fold(w) for w in pauta.split())
     grupos = cluster_items(fetch_items(extra=extra))
-    return [c for c in grupos
-            if all(w in fold(" ".join(i.title + " " + i.summary for i in c.items)) for w in palavras)]
+    # o assunto tem que estar na MANCHETE (não basta aparecer de passagem no resumo)
+    return [c for c in grupos if any(frase in " ".join(fold(i.title).split()) for i in c.items)]
 
 
 # nomes muito comuns nas manchetes locais: não servem para dizer que duas notícias são a mesma

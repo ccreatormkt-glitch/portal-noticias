@@ -152,6 +152,18 @@ _IG_LEGENDAS = {}
 _PAUTA = {}
 
 
+def _repetida_pela_ia(card) -> str:
+    """A IA compara com tudo que saiu nas últimas 48h (pega o mesmo fato escrito de outro jeito)."""
+    import editor
+    recentes = db.titulos_publicados(48) + [l.strip().split("\n")[0] for l in _IG_LEGENDAS.get("lista", [])]
+    try:
+        igual = editor.mesma_noticia(card, recentes)
+    except Exception as e:
+        print(f"[run] conferência de repetição pela IA indisponível ({str(e)[:80]}); vale o banco")
+        return ""
+    return f"mesmo fato já postado (IA): {igual[:60]}" if igual else ""
+
+
 def _legendas_ig(atualizar=False) -> list:
     """Legendas dos últimos posts do Instagram (uma consulta por rodada; atualiza antes de publicar)."""
     if atualizar or "lista" not in _IG_LEGENDAS:
@@ -194,7 +206,7 @@ def _candidatos(clusters, quantos, mode) -> list:
         confirmed = c.n_sources >= config.MIN_SOURCES or (config.TRUSTED_SINGLE_SOURCE and c.trusted)
         # na pauta pedida, uma tentativa anterior descartada (ex.: texto parecido) pode ser refeita;
         # o que já foi PUBLICADO continua barrado pelo banco de notícias postadas
-        visto = db.seen(c.fingerprint, c.stems) if not _PAUTA.get("ativa") else False
+        visto = db.ja_postado(c.fingerprint, c.stems) if _PAUTA.get("ativa") else db.seen(c.fingerprint, c.stems)
         if not confirmed or c.fingerprint in ja or visto:
             continue
         if not c.is_local and not vez_brasil:
@@ -236,6 +248,8 @@ def _candidatos(clusters, quantos, mode) -> list:
         motivo = db.ja_publicada({**card, "fp": c.fingerprint, "titulo_fonte": c.rep.title,
                                   "links": [i.link for i in c.items[:4]]},
                                  _legendas_ig() if mode == "auto" else ())
+        if not motivo:
+            motivo = _repetida_pela_ia(card)
         if motivo:
             db.record(c.fingerprint, c.stems, c.rep.title, "", "pulado", note=motivo[:120])
             print(f"[run] pulado ({motivo})")

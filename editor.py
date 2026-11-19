@@ -474,3 +474,26 @@ def ver_imagem(img: bytes, mime: str, contexto: str) -> dict:
                 erros.append(f"gemini {model}: {type(e).__name__}")
                 continue  # tenta o próximo modelo
     raise RuntimeError("; ".join(erros) or "nenhuma IA configurada")
+
+
+MESMA_NOTICIA = """Você é o editor-chefe de um portal de notícias no Instagram e NÃO pode publicar a
+mesma notícia duas vezes. Compare a NOVA notícia com a lista do que já foi publicado.
+É REPETIDA se trata do mesmo fato, do mesmo acontecimento ou da mesma informação de serviço,
+mesmo escrita com outras palavras, de outro portal, com outro enfoque ou com pequenos detalhes a mais
+(ex.: "horários do comércio no feriado" publicado de novo com outra manchete = repetida;
+"abertura do Natal Iluminado" e "programação do Natal Iluminado divulgada semanas antes" = fatos diferentes).
+NÃO é repetida se traz um FATO NOVO relevante (outro acontecimento, outro dia, resultado novo).
+Responda só JSON: {"repetida": true ou false, "igual_a": "manchete já publicada igual, ou vazio"}"""
+
+
+def mesma_noticia(card: dict, publicadas: list) -> str:
+    """Pergunta à IA se a notícia nova repete alguma já publicada. Devolve a manchete igual, ou ''."""
+    if not publicadas:
+        return ""
+    lista = "\n".join(f"- {t}" for t in publicadas[:80])
+    nova = f"{card.get('titulo', '')}\n{card.get('linha_fina', '')}\n{card.get('resumo', '')}"
+    resp = _extract_json(generate(f"JÁ PUBLICADAS (últimas 48h):\n{lista}\n\nNOVA NOTÍCIA:\n{nova}",
+                                  system=MESMA_NOTICIA))
+    if resp.get("repetida"):
+        return str(resp.get("igual_a") or "uma notícia já publicada")
+    return ""
