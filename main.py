@@ -223,6 +223,26 @@ def _candidatos(clusters, quantos, mode) -> list:
     return cards
 
 
+def cmd_mesclar(args):
+    """Junta o histórico desta rodada (cópia local do banco) ao do repositório, quando duas rodadas
+    gravaram ao mesmo tempo. Nada se perde: só entram as linhas que o banco atual ainda não tem."""
+    import sqlite3
+    db._conn().close()  # garante as tabelas no banco atual
+    c = sqlite3.connect(db.DB_PATH)
+    c.execute("ATTACH DATABASE ? AS outro", (args.banco,))
+    novos = c.execute("""INSERT INTO posts (ts, fp, stems, headline, source, status, ig_id, note)
+        SELECT o.ts, o.fp, o.stems, o.headline, o.source, o.status, o.ig_id, o.note FROM outro.posts o
+        WHERE NOT EXISTS (SELECT 1 FROM posts p WHERE p.fp = o.fp AND p.ts = o.ts)""").rowcount
+    for tabela in ("meta", "regiao", "metricas"):
+        try:
+            c.execute(f"INSERT OR IGNORE INTO {tabela} SELECT * FROM outro.{tabela}")
+        except sqlite3.OperationalError:
+            pass
+    c.commit()
+    c.close()
+    print(f"[histórico] {novos} registro(s) desta rodada juntados ao histórico do repositório")
+
+
 def cmd_run(args):
     import illustrate
     import sources
@@ -489,6 +509,9 @@ def main():
     r = sub.add_parser("run")
     r.add_argument("--dry-run", action="store_true")
     r.add_argument("--count", type=int)
+    m = sub.add_parser("mesclar", help="junta o histórico de uma rodada ao do repositório")
+    m.add_argument("banco")
+    m.set_defaults(fn=cmd_mesclar)
     r.set_defaults(fn=cmd_run)
     a = sub.add_parser("approve")
     a.add_argument("id", nargs="?")

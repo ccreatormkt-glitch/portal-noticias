@@ -205,3 +205,21 @@ def test_ritmo_recupera_com_dois_posts_quando_atrasado(ambiente, monkeypatch):
         db.record(f"x{i}", set(), f"manchete {i}", "", "published")
     main.cmd_run(sem_count)
     assert len(ambiente) == 3  # 5 na última hora (meta ~5) -> só 1
+
+
+def test_mesclar_historico_de_duas_rodadas(tmp_path):
+    import sqlite3
+    db.record("fpA", {"a"}, "Notícia A", "", "published", ig_id="1")
+    outro = tmp_path / "outro.db"
+    original = db.DB_PATH
+    db.DB_PATH = outro
+    try:
+        db.record("fpB", {"b"}, "Notícia B", "", "published", ig_id="2")
+        db.marcar_regiao("fpB", "brasil")
+    finally:
+        db.DB_PATH = original
+    main.cmd_mesclar(argparse.Namespace(banco=str(outro)))
+    main.cmd_mesclar(argparse.Namespace(banco=str(outro)))  # rodar de novo não duplica
+    c = sqlite3.connect(db.DB_PATH)
+    assert sorted(r[0] for r in c.execute("SELECT headline FROM posts")) == ["Notícia A", "Notícia B"]
+    assert c.execute("SELECT regiao FROM regiao WHERE fp='fpB'").fetchone()[0] == "brasil"
