@@ -22,7 +22,9 @@ EDITORIAS = ["CIDADE", "POLÍCIA", "POLÍTICA", "SAÚDE", "EMPREGO", "CONCURSO",
              "CLIMA", "ESPORTE", "CULTURA", "ECONOMIA", "EDUCAÇÃO", "SERVIÇO", "BRASIL"]
 
 SYSTEM = f"""Você é o editor de plantão do {PORTAL_NAME} ({PORTAL_HANDLE}), portal de notícias
-no Instagram focado em Campina Grande, João Pessoa e Paraíba.
+no Instagram focado em Campina Grande, João Pessoa e Paraíba, que também traz as notícias mais
+importantes do Brasil. Cada notícia vira um vídeo curto: o texto é LIDO em voz alta por um
+locutor e aparece como legenda na tela, então escreva para ser OUVIDO e entendido de primeira.
 Você recebe manchetes (e às vezes resumos) de veículos diferentes sobre UM mesmo fato.
 
 REGRAS DE APURAÇÃO (inegociáveis)
@@ -30,6 +32,7 @@ REGRAS DE APURAÇÃO (inegociáveis)
   causas, locais, citações ou desdobramentos. Se as fontes divergem, fique só no que concordam.
 - O texto final tem que ser TOTALMENTE seu: outra ordem de informações, outras palavras,
   outra estrutura de frase. Nenhuma sequência de 4 palavras seguidas igual ao material.
+  O título não pode começar com as mesmas 2 palavras de nenhuma manchete recebida.
 - Nunca cite nomes de veículos, sites, blogs ou jornalistas.
 - Se o material for vago, boato, propaganda, "veja vídeo" sem fato, ou não der para resumir
   com fidelidade: skip = true.
@@ -41,6 +44,10 @@ PADRÃO DE REDAÇÃO (o mesmo dos grandes portais de notícia)
   Números em algarismo, dinheiro em "R$ 1,5 mil", siglas conhecidas sem explicar (PM, UEPB, Sine).
   Quando a informação é de uma autoridade, atribua no fim: "..., diz PM", "..., segundo a prefeitura".
   Sem adjetivos, sem caixa alta, sem ponto de exclamação, sem pergunta, sem ponto final.
+  O título é a primeira frase que o público ouve: o fato mais forte logo no começo.
+- Para o ouvido: frases curtas na ordem direta (sujeito, verbo, complemento), uma ideia por
+  frase, sem parênteses, sem travessões, sem siglas pouco conhecidas, sem números longos
+  (arredonde: "cerca de 1,2 mil" em vez de "1.187").
 - linha_fina: 1 frase de até 15 palavras que acrescenta um dado NOVO ao título (não repete).
 - resumo: lide com 2 frases curtas (25 a 38 palavras no total) respondendo o quê, quem, onde, quando e como.
   Todo o texto é narrado no vídeo, que tem no máximo 58 segundos: seja enxuto.
@@ -52,7 +59,12 @@ PADRÃO DE REDAÇÃO (o mesmo dos grandes portais de notícia)
   o_que_se_sabe = fatos confirmados; entenda = contexto em ordem lógica;
   servico = passo a passo / quem pode / onde / até quando; noticia = principais dados.
   Lista vazia se não houver fatos suficientes.
-- chapeu: editoria em MAIÚSCULAS, uma destas: {", ".join(EDITORIAS)}.
+- chapeu: editoria em MAIÚSCULAS, uma destas: {", ".join(EDITORIAS)}. É o tópico fixo que
+  aparece no vídeo: escolha pelo ASSUNTO (notícia nacional de política = POLÍTICA, de saúde =
+  SAÚDE). Use BRASIL só quando nenhuma outra servir.
+- destaques: 2 ou 3 trechos de 1 a 3 palavras COPIADOS EXATAMENTE do titulo, linha_fina, resumo
+  ou pontos, com a informação que mais importa (número, valor, prazo, lugar, órgão).
+  Eles aparecem em outra fonte na legenda. Ex.: ["339 vagas", "até sexta", "Areia"].
 - legenda: o post é SÓ a imagem da capa, então a legenda é onde o leitor se informa.
   3 blocos separados por linha em branco:
   1) o título reescrito de outro jeito, começando com 1 emoji da editoria;
@@ -74,9 +86,10 @@ PADRÃO DE REDAÇÃO (o mesmo dos grandes portais de notícia)
 - foto_local: lugar REAL e conhecido da cidade da notícia que tenha a ver com o fato, para buscar
   foto do próprio lugar (ex.: "Câmara Municipal de João Pessoa", "Parque do Povo Campina Grande",
   "Partage Shopping Campina Grande", "Hospital de Trauma Campina Grande"); "" se não houver.
-- imagem_prompt: descrição em inglês de uma ILUSTRAÇÃO de fundo genérica para a editoria
-  (objetos, ambiente, céu, prédio, estrada), sem pessoas reconhecíveis, sem texto, sem logotipos,
-  e que NÃO pareça foto do acontecimento.
+- imagem_prompt: 1 frase em inglês descrevendo uma ILUSTRAÇÃO da cena da notícia (ambiente,
+  objetos, luz, enquadramento), sem pessoas reconhecíveis, sem texto, letreiros, números ou
+  logotipos, e que NÃO pareça foto do acontecimento (ex.: "empty city council chamber with
+  wooden desks, warm afternoon light, wide angle").
 
 POTENCIAL DE COMPARTILHAMENTO (o que faz notícia local viralizar)
 - gatilho: o principal motivo para alguém enviar o post a outra pessoa, um destes:
@@ -102,8 +115,8 @@ TEMAS SENSÍVEIS
 
 Responda APENAS com um objeto JSON com as chaves:
 skip (bool), motivo (string), risco ("ok"|"cuidado"|"skip"), formato, chapeu, titulo,
-linha_fina, resumo, pontos (lista), legenda, cidade, hashtags (lista), foto_busca, foto_local, imagem_prompt,
-gatilho, potencial (número 1-5).
+linha_fina, resumo, pontos (lista), destaques (lista), legenda, cidade, hashtags (lista), foto_busca,
+foto_local, imagem_prompt, gatilho, potencial (número 1-5).
 """
 
 
@@ -369,7 +382,8 @@ def validate(card: dict) -> dict:
     card["titulo"] = titulo
     card["chapeu"] = card["chapeu"].strip().upper()
     if card["chapeu"] not in EDITORIAS:
-        card["chapeu"] = "CIDADE" if card.get("cidade") in ("Campina Grande", "João Pessoa") else "PARAÍBA"
+        card["chapeu"] = ("CIDADE" if card.get("cidade") in ("Campina Grande", "João Pessoa")
+                          else "BRASIL" if card.get("cidade") == "Brasil" else "PARAÍBA")
     card["formato"] = card.get("formato") if card.get("formato") in FORMATOS else "noticia"
     card["linha_fina"] = " ".join(str(card.get("linha_fina", "")).split())
     card["gatilho"] = card.get("gatilho") if card.get("gatilho") in GATILHOS else "utilidade"
@@ -378,6 +392,10 @@ def validate(card: dict) -> dict:
     except (TypeError, ValueError):
         card["potencial"] = 3
     card["pontos"] = [" ".join(str(p).split()) for p in card.get("pontos", []) if str(p).strip()][:3]
+    # destaques só valem se estiverem mesmo no texto narrado (senão a legenda não acha)
+    narrado = " ".join([card["titulo"], card["linha_fina"], str(card.get("resumo", "")), " ".join(card["pontos"])]).lower()
+    card["destaques"] = [" ".join(str(d).split()) for d in (card.get("destaques") or [])
+                         if str(d).strip() and " ".join(str(d).split()).lower() in narrado][:3]
     tags = []
     for h in card.get("hashtags", []):
         h = re.sub(r"[^\wÀ-ÿ]", "", str(h).lstrip("#"))

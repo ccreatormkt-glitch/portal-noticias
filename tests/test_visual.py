@@ -62,8 +62,10 @@ def test_video_reels_no_padrao_do_instagram(tmp_path):
 
 
 @pytest.mark.skipif(not shutil.which("ffmpeg"), reason="ffmpeg não instalado")
-def test_video_leve_com_quadro_chave_a_cada_4s(tmp_path):
-    """Arquivo leve facilita o envio à Meta; o Instagram pede GOP fechado de 2 a 5 s."""
+def test_video_leve_com_quadro_chave_a_cada_4s(tmp_path, monkeypatch):
+    """Estilo estático: arquivo leve; o Instagram pede GOP fechado de 2 a 5 s."""
+    import config
+    monkeypatch.setattr(config, "ESTILO_VIDEO", "estatico")
     c = card()
     audio = tmp_path / "a.m4a"
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-f", "lavfi", "-i", "anullsrc=r=48000:cl=stereo",
@@ -215,3 +217,70 @@ def test_ilustracao_reserva_corta_a_marca(monkeypatch, tmp_path):
     monkeypatch.setattr(requests, "get", lambda url, **k: R())
     out = illustrate._pollinations("cena", tmp_path / "ia.png")
     assert out and Image.open(out).size == (1080, int(2048 * 0.93))
+
+
+# ---------------------------------------------------------------- audiograma (onda + legenda)
+def _fala_sintetica(caminho, trechos, pausa=0.45):
+    import wave
+    import numpy as np
+    sr, partes = 24000, []
+    for d in trechos:
+        t = np.arange(int(d * sr)) / sr
+        partes += [np.sin(2 * np.pi * 180 * t) * 0.5, np.zeros(int(pausa * sr))]
+    pcm = (np.concatenate(partes) * 32767).astype("int16")
+    with wave.open(str(caminho), "wb") as w:
+        w.setnchannels(1)
+        w.setsampwidth(2)
+        w.setframerate(sr)
+        w.writeframes(pcm.tobytes())
+
+
+@pytest.mark.skipif(not shutil.which("ffmpeg"), reason="ffmpeg não instalado")
+def test_legenda_acompanha_as_pausas_da_voz(tmp_path):
+    import audiograma
+    frases = ["Primeira frase curta.", "Uma segunda frase bem mais comprida que a primeira.", "Fim."]
+    _fala_sintetica(tmp_path / "v.wav", [1.5, 3.5, 0.6])
+    t = audiograma.tempos_das_frases(frases, tmp_path / "v.wav")
+    assert abs(t[0][1] - 1.5) < 0.1 and abs(t[1][0] - 1.95) < 0.1 and abs(t[2][0] - 5.9) < 0.15
+
+
+def test_blocos_de_legenda_equilibrados():
+    import audiograma
+    frase = "Empresas terão 90 dias para adaptar escalas e contratos de trabalho em todo o país."
+    partes = audiograma.blocos(frase, [])
+    assert all(len(ls) <= 2 for ls, _ in partes) and len(partes) >= 2
+    tam = [sum(len(p) for l in ls for p, _ in l) for ls, _ in partes]
+    assert min(tam) >= max(tam) * 0.4  # nada de sobra curta no fim
+    manchete = audiograma.blocos("Lula assina decreto que troca a escala 6x1 pela jornada 5x2 em todo o país", [],
+                                 manchete=True)
+    assert len(manchete) == 1 and len(manchete[0][0]) <= 4
+
+
+def test_destaque_usa_outra_fonte(tmp_path):
+    import audiograma
+    frases = ["Prefeitura abre 339 vagas em Areia.", "Inscrições vão até sexta."]
+    ass = audiograma.legenda_ass(frases, [(0, 2), (2.4, 4)], ["339 vagas"], tmp_path / "l.ass", total=5)
+    txt = ass.read_text()
+    assert "\\fnInstrument Serif\\i1" in txt and "339" in txt and "Montserrat Black" in txt
+    assert txt.count("Dialogue:") >= 2
+    # sem destaque do editor, os números ganham a outra fonte
+    assert any(d for p, d in audiograma._marcar_destaques("Concurso tem 339 vagas".split(), []) if p == "339")
+
+
+@pytest.mark.skipif(not shutil.which("ffmpeg"), reason="ffmpeg não instalado")
+def test_audiograma_completo(tmp_path):
+    import json
+    import audiograma
+    c = card(destaques=["cursos gratuitos"])
+    frases = [video._para_fala(f) for f in video.roteiro(c)]
+    _fala_sintetica(tmp_path / "narracao.wav", [2.0] * len(frases), pausa=0.3)
+    (tmp_path / "narracao.json").write_text(json.dumps({"frases": frases, "atraso": 0.3, "fator": 1.0}))
+    audio = tmp_path / "a.m4a"
+    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(tmp_path / "narracao.wav"), "-af",
+                    "adelay=300|300", "-c:a", "aac", "-ar", "48000", "-ac", "2", str(audio)], check=True)
+    out = audiograma.montar(c, None, audio, 9.0, tmp_path / "r.mp4", tmp_path)
+    info = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "stream=width,height,codec_name:format=duration",
+                           "-of", "json", str(out)], capture_output=True, text=True).stdout
+    assert '"width": 1080' in info and '"height": 1920' in info and '"aac"' in info
+    assert abs(float(json.loads(info)["format"]["duration"]) - 9.0) < 0.3
+    assert (tmp_path / "quadro.jpg").exists() and (tmp_path / "legenda.ass").exists()

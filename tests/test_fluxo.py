@@ -156,3 +156,28 @@ def test_sem_novidade_da_paraiba_publica_noticia_do_brasil(ambiente, monkeypatch
     monkeypatch.setattr(editor, "generate", fake)
     rodar()
     assert ambiente == ["BRASIL"]
+
+
+def test_um_a_cada_tres_posts_e_do_brasil(ambiente, monkeypatch):
+    """Fluxo misto: depois de 2 posts da Paraíba, o próximo é notícia relevante do Brasil (G1)."""
+    nacional = "Governo federal anuncia novo calendário de pagamento do Bolsa Família em dezembro"
+    locais = sources.build_clusters
+
+    def clusters():
+        return locais() + sources.cluster_items([item(nacional, "g1", feed="g1_brasil")])
+    monkeypatch.setattr(sources, "build_clusters", clusters)
+    gerar = editor.generate
+
+    def fake(prompt, system=None):
+        if nacional[:25] in prompt:
+            return json.dumps(card(chapeu="POLÍTICA", cidade="Brasil", titulo="Bolsa Família tem novas datas de pagamento em dezembro",
+                                   resumo="Fatos.", legenda="a\n\nb\n\nc", pontos=[], linha_fina="x"), ensure_ascii=False)
+        return gerar(prompt, system)
+    monkeypatch.setattr(editor, "generate", fake)
+    monkeypatch.setattr(config, "CANDIDATOS", 1)
+    monkeypatch.setattr(config, "BRASIL_A_CADA", 3)
+    rodar()
+    rodar()
+    rodar()
+    assert len(ambiente) == 3 and ambiente[2] == "POLÍTICA" and "POLÍTICA" not in ambiente[:2]
+    assert db.vez_do_brasil(3) is False

@@ -34,7 +34,7 @@ def env_bool(key: str, default: bool) -> bool:
 PORTAL_NAME = env("PORTAL_NAME", "PB Minuto")
 PORTAL_HANDLE = env("PORTAL_HANDLE", "@pbminuto")
 # cor principal da marca (hex). Cada editoria tem sua própria cor de destaque.
-BRAND_COLOR = env("BRAND_COLOR", "#DC2626")  # vermelho da marca (antes: verde #10B981)
+BRAND_COLOR = env("BRAND_COLOR", "#D0331F")  # vermelho da marca, tom da referência escolhida pelo Arthur
 TIMEZONE = env("TIMEZONE", "America/Fortaleza")
 
 # ---- Comportamento ------------------------------------------------------------
@@ -53,6 +53,7 @@ MAX_STORY_AGE_HOURS = int(env("MAX_STORY_AGE_HOURS", "12"))
 # carrossel de 2 lâminas (capa + detalhes). Desligado: o post é só a capa + legenda completa
 # quantas notícias a IA avalia por rodada para escolher a de maior potencial
 BRASIL_RESERVA = env_bool("BRASIL_RESERVA", True)  # sem novidade da Paraíba: notícia geral do Brasil (G1)
+BRASIL_A_CADA = int(env("BRASIL_A_CADA", "3"))  # 1 a cada 3 posts é notícia relevante do Brasil (0 = só reserva)
 CANDIDATOS = int(env("CANDIDATOS", "1"))  # 1 = mais rápido (uma notícia por rodada de 10 min)
 CAROUSEL = env_bool("CAROUSEL", False)  # padrão: só a capa; detalhes vão na legenda
 
@@ -83,6 +84,7 @@ VOZ_MOTOR = env("VOZ_MOTOR", "gemini")  # "clonada" só com máquina mais forte 
 # rodada em vez de sair com outra voz. Sem VOZ_FIXA, as outras da lista (e o Piper) viram reserva.
 TTS_MODEL = env("TTS_MODEL", "gemini-3.1-flash-tts-preview,gemini-3.8-flash-tts,gemini-2.5-flash-preview-tts")
 VOZ_FIXA = env_bool("VOZ_FIXA", True)
+ESTILO_VIDEO = env("ESTILO_VIDEO", "audiograma")  # "audiograma" (onda + legenda) ou "estatico"
 TTS_VOICE = env("TTS_VOICE", "Charon")  # voz de biblioteca, tom informativo; outras: Kore, Orus, Puck
 
 # ---- Imagem ilustrativa por IA (opcional) --------------------------------------

@@ -16,6 +16,7 @@ import socket
 import json
 import shutil
 import sys
+import subprocess
 import time
 from pathlib import Path
 
@@ -97,6 +98,9 @@ def _gerar_video(card, bg, stamp):
         import video
         capa = render.render_cover_reels(card, config.OUT_DIR / f"{stamp}_capa_reels.jpg", bg)
         out = video.montar(card, bg, config.OUT_DIR / f"{stamp}.mp4")
+        if config.ESTILO_VIDEO == "audiograma":  # capa = quadro com a manchete inteira
+            subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-ss", "1.2", "-i", str(out),
+                            "-frames:v", "1", "-q:v", "2", str(capa)], check=False)
         print(f"[reels] vídeo pronto: {out.name}")
         return str(out), str(capa)
     except Exception as e:
@@ -150,21 +154,25 @@ def _candidatos(clusters, quantos, mode) -> list:
     tentativas = fails = 0
     prazo = time.monotonic() + 7 * 60  # rodada a cada 10 min: escrever rápido e publicar
     locais = [c for c in clusters if c.is_local]
-    # reserva: notícias gerais do Brasil (G1) quando não houver nada novo da Paraíba
+    # notícias relevantes do Brasil (G1): 1 a cada BRASIL_A_CADA posts e, de reserva, quando
+    # não houver nada novo da Paraíba
     brasil = [c for c in clusters if not c.is_local and any(i.feed == "g1_brasil" for i in c.items)]
-    fila = locais + (brasil if config.BRASIL_RESERVA else [])
+    vez_brasil = config.BRASIL_A_CADA > 0 and db.vez_do_brasil(config.BRASIL_A_CADA)
+    if vez_brasil and brasil:
+        print("[run] vez de uma notícia do Brasil (G1)")
+        fila = brasil + locais
+    else:
+        fila = locais + (brasil if config.BRASIL_RESERVA else [])
     for c in fila:
         if len(cards) >= quantos or tentativas >= quantos + 3:
             break
-        if not c.is_local and cards:
-            break  # só vai para o Brasil se a Paraíba não rendeu nenhum post
         if time.monotonic() > prazo and cards:
             print("[run] tempo de escrita esgotado; seguindo com os candidatos que já tenho")
             break
         confirmed = c.n_sources >= config.MIN_SOURCES or (config.TRUSTED_SINGLE_SOURCE and c.trusted)
         if not confirmed or c.fingerprint in ja or db.seen(c.fingerprint, c.stems):
             continue
-        if not c.is_local:
+        if not c.is_local and not vez_brasil:
             print(f"[run] sem novidade da Paraíba; notícia do Brasil (G1): {c.rep.title[:60]}")
         repetida = db.manchete_repetida(c.rep.title) or next(
             (k["titulo"] for k in cards if sources.mesma_historia(c.rep.title, k["titulo"])
@@ -200,7 +208,7 @@ def _candidatos(clusters, quantos, mode) -> list:
             print(f"[run] pulado (já publicamos algo igual: {parecida[:60]})")
             continue
         card.update(fp=c.fingerprint, stems=sorted(c.stems), source_line=source_line(c.sources),
-                    titulo_fonte=c.rep.title,
+                    titulo_fonte=c.rep.title, regiao="paraiba" if c.is_local else "brasil",
                     links=[i.link for i in c.items[:4]], cluster_score=c.score, _ts=time.time())
         cards.append(card)
     for card in cards:
@@ -298,6 +306,7 @@ def cmd_run(args):
                     pub_fail += 1  # erro de verdade (token, permissão...): rodada vermelha + e-mail
                 continue
             db.update_status(fp, "published", ig_id=mid)
+            db.marcar_regiao(fp, card.get("regiao", "paraiba"))
             print(f"[publicado] {mid}  {card['titulo']}")
         made += 1
     print(f"[run] fim: {made} post(s) {'gerados' if mode != 'auto' else 'publicados'}")

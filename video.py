@@ -177,11 +177,16 @@ def narrar(card: dict, pasta: Path):
         frases = roteiro(card, alvo)
         print(f"[voz] {dur:.1f} s passou do limite; roteiro encurtado para ~{alvo} palavras")
         dur = _sintetizar(_para_fala(" ".join(frases)), wav)
-    filtro = "adelay=300|300"
+    filtro, fator = "adelay=300|300", 1.0
     if dur > MAX_FALA:  # ainda passou (raro): acelera de leve, no máximo 8 %
         fator = min(dur / MAX_FALA, 1.08)
         filtro += f",atempo={fator:.3f}"
         dur = dur / fator
+    # o que foi falado e como (a legenda do audiograma usa isso para acompanhar a voz)
+    import json
+    (pasta / "narracao.json").write_text(json.dumps(
+        {"frases": [_para_fala(f) for f in frases], "atraso": 0.3, "fator": fator}, ensure_ascii=False),
+        encoding="utf-8")
     total = min(max(dur + 1.3, 5.5), MAX_SEG)
     audio = pasta / "narracao.m4a"
     _ff(["-i", str(wav), "-af", f"{filtro},apad,atrim=0:{total:.2f}",
@@ -204,6 +209,13 @@ def montar(card: dict, image_path, out_mp4: Path, audio=None, total=None) -> Pat
     pasta.mkdir(parents=True, exist_ok=True)
     if audio is None:
         audio, total = narrar(card, pasta)
+    from config import ESTILO_VIDEO
+    if ESTILO_VIDEO == "audiograma":
+        import audiograma
+        try:
+            return audiograma.montar(card, image_path, audio, total, Path(out_mp4), pasta)
+        except Exception as e:  # nunca deixa de postar por causa do visual: cai no estilo parado
+            print(f"[reels] audiograma falhou ({str(e)[:160]}); usando a arte parada")
     quadro = render.render_cover_reels(card, pasta / "arte.jpg", image_path)
     _ff(["-loop", "1", "-framerate", str(FPS), "-i", str(quadro), "-i", str(audio),
          "-map", "0:v", "-map", "1:a", "-t", f"{total:.2f}",

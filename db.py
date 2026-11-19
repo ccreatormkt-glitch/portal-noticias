@@ -13,6 +13,7 @@ def _conn():
         headline TEXT, source TEXT, status TEXT, ig_id TEXT, note TEXT)""")
     c.execute("""CREATE TABLE IF NOT EXISTS meta (
         fp TEXT PRIMARY KEY, chapeu TEXT, gatilho TEXT, potencial INTEGER, formato TEXT)""")
+    c.execute("""CREATE TABLE IF NOT EXISTS regiao (fp TEXT PRIMARY KEY, regiao TEXT)""")
     c.execute("""CREATE TABLE IF NOT EXISTS metricas (
         ig_id TEXT PRIMARY KEY, ts REAL, reach INTEGER, saved INTEGER, shares INTEGER,
         likes INTEGER, comments INTEGER, score REAL)""")
@@ -125,3 +126,19 @@ def historico(n=20) -> list:
     with _conn() as c:
         return c.execute("SELECT ts, ig_id, headline, source, note FROM posts WHERE status='published' "
                          "ORDER BY ts DESC LIMIT ?", (n,)).fetchall()
+
+
+def marcar_regiao(fp: str, regiao: str):
+    with _conn() as c:
+        c.execute("INSERT OR REPLACE INTO regiao VALUES (?,?)", (fp, regiao))
+
+
+def vez_do_brasil(cada: int) -> bool:
+    """True quando os últimos (cada-1) posts publicados foram todos da Paraíba:
+    assim 1 a cada `cada` posts é notícia do Brasil."""
+    if cada <= 1:
+        return cada == 1
+    with _conn() as c:
+        rows = c.execute("SELECT r.regiao FROM posts p LEFT JOIN regiao r ON r.fp = p.fp "
+                         "WHERE p.status='published' ORDER BY p.ts DESC LIMIT ?", (cada - 1,)).fetchall()
+    return len(rows) == cada - 1 and all((r[0] or "paraiba") != "brasil" for r in rows)

@@ -89,7 +89,7 @@ jobs:
         run: |
           if [ "$(date -u +%M)" -lt 10 ]; then python main.py insights || echo "métricas indisponíveis nesta rodada"; fi  # métricas 1x por hora
           if [ "$MODO" = "dry" ]; then
-            python main.py run --dry-run --count 3
+            python main.py run --dry-run --count 1
           else
             python main.py run
           fi
@@ -105,6 +105,7 @@ jobs:
             done
           done
           for c in out/*_capa_reels.jpg; do ffmpeg -loglevel error -y -i "$c" -vf scale=540:-1 "/tmp/previa/$(basename "$c")"; done
+          cp out/*.mp4 /tmp/previa/ 2>/dev/null || true   # o vídeo inteiro, para conferir som e legenda
           cd /tmp/previa
           git add -A
           git -c user.name="pbminuto-bot" -c user.email="pbminuto-bot@users.noreply.github.com" commit -qm "prévia $(date -u +%F_%H%M)" || exit 0
