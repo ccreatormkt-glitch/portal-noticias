@@ -140,14 +140,14 @@ def tts_gemini(texto: str, out_wav: Path):
     if VOZ_FIXA:
         modelos = modelos[:1]
     for model in modelos:
-        for tentativa in range(3 if VOZ_FIXA else 1):
+        for tentativa in range(5 if VOZ_FIXA else 1):  # limite por minuto do Gemini: insiste com calma
             try:
                 r = requests.post(f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
                                   headers={"x-goog-api-key": GEMINI_API_KEY}, json=body, timeout=(10, 120))
                 if r.status_code != 200:
                     print(f"[voz] {model}: HTTP {r.status_code}")
-                    if r.status_code in (429, 500, 503) and tentativa < 2 and VOZ_FIXA:
-                        time.sleep(20 * (tentativa + 1))  # ocupada: espera e tenta a mesma voz
+                    if r.status_code in (429, 500, 503) and tentativa < 4 and VOZ_FIXA:
+                        time.sleep(min(20 * (tentativa + 1), 60))  # 20, 40, 60, 60 s: tenta a mesma voz
                         continue
                     break
                 parte = r.json()["candidates"][0]["content"]["parts"][0]

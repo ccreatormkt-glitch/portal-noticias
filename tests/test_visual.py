@@ -168,7 +168,7 @@ def test_voz_fixa_usa_so_o_modelo_da_primeira_postagem(monkeypatch, tmp_path):
     monkeypatch.setattr(video, "VOZ_FIXA", True)
     monkeypatch.setattr(video, "GEMINI_API_KEY", "k")
     assert video.tts_gemini("oi", tmp_path / "a.wav") is None
-    assert len(pedidos) == 3 and all("gemini-3.1-flash-tts-preview" in u for u in pedidos)
+    assert len(pedidos) == 5 and all("gemini-3.1-flash-tts-preview" in u for u in pedidos)
 
 
 def test_foto_da_materia_nunca_vai_para_a_arte(monkeypatch, tmp_path):
