@@ -102,6 +102,13 @@ def _fold(t: str) -> str:
     return unicodedata.normalize("NFKD", t or "").encode("ascii", "ignore").decode().lower()
 
 
+import re as _re
+
+NAO_E_FOTO = _re.compile(r"\b(map|mapa|carta|planta|brasao|bandeira|flag|coat of arms|escudo|logo|"
+                         r"desenho|drawing|gravura|engraving|pintura|painting|diagrama|seal|selo|"
+                         r"1[5-8]\d\d)\b")
+
+
 def buscar_commons(busca: str, out_path: Path, exigir=()):
     """Wikimedia Commons: ótimo para lugares (praças, prédios, ruas) de CG e JP. Exige crédito.
     `exigir`: palavras que precisam estar no nome ou na descrição do arquivo (ex.: a cidade),
@@ -112,7 +119,7 @@ def buscar_commons(busca: str, out_path: Path, exigir=()):
         r = requests.get("https://commons.wikimedia.org/w/api.php", headers=UA, timeout=(5, 15), params={
             "action": "query", "format": "json", "generator": "search", "gsrnamespace": 6,
             "gsrsearch": f"{busca} filetype:bitmap", "gsrlimit": 12, "prop": "imageinfo",
-            "iiprop": "url|extmetadata|size", "iiurlwidth": 1920})  # tamanho padrão do Wikimedia (outros dão erro)
+            "iiprop": "url|extmetadata|size|mime", "iiurlwidth": 1920})  # tamanho padrão do Wikimedia (outros dão erro)
         paginas = (r.json().get("query") or {}).get("pages", {}).values()
         usadas = _usadas()
         for p in sorted(paginas, key=lambda x: x.get("index", 99)):
@@ -125,6 +132,8 @@ def buscar_commons(busca: str, out_path: Path, exigir=()):
             onde = _fold(p.get("title", "") + " " + _texto((meta.get("ImageDescription") or {}).get("value", "")))
             if exigir and not any(_fold(x) in onde for x in exigir):
                 continue
+            if NAO_E_FOTO.search(_fold(p.get("title", ""))) or info.get("mime") not in (None, "image/jpeg"):
+                continue  # mapas, brasões, bandeiras, desenhos antigos: não servem de foto de notícia
             img = None
             for url in (info.get("thumburl"), info.get("url")):  # miniatura padrão; se falhar, o original
                 if not url:
@@ -191,9 +200,8 @@ def foto_parecida(card: dict, base: Path):
                 buscas.append(f"{desc['busca_en']} {principal}")
         except Exception as e:
             print(f"[foto] não consegui descrever a foto original ({str(e)[:80]})")
-    if card.get("foto_busca"):
-        buscas.append(f"{card['foto_busca']} {principal}")
-    buscas.append(principal)  # por último: uma foto conhecida da própria cidade
+    # só lugares específicos (prédio, praça, órgão); busca genérica com o nome solto da cidade
+    # traz mapas e fotos sem relação, então nesse caso a arte usa a ilustração da IA
     destino = Path(f"{base}_foto.jpg")
     vistas = set()
     for q in buscas:

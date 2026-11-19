@@ -301,11 +301,12 @@ def render_cover_reels(card, out_path, image_path=None, tema=None) -> Path:
     d = ImageDraw.Draw(img)
 
     # manchete: Inter Black, até 5 linhas, ancorada para terminar perto de y=1540
-    for tamanhos in ((80, 76), (72, 68), (64, 60), (56, 52)):
-        ft, linhas = fit(clean(card["titulo"]), "Black", tamanhos, W0 - 2 * mx, 5)
+    for tamanhos in ((80, 76), (72, 68), (64, 60), (56, 52), (50, 46)):
+        ft, linhas = fit(clean(card["titulo"]), "Black", tamanhos, W0 - 2 * mx, 6)
         lh = int(ft.size * 1.12)
-        if len(linhas) * lh <= 560:
-            break
+        cortou = linhas[-1].endswith("...")
+        if not cortou and len(linhas) * lh <= 560:
+            break  # a manchete inteira cabe: nunca corta com "..." se der para diminuir a letra
     y = 1540 - len(linhas) * lh
     # etiqueta da editoria
     fe = font("Bold", 28)
