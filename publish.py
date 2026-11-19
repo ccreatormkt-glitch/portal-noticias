@@ -133,14 +133,20 @@ def post_reel(video_path: Path, caption: str, cover_url: str = None, thumb_ms: i
         raise RuntimeError("upload direto de vídeo só existe no login pelo Facebook (graph.facebook.com)")
     video_path = Path(video_path)
     extra = {"cover_url": cover_url} if cover_url else {"thumb_offset": str(thumb_ms)}
-    cid = _container(media_type="REELS", upload_type="resumable", caption=caption,
-                     share_to_feed="true", **extra)
     dados = video_path.read_bytes()
-    r = requests.post(f"https://rupload.facebook.com/ig-api-upload/{GRAPH_VERSION}/{cid}",
-                      headers={"Authorization": f"OAuth {IG_ACCESS_TOKEN}", "offset": "0",
-                               "file_size": str(len(dados))},
-                      data=dados, timeout=300)
-    _check(r)
+    for tentativa in range(3):  # o servidor de upload da Meta às vezes falha à toa: tenta de novo
+        cid = _container(media_type="REELS", upload_type="resumable", caption=caption,
+                         share_to_feed="true", **extra)
+        r = requests.post(f"https://rupload.facebook.com/ig-api-upload/{GRAPH_VERSION}/{cid}",
+                          headers={"Authorization": f"OAuth {IG_ACCESS_TOKEN}", "offset": "0",
+                                   "file_size": str(len(dados))},
+                          data=dados, timeout=300)
+        if r.status_code < 400:
+            break
+        print(f"[reels] upload recusado (tentativa {tentativa + 1}/3): {_sem_segredos(r.text[:200])}")
+        if tentativa == 2:
+            _check(r)
+        time.sleep(20 * (tentativa + 1))
     for _ in range(60):  # vídeo demora mais para processar (até ~5 min)
         st = _check(_ig().get(f"{BASE}/{cid}", params={"fields": "status_code,status"}, timeout=30))
         if st.get("status_code") == "FINISHED":

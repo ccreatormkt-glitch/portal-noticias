@@ -171,7 +171,9 @@ def montar(card: dict, image_path, out_mp4: Path, audio=None, total=None) -> Pat
         audio, total = narrar(card, pasta)
     quadro = render.render_cover_reels(card, pasta / "arte.jpg", image_path)
     _ff(["-loop", "1", "-framerate", str(FPS), "-i", str(quadro), "-i", str(audio),
-         "-map", "0:v", "-map", "1:a", "-t", f"{total:.2f}", "-r", str(FPS),
+         "-map", "0:v", "-map", "1:a", "-t", f"{total:.2f}",
+         # taxa de quadros FIXA (o Instagram recusa vídeo com taxa variável)
+         "-vf", f"fps={FPS},format=yuv420p", "-fps_mode", "cfr", "-r", str(FPS),
          # perfil conservador aceito pelo Instagram (H.264 High, sem B-frames, GOP fechado,
          # AAC 128 kbps 48 kHz, cabeçalho no início do arquivo)
          "-c:v", "libx264", "-preset", "veryfast", "-tune", "stillimage", "-crf", "20",
