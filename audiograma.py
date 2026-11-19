@@ -35,11 +35,10 @@ VW, VH = round(W * ESCALA), round(H * ESCALA)
 def z(v):
     """Coordenada do desenho (1080x1920) -> pixel do vídeo (2K)."""
     return round(v * ESCALA)
-M = 72                                   # margem lateral
-FOTO = (M, 320, W - M, 950)              # moldura da foto
-ONDA = (M, 985, W - 2 * M, 110)          # x, y, largura, altura da onda da voz
-LEG_Y = 1330                             # centro da legenda (fica entre 1130 e 1530)
-LEG_W = 860                              # largura máxima da legenda (longe dos botões da direita)
+M = 80                                   # margem esquerda (área segura do Instagram)
+ONDA = (M, 1060, 820, 100)               # x, y, largura, altura da onda da voz
+LEG_Y = 1400                             # centro vertical da legenda (entre ~1190 e ~1610)
+LEG_W = 820                              # largura máxima da legenda (longe dos botões da direita)
 VERMELHO = tuple(int(BRAND_COLOR.lstrip("#")[i:i + 2], 16) for i in (0, 2, 4))
 VERMELHO_ESCURO = tuple(int(c * 0.78) for c in VERMELHO)
 BRANCO = (255, 255, 255)
@@ -83,53 +82,141 @@ def _carimbo():
     return f"{agora.day} {MESES[agora.month - 1]} · {agora.hour}H{agora.minute:02d}"
 
 
-def quadro(card: dict, out_path: Path, image_path=None) -> Path:
-    """Fundo fixo do vídeo (tudo que não se mexe), já no tamanho final (2K)."""
-    import render  # ícone da editoria quando não houver imagem
-    img = Image.new("RGB", (VW, VH), VERMELHO)
-    d = ImageDraw.Draw(img)
-
-    lg = logo(z(64))
-    img.paste(lg, (z(M), z(200)), lg)
-    d.text((z(W - M), z(232)), _carimbo(), font=fonte("Montserrat-ExtraBold.ttf", z(26)),
-           fill=(255, 225, 220), anchor="rm")
-
-    x0, y0, x1, y1 = (z(v) for v in FOTO)
-    fw, fh = x1 - x0, y1 - y0
+def _foto_ou_vazio(image_path, w, h):
     if image_path and Path(image_path).exists():
-        foto = _cobrir(Image.open(image_path).convert("RGB"), fw, fh)
-        hs = z(220)
-        sombra = Image.new("RGBA", (fw, hs), (0, 0, 0, 0))  # escurece o pé da foto para o crédito
-        ds = ImageDraw.Draw(sombra)
-        for i in range(hs):
-            ds.line((0, i, fw, i), fill=(0, 0, 0, int(150 * (i / hs) ** 1.6)))
-        foto = foto.convert("RGBA")
-        foto.alpha_composite(sombra, (0, fh - hs))
-        foto = foto.convert("RGB")
-    else:
-        foto = Image.new("RGB", (fw, fh), VERMELHO_ESCURO)
-        f_ic, ch = render.icone(render.ICONE.get(card.get("chapeu", ""), "newspaper"), z(300))
-        ImageDraw.Draw(foto).text((fw / 2, fh / 2), ch, font=f_ic, fill=BRANCO, anchor="mm")
-    img.paste(foto, (x0, y0), _mascara(fw, fh, z(40)))
+        try:
+            return _cobrir(Image.open(image_path).convert("RGB"), w, h)
+        except Exception:
+            pass
+    return None
 
-    # editoria fixa: cápsula branca com texto vermelho, sempre no canto de cima da foto
-    chapeu = (card.get("chapeu") or "NOTÍCIA").upper()
+
+def _degrade(img: Image.Image, y0: int, y1: int, a0: int, a1: int, cor=None):
+    """Faixa vertical de cor (padrão: vermelho da marca) indo da opacidade a0 até a1."""
+    cor = cor or VERMELHO
+    camada = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    d = ImageDraw.Draw(camada)
+    for y in range(max(y0, 0), min(y1, img.height)):
+        t = (y - y0) / max(y1 - y0, 1)
+        d.line((0, y, img.width, y), fill=cor + (int(a0 + (a1 - a0) * t ** 1.3),))
+    if y1 < img.height:
+        d.rectangle((0, y1, img.width, img.height), fill=cor + (a1,))
+    base = img.convert("RGBA")
+    base.alpha_composite(camada)
+    return base.convert("RGB")
+
+
+def _sem_foto(card, w, h):
+    import render
+    fundo = Image.new("RGB", (w, h), VERMELHO_ESCURO)
+    f_ic, ch = render.icone(render.ICONE.get(card.get("chapeu", ""), "newspaper"), z(420))
+    ImageDraw.Draw(fundo).text((w / 2, h * 0.36), ch, font=f_ic, fill=(255, 255, 255, 255), anchor="mm")
+    return fundo
+
+
+def _tag(d, x, y, texto):
+    """Editoria fixa: cápsula branca com texto vermelho."""
     f_tag = fonte("Montserrat-Black.ttf", z(30))
-    tw = int(f_tag.getlength(chapeu))
-    tx, ty = x0 + z(28), y0 + z(28)
-    d.rounded_rectangle((tx, ty, tx + tw + z(48), ty + z(60)), radius=z(30), fill=BRANCO)
-    d.text((tx + z(24), ty + z(31)), chapeu, font=f_tag, fill=VERMELHO, anchor="lm")
+    tw = int(f_tag.getlength(texto))
+    d.rounded_rectangle((x, y, x + tw + z(48), y + z(60)), radius=z(30), fill=BRANCO)
+    d.text((x + z(24), y + z(31)), texto, font=f_tag, fill=VERMELHO, anchor="lm")
+    return y + z(60)
 
+
+def _credito(d, card, y, imagem):
     credito = card.get("_credito", "")
-    if image_path and credito:
+    if imagem and credito:
         f_cr = fonte("Montserrat-ExtraBold.ttf", z(20))
-        while f_cr.getlength(credito) > fw - z(60) and len(credito) > 10:
+        while f_cr.getlength(credito) > z(W - 2 * M) and len(credito) > 10:
             credito = credito[:-2]
-        d.text((x1 - z(24), y1 - z(22)), credito, font=f_cr, fill=(255, 255, 255), anchor="rs")
+        d.text((z(W - M), y), credito, font=f_cr, fill=(255, 230, 225), anchor="rs")
 
+
+def _palavras_com_fonte(texto: str, destaques: list, tamanho: int):
+    """[(palavra, fonte, destaque?)] para desenhar a manchete com os destaques na serifada."""
+    out = []
+    for p, dest in _marcar_destaques(texto.split(), destaques):
+        arq = "InstrumentSerif-Italic.ttf" if dest else "Montserrat-Black.ttf"
+        out.append((p, fonte(arq, int(tamanho * (1.22 if dest else 1.0))), dest))
+    return out
+
+
+def _quebrar(itens, largura):
+    linhas, atual, w = [], [], 0.0
+    for p, f, dest in itens:
+        lw = f.getlength(p + " ")
+        if atual and w + lw > largura:
+            linhas.append(atual)
+            atual, w = [], 0.0
+        atual.append((p, f, dest))
+        w += lw
+    if atual:
+        linhas.append(atual)
+    return linhas
+
+
+def capa(card: dict, out_path: Path, image_path=None) -> Path:
+    """Capa do Reels (padrão aprovado pelo Arthur): foto em tela cheia, degradê VERMELHO da marca
+    embaixo (no lugar do preto), editoria, manchete em Montserrat Black alinhada à esquerda e
+    dentro da área que aparece na grade do perfil (corte 3:4)."""
+    foto = _foto_ou_vazio(image_path, VW, VH)
+    img = foto if foto is not None else _sem_foto(card, VW, VH)
+    img = _degrade(img, 0, z(460), 150, 0)        # topo: deixa a logo legível
+    img = _degrade(img, z(820), z(1330), 0, 238)  # pé: vermelho da marca até o fim
+    d = ImageDraw.Draw(img)
+    lg = logo(z(64))
+    img.paste(lg, (z(M), z(270)), lg)
+
+    largura = z(W - 2 * M - 40)
+    for tam in (96, 88, 80, 72, 66, 60):
+        linhas = _quebrar(_palavras_com_fonte(card["titulo"], card.get("destaques", []), z(tam)), largura)
+        if len(linhas) <= 5:
+            break
+    passo = int(z(tam) * 1.12)
+    base_ultima = z(1530)
+    y_tag = base_ultima - passo * (len(linhas) - 1) - int(z(tam) * 0.9) - z(90)
+    _tag(d, z(M), y_tag, (card.get("chapeu") or "NOTÍCIA").upper())
+    y = base_ultima - passo * (len(linhas) - 1)
+    for linha in linhas:
+        x = z(M)
+        for p, f, dest in linha:
+            d.text((x, y), p, font=f, fill=BRANCO, anchor="ls")
+            x += f.getlength(p + " ")
+        y += passo
+    meta = [card.get("cidade") or "Paraíba", _carimbo().replace(" · ", ", ").lower()]
+    if card.get("_ilustrativa"):
+        meta.append("Imagem ilustrativa")
+    elif "IA" in card.get("_credito", ""):
+        meta.append("Ilustração por IA")
+    d.text((z(M), z(1590)), "  ·  ".join(meta), font=fonte("Montserrat-ExtraBold.ttf", z(28)),
+           fill=(255, 232, 228), anchor="ls")
+    _credito(d, card, z(1648), foto is not None)
+    img.save(out_path, quality=94)
+    return Path(out_path)
+
+
+def quadro(card: dict, out_path: Path, image_path=None) -> Path:
+    """Fundo fixo do vídeo: a MESMA imagem da capa com efeito vermelho (duotone da marca),
+    logo e editoria no topo; embaixo, vermelho sólido para a onda da voz e a legenda."""
+    from PIL import ImageOps
+    foto = _foto_ou_vazio(image_path, VW, VH)
+    if foto is not None:
+        claro = tuple(min(255, int(c + (255 - c) * 0.80)) for c in VERMELHO)
+        duo = ImageOps.colorize(ImageOps.autocontrast(ImageOps.grayscale(foto), cutoff=1),
+                                black=tuple(int(c * 0.45) for c in VERMELHO), white=claro)
+        img = Image.blend(duo, foto, 0.38)  # vermelho da marca, mas a foto continua reconhecível
+    else:
+        img = _sem_foto(card, VW, VH)
+    img = _degrade(img, 0, z(480), 120, 0)
+    img = _degrade(img, z(700), z(1080), 0, 245)
+    d = ImageDraw.Draw(img)
+    lg = logo(z(64))
+    img.paste(lg, (z(M), z(270)), lg)
+    _tag(d, z(M), z(366), (card.get("chapeu") or "NOTÍCIA").upper())   # editoria fixa, sempre aqui
     cidade = card.get("cidade") or "Paraíba"
-    d.text((z(M), z(1600)), f"{PORTAL_HANDLE}  ·  {cidade.upper()}",
-           font=fonte("Montserrat-ExtraBold.ttf", z(28)), fill=(255, 225, 220), anchor="lm")
+    d.text((z(M), z(990)), f"{cidade.upper()}  ·  {_carimbo()}", font=fonte("Montserrat-ExtraBold.ttf", z(26)),
+           fill=(255, 232, 228), anchor="ls")
+    _credito(d, card, z(1030), foto is not None)
     img.save(out_path, quality=95)
     return Path(out_path)
 
@@ -299,7 +386,7 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Base,{nome},{tam},&H00FFFFFF,&H00FFFFFF,&H00000000,&H50000000,0,0,0,0,100,100,0,0,1,0,2,5,40,40,0,1
+Style: Base,{nome},{tam},&H00FFFFFF,&H00FFFFFF,&H00000000,&H50000000,0,0,0,0,100,100,0,0,1,0,2,4,40,40,0,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -318,7 +405,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
             d = (fim - ini) * peso / sum(pesos)
             texto = "\\N".join(_ass_linha(linha, escala) for linha in ls)
             fs = f"\\fs{int(tam * escala)}" if escala != 1.0 else ""
-            efeito = f"{{\\pos({W // 2},{LEG_Y}){fs}\\fad(90,0)\\fscx94\\fscy94\\t(0,140,\\fscx100\\fscy100)}}"
+            efeito = f"{{\\an4\\pos({M},{LEG_Y}){fs}\\fad(90,0)\\fscx96\\fscy96\\t(0,140,\\fscx100\\fscy100)}}"
             eventos.append(f"Dialogue: 0,{_ts(t)},{_ts(t + d)},Base,,0,0,0,,{efeito}{texto}")
             t += d
     Path(out_path).write_text(cab + "\n".join(eventos) + "\n", encoding="utf-8")

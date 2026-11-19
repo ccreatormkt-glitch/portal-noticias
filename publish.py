@@ -151,7 +151,7 @@ def _enviar_direto(video_path: Path, caption: str, extra: dict) -> str:
     return _esperar_processar(cid)
 
 
-def post_reel(video_path: Path, caption: str, cover_url: str = None, thumb_ms: int = 1500) -> str:
+def post_reel(video_path: Path, caption: str, cover_url: str = None, thumb_ms: int = 1500, capa=None) -> str:
     """Publica um Reels. 1º caminho: link público temporário do vídeo (ramo "midia" do
     repositório) que a Meta baixa — é o que tem funcionado. 2º caminho (fora do GitHub ou se o
     link falhar): envia o arquivo direto para a Meta. Aparece também no feed."""
@@ -160,23 +160,31 @@ def post_reel(video_path: Path, caption: str, cover_url: str = None, thumb_ms: i
         raise RuntimeError("upload direto de vídeo só existe no login pelo Facebook (graph.facebook.com)")
     video_path = Path(video_path)
     extra = {"cover_url": cover_url} if cover_url else {"thumb_offset": str(thumb_ms)}
+    capas = []
     try:
         import hospedar
-        links = hospedar.links_publicos(video_path)
+        if capa and Path(capa).exists() and not cover_url:  # a capa sobe junto, no mesmo link
+            todos = hospedar.publicar_arquivos([video_path, capa])
+            links, capas = todos[video_path.name], todos[Path(capa).name]
+        else:
+            links = hospedar.links_publicos(video_path)
     except Exception as e:
         links = []
         if "GitHub Actions" not in str(e):
             print(f"[reels] sem link público para o vídeo ({str(e)[:160]})")
-    for url in links:
-        try:
-            cid = _container(media_type="REELS", video_url=url, caption=caption, share_to_feed="true", **extra)
-            media_id = _esperar_processar(cid)
-            print(f"[reels] enviado por link público ({url.split('/')[2]})")
-            return media_id
-        except Exception as e:
-            if "OAuthException" in str(e):  # token/permissão: não é instabilidade, avisa de verdade
-                raise
-            print(f"[reels] link público {url.split('/')[2]} não deu certo: {_sem_segredos(str(e)[:160])}")
+    for i, url in enumerate(links):
+        tentativas = ([{"cover_url": capas[i]}] if capas else []) + [extra]  # com a capa; se falhar, sem
+        for ext in tentativas:
+            try:
+                cid = _container(media_type="REELS", video_url=url, caption=caption, share_to_feed="true", **ext)
+                media_id = _esperar_processar(cid)
+                print(f"[reels] enviado por link público ({url.split('/')[2]}"
+                      f"{', com capa' if 'cover_url' in ext else ''})")
+                return media_id
+            except Exception as e:
+                if "OAuthException" in str(e):  # token/permissão: não é instabilidade, avisa de verdade
+                    raise
+                print(f"[reels] link público {url.split('/')[2]} não deu certo: {_sem_segredos(str(e)[:160])}")
     try:
         return _enviar_direto(video_path, caption, extra)
     except RuntimeError as e:

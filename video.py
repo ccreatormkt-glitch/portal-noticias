@@ -77,9 +77,10 @@ def roteiro(card: dict, max_palavras: int = MAX_PALAVRAS) -> list:
     final = f"Siga o {render.PORTAL_NAME} para mais notícias da Paraíba."
     vistas, out = set(), []
     palavras = len(final.split())
+    ditas = set()  # palavras importantes já narradas (para não repetir a mesma informação)
     for i, f in enumerate(frases):
         chave = f.lower()
-        if chave in vistas:
+        if chave in vistas or (i > 0 and redundante(f, ditas)):
             continue
         n = len(f.split())
         if palavras + n > max_palavras and i > 0:
@@ -87,7 +88,22 @@ def roteiro(card: dict, max_palavras: int = MAX_PALAVRAS) -> list:
         vistas.add(chave)
         out.append(f)
         palavras += n
+        ditas |= _importantes(f)
     return out + [final]
+
+
+def _importantes(frase: str) -> set:
+    import sources
+    return set(sources.stems_of(frase))
+
+
+def redundante(frase: str, ditas: set) -> bool:
+    """Parâmetro anti-repetição (config.REDUNDANCIA_MAX): a frase repete o que já foi dito?"""
+    from config import REDUNDANCIA_MAX
+    novas = _importantes(frase)
+    if not novas or REDUNDANCIA_MAX >= 1:
+        return False
+    return len(novas & ditas) / len(novas) >= REDUNDANCIA_MAX
 
 
 _NUM = r"(\d[\d.,]*)"

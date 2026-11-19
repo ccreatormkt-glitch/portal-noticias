@@ -48,6 +48,9 @@ PADRÃO DE REDAÇÃO (o mesmo dos grandes portais de notícia)
 - Para o ouvido: frases curtas na ordem direta (sujeito, verbo, complemento), uma ideia por
   frase, sem parênteses, sem travessões, sem siglas pouco conhecidas, sem números longos
   (arredonde: "cerca de 1,2 mil" em vez de "1.187").
+- SEM REDUNDÂNCIA: o título, a linha_fina, cada frase do resumo e cada ponto são narrados em
+  sequência, então cada um traz um dado NOVO. Nunca repita a mesma informação com outras palavras
+  (ex.: título "Prefeitura abre 300 vagas" e resumo "A prefeitura oferece 300 oportunidades" = errado).
 - linha_fina: 1 frase de até 15 palavras que acrescenta um dado NOVO ao título (não repete).
 - resumo: lide com 2 frases curtas (25 a 38 palavras no total) respondendo o quê, quem, onde, quando e como.
   Todo o texto é narrado no vídeo, que tem no máximo 58 segundos: seja enxuto.

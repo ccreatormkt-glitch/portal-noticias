@@ -266,14 +266,16 @@ def foto_parecida(card: dict, base: Path):
 
 
 def foto_semelhante(card: dict, base: Path):
-    """Notícia sem cidade da Paraíba (ex.: Brasil): foto livre parecida com a da matéria ou com o
-    tema do texto, sem pessoas em destaque e sem textos (Wikimedia Commons, imagem ilustrativa)."""
-    if cidades_citadas(card):
-        return None  # notícia da Paraíba: só foto da própria cidade
+    """Foto livre ligada ao ASSUNTO da notícia (parecida com a da matéria ou com o tema do texto):
+    objetos e cenas genéricas, sem pessoas em destaque, sem letreiros e sem lugar identificável de
+    outra cidade (Wikimedia Commons, imagem ilustrativa)."""
     v = _visao(card)
     destino = Path(f"{base}_semelhante.jpg")
     vistas = set()
-    for q in (v.get("busca_lugar", ""), v.get("busca_en", ""), card.get("foto_busca", "")):
+    buscas = [v.get("busca_en", ""), card.get("foto_busca", "")]
+    if not cidades_citadas(card):  # notícia de fora da Paraíba: pode ser o lugar da foto original
+        buscas.insert(0, v.get("busca_lugar", ""))
+    for q in buscas:
         if not q or q.lower() in vistas:
             continue
         vistas.add(q.lower())
@@ -315,9 +317,9 @@ def foto_da_cidade(card: dict, base: Path):
 def imagem_de_fundo(card: dict, base: Path):
     """Toda arte tem imagem, sem textos. A foto da matéria original NUNCA vai para a arte (costuma
     ter texto, logo ou marca do site): serve só de referência. Ordem:
-    1) foto livre de um lugar específico da cidade citada (Wikimedia Commons, com crédito);
-    2) a imagem refeita por IA a partir da foto original ou do texto ("Ilustração gerada por IA");
-    3) notícia de fora da Paraíba: foto livre parecida, sem pessoas em destaque;
+    1) foto livre do lugar ligado ao fato, na cidade citada (Wikimedia Commons, com crédito);
+    2) a cena da notícia refeita por IA, a partir da foto original ou do texto ("Ilustração por IA");
+    3) foto livre ligada ao assunto (tema da notícia), sem pessoas em destaque nem letreiros;
     4) vista geral da cidade citada (Wikimedia Commons, "Imagem ilustrativa");
     5) só se tudo falhar: fundo da marca com ícone."""
     card["_credito"], card["_ilustrativa"] = "", False

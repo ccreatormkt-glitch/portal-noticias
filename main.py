@@ -86,7 +86,8 @@ def _publish(card, paths) -> str:
                 cover_url = publish.host_image(Path(card["_capa_reels"]))
             except Exception as e:
                 print(f"[reels] sem link para a capa ({str(e)[:120]}); usando um quadro do vídeo")
-        return publish.post_reel(Path(card["_video"]), publish.build_caption(card), cover_url=cover_url)
+        return publish.post_reel(Path(card["_video"]), publish.build_caption(card), cover_url=cover_url,
+                                 capa=card.get("_capa_reels"))
     return publish.post([Path(p) for p in paths], publish.build_caption(card))
 
 
@@ -96,11 +97,13 @@ def _gerar_video(card, bg, stamp):
         return None, None
     try:
         import video
-        capa = render.render_cover_reels(card, config.OUT_DIR / f"{stamp}_capa_reels.jpg", bg)
+        destino_capa = config.OUT_DIR / f"{stamp}_capa_reels.jpg"
+        if config.ESTILO_VIDEO == "audiograma":  # capa: foto cheia + degradê vermelho + manchete
+            import audiograma
+            capa = audiograma.capa(card, destino_capa, bg)
+        else:
+            capa = render.render_cover_reels(card, destino_capa, bg)
         out = video.montar(card, bg, config.OUT_DIR / f"{stamp}.mp4")
-        if config.ESTILO_VIDEO == "audiograma":  # capa = quadro com a manchete inteira
-            subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-ss", "1.2", "-i", str(out),
-                            "-frames:v", "1", "-q:v", "2", str(capa)], check=False)
         print(f"[reels] vídeo pronto: {out.name}")
         return str(out), str(capa)
     except Exception as e:

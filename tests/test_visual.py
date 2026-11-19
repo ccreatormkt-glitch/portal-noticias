@@ -121,7 +121,8 @@ def test_reserva_vista_geral_da_cidade(monkeypatch, tmp_path):
     monkeypatch.setattr(illustrate, "buscar_commons", commons)
     img = illustrate.imagem_de_fundo(c, tmp_path / "b")
     assert img and c["_ilustrativa"] and "Wikimedia" in c["_credito"]
-    assert buscas[0] == ("Cajazeiras Paraíba", ("Cajazeiras",), False)
+    assert buscas[0] == ("classroom", (), False)  # 1º: foto ligada ao assunto da notícia
+    assert ("Cajazeiras Paraíba", ("Cajazeiras",), False) in buscas  # depois: vista da cidade
     assert illustrate.RETRATO.search("retrato do deputado fulano")
 
 
@@ -293,3 +294,40 @@ def test_foto_com_letreiro_fica_de_fora():
     assert illustrate.LETREIRO.search("manaira shopping joao pessoa")
     assert illustrate.LETREIRO.search("fachada do hotel tambau")
     assert not illustrate.LETREIRO.search("acude velho campina grande ao entardecer")
+
+
+
+def test_capa_padrao_aprovado(tmp_path):
+    """Capa: foto cheia com degradê vermelho da marca embaixo, texto branco à esquerda."""
+    import audiograma
+    from PIL import Image
+    foto = tmp_path / "f.jpg"
+    Image.new("RGB", (1600, 1200), (20, 120, 200)).save(foto)
+    c = card(destaques=["cursos gratuitos"], _ilustrativa=True, _credito="Foto: X / Wikimedia Commons (CC0)")
+    out = audiograma.capa(c, tmp_path / "capa.jpg", foto)
+    im = Image.open(out).convert("RGB")
+    assert im.size == (audiograma.VW, audiograma.VH)
+    r, g, b = im.getpixel((im.width - 10, audiograma.z(1700)))  # pé da capa: vermelho da marca
+    assert r > 150 and g < 90 and b < 80
+    r, g, b = im.getpixel((im.width // 2, audiograma.z(600)))   # meio: a foto aparece
+    assert b > 120
+
+
+def test_video_usa_a_mesma_foto_com_efeito_vermelho(tmp_path):
+    import audiograma
+    from PIL import Image
+    foto = tmp_path / "f.jpg"
+    Image.new("RGB", (1600, 1200), (20, 200, 60)).save(foto)
+    out = audiograma.quadro(card(), tmp_path / "q.jpg", foto)
+    im = Image.open(out).convert("RGB")
+    r, g, b = im.getpixel((im.width // 2, audiograma.z(600)))
+    assert r > g and r > b  # foto tingida de vermelho (duotone da marca)
+
+
+def test_sem_redundancia_na_narracao():
+    c = card(titulo="Prefeitura de Areia abre 339 vagas em concurso",
+             linha_fina="Inscrições vão até sexta pelo site oficial.",
+             resumo="A prefeitura de Areia oferece 339 vagas no concurso. As provas foram adiadas pela Justiça.",
+             pontos=["339 vagas no concurso de Areia", "Salários de até R$ 4 mil"])
+    texto = " ".join(video.roteiro(c))
+    assert texto.count("339") == 1 and "Salários" in texto and "adiadas" in texto

@@ -22,16 +22,25 @@ def _git(*args, entrada=None) -> str:
     return r.stdout.strip()
 
 
-def links_publicos(arquivo: Path) -> list:
-    """Publica o arquivo no ramo "midia" e devolve os links públicos (o mais confiável primeiro)."""
+def publicar_arquivos(arquivos: list) -> dict:
+    """Publica os arquivos juntos no ramo "midia" (um commit só, sem histórico) e devolve
+    {nome do arquivo: [link jsDelivr, link raw.githubusercontent.com]}."""
     repo = os.environ.get("GITHUB_REPOSITORY")
     if not repo or os.environ.get("GITHUB_ACTIONS") != "true":
         raise RuntimeError("hospedagem pelo GitHub só funciona dentro do GitHub Actions")
-    arquivo = Path(arquivo)
-    nome = arquivo.name
-    blob = _git("hash-object", "-w", str(arquivo))
-    arvore = _git("mktree", entrada=f"100644 blob {blob}\t{nome}\n")
-    commit = _git("commit-tree", arvore, "-m", f"mídia temporária: {nome}")
+    linhas = []
+    for arq in arquivos:
+        arq = Path(arq)
+        blob = _git("hash-object", "-w", str(arq))
+        linhas.append(f"100644 blob {blob}\t{arq.name}\n")
+    arvore = _git("mktree", entrada="".join(linhas))
+    commit = _git("commit-tree", arvore, "-m", "mídia temporária: " + ", ".join(Path(a).name for a in arquivos))
     _git("push", "--force", "origin", f"{commit}:refs/heads/{RAMO}")
-    return [f"https://cdn.jsdelivr.net/gh/{repo}@{commit}/{nome}",
-            f"https://raw.githubusercontent.com/{repo}/{commit}/{nome}"]
+    return {Path(a).name: [f"https://cdn.jsdelivr.net/gh/{repo}@{commit}/{Path(a).name}",
+                           f"https://raw.githubusercontent.com/{repo}/{commit}/{Path(a).name}"]
+            for a in arquivos}
+
+
+def links_publicos(arquivo: Path) -> list:
+    """Publica um arquivo no ramo "midia" e devolve os links públicos (o mais confiável primeiro)."""
+    return publicar_arquivos([arquivo])[Path(arquivo).name]
