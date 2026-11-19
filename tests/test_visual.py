@@ -57,7 +57,8 @@ def test_video_reels_no_padrao_do_instagram(tmp_path):
     info = subprocess.run(["ffprobe", "-v", "error", "-show_entries",
                            "stream=codec_name,width,height,has_b_frames,sample_rate", "-of", "json", str(out)],
                           capture_output=True, text=True).stdout
-    assert '"width": 1080' in info and '"height": 1920' in info
+    import audiograma
+    assert f'"width": {audiograma.VW}' in info and f'"height": {audiograma.VH}' in info  # 2K vertical
     assert '"has_b_frames": 0' in info and '"sample_rate": "48000"' in info
 
 
@@ -281,6 +282,7 @@ def test_audiograma_completo(tmp_path):
     out = audiograma.montar(c, None, audio, 9.0, tmp_path / "r.mp4", tmp_path)
     info = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "stream=width,height,codec_name:format=duration",
                            "-of", "json", str(out)], capture_output=True, text=True).stdout
-    assert '"width": 1080' in info and '"height": 1920' in info and '"aac"' in info
+    assert f'"width": {audiograma.VW}' in info and f'"height": {audiograma.VH}' in info and '"aac"' in info
+    assert (audiograma.VW, audiograma.VH) == ((1440, 2560) if audiograma.VIDEO_2K else (1080, 1920))
     assert abs(float(json.loads(info)["format"]["duration"]) - 9.0) < 0.3
     assert (tmp_path / "quadro.jpg").exists() and (tmp_path / "legenda.ass").exists()

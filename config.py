@@ -85,6 +85,7 @@ VOZ_MOTOR = env("VOZ_MOTOR", "gemini")  # "clonada" só com máquina mais forte 
 TTS_MODEL = env("TTS_MODEL", "gemini-3.1-flash-tts-preview,gemini-3.8-flash-tts,gemini-2.5-flash-preview-tts")
 VOZ_FIXA = env_bool("VOZ_FIXA", True)
 ESTILO_VIDEO = env("ESTILO_VIDEO", "audiograma")  # "audiograma" (onda + legenda) ou "estatico"
+VIDEO_2K = env_bool("VIDEO_2K", True)  # vídeo em 2K (1440x2560); false = 1080x1920
 TTS_VOICE = env("TTS_VOICE", "Charon")  # voz de biblioteca, tom informativo; outras: Kore, Orus, Puck
 
 # ---- Imagem ilustrativa por IA (opcional) --------------------------------------

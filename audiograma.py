@@ -23,7 +23,18 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 from config import BRAND_COLOR, FONT_DIR, PORTAL_HANDLE, TIMEZONE
 
-W, H, FPS = 1080, 1920, 30
+W, H, FPS = 1080, 1920, 30              # coordenadas do desenho (o vídeo sai em 2K: ESCALA)
+try:
+    from config import VIDEO_2K
+except ImportError:
+    VIDEO_2K = True
+ESCALA = 4 / 3 if VIDEO_2K else 1.0     # 2K vertical = 1440x2560 (o Instagram aceita até 1920 de largura)
+VW, VH = round(W * ESCALA), round(H * ESCALA)
+
+
+def z(v):
+    """Coordenada do desenho (1080x1920) -> pixel do vídeo (2K)."""
+    return round(v * ESCALA)
 M = 72                                   # margem lateral
 FOTO = (M, 320, W - M, 950)              # moldura da foto
 ONDA = (M, 985, W - 2 * M, 110)          # x, y, largura, altura da onda da voz
@@ -73,51 +84,52 @@ def _carimbo():
 
 
 def quadro(card: dict, out_path: Path, image_path=None) -> Path:
-    """Fundo fixo do vídeo (tudo que não se mexe)."""
+    """Fundo fixo do vídeo (tudo que não se mexe), já no tamanho final (2K)."""
     import render  # ícone da editoria quando não houver imagem
-    img = Image.new("RGB", (W, H), VERMELHO)
+    img = Image.new("RGB", (VW, VH), VERMELHO)
     d = ImageDraw.Draw(img)
 
-    lg = logo(64)
-    img.paste(lg, (M, 200), lg)
-    d.text((W - M, 232), _carimbo(), font=fonte("Montserrat-ExtraBold.ttf", 26),
+    lg = logo(z(64))
+    img.paste(lg, (z(M), z(200)), lg)
+    d.text((z(W - M), z(232)), _carimbo(), font=fonte("Montserrat-ExtraBold.ttf", z(26)),
            fill=(255, 225, 220), anchor="rm")
 
-    x0, y0, x1, y1 = FOTO
+    x0, y0, x1, y1 = (z(v) for v in FOTO)
     fw, fh = x1 - x0, y1 - y0
     if image_path and Path(image_path).exists():
         foto = _cobrir(Image.open(image_path).convert("RGB"), fw, fh)
-        sombra = Image.new("RGBA", (fw, 220), (0, 0, 0, 0))  # escurece o pé da foto para o crédito
+        hs = z(220)
+        sombra = Image.new("RGBA", (fw, hs), (0, 0, 0, 0))  # escurece o pé da foto para o crédito
         ds = ImageDraw.Draw(sombra)
-        for i in range(220):
-            ds.line((0, i, fw, i), fill=(0, 0, 0, int(150 * (i / 220) ** 1.6)))
+        for i in range(hs):
+            ds.line((0, i, fw, i), fill=(0, 0, 0, int(150 * (i / hs) ** 1.6)))
         foto = foto.convert("RGBA")
-        foto.alpha_composite(sombra, (0, fh - 220))
+        foto.alpha_composite(sombra, (0, fh - hs))
         foto = foto.convert("RGB")
     else:
         foto = Image.new("RGB", (fw, fh), VERMELHO_ESCURO)
-        f_ic, ch = render.icone(render.ICONE.get(card.get("chapeu", ""), "newspaper"), 300)
+        f_ic, ch = render.icone(render.ICONE.get(card.get("chapeu", ""), "newspaper"), z(300))
         ImageDraw.Draw(foto).text((fw / 2, fh / 2), ch, font=f_ic, fill=BRANCO, anchor="mm")
-    img.paste(foto, (x0, y0), _mascara(fw, fh, 40))
+    img.paste(foto, (x0, y0), _mascara(fw, fh, z(40)))
 
     # editoria fixa: cápsula branca com texto vermelho, sempre no canto de cima da foto
     chapeu = (card.get("chapeu") or "NOTÍCIA").upper()
-    f_tag = fonte("Montserrat-Black.ttf", 30)
+    f_tag = fonte("Montserrat-Black.ttf", z(30))
     tw = int(f_tag.getlength(chapeu))
-    tx, ty = x0 + 28, y0 + 28
-    d.rounded_rectangle((tx, ty, tx + tw + 48, ty + 60), radius=30, fill=BRANCO)
-    d.text((tx + 24, ty + 31), chapeu, font=f_tag, fill=VERMELHO, anchor="lm")
+    tx, ty = x0 + z(28), y0 + z(28)
+    d.rounded_rectangle((tx, ty, tx + tw + z(48), ty + z(60)), radius=z(30), fill=BRANCO)
+    d.text((tx + z(24), ty + z(31)), chapeu, font=f_tag, fill=VERMELHO, anchor="lm")
 
     credito = card.get("_credito", "")
     if image_path and credito:
-        f_cr = fonte("Montserrat-ExtraBold.ttf", 20)
-        while f_cr.getlength(credito) > fw - 60 and len(credito) > 10:
+        f_cr = fonte("Montserrat-ExtraBold.ttf", z(20))
+        while f_cr.getlength(credito) > fw - z(60) and len(credito) > 10:
             credito = credito[:-2]
-        d.text((x1 - 24, y1 - 22), credito, font=f_cr, fill=(255, 255, 255), anchor="rs")
+        d.text((x1 - z(24), y1 - z(22)), credito, font=f_cr, fill=(255, 255, 255), anchor="rs")
 
     cidade = card.get("cidade") or "Paraíba"
-    d.text((M, 1600), f"{PORTAL_HANDLE}  ·  {cidade.upper()}", font=fonte("Montserrat-ExtraBold.ttf", 28),
-           fill=(255, 225, 220), anchor="lm")
+    d.text((z(M), z(1600)), f"{PORTAL_HANDLE}  ·  {cidade.upper()}",
+           font=fonte("Montserrat-ExtraBold.ttf", z(28)), fill=(255, 225, 220), anchor="lm")
     img.save(out_path, quality=95)
     return Path(out_path)
 
@@ -328,7 +340,7 @@ def montar(card: dict, image_path, audio: Path, total: float, out_mp4: Path, pas
                                total=(total - 1.3) if not wav.exists() else None)
     ass = legenda_ass(frases, tempos, card.get("destaques", []), pasta / "legenda.ass",
                       atraso=meta.get("atraso", 0.3), fator=meta.get("fator", 1.0), total=total)
-    x, y, w, h = ONDA
+    x, y, w, h = (z(v) for v in ONDA)
     filtro = (f"[1:a]showwaves=s={w}x{h}:mode=cline:rate={FPS}:colors=white:scale=sqrt:draw=full,"
               f"format=rgba,colorkey=black:0.1:0.0[onda];"
               f"[0:v][onda]overlay={x}:{y}:shortest=0,"
@@ -336,7 +348,8 @@ def montar(card: dict, image_path, audio: Path, total: float, out_mp4: Path, pas
     cmd = ["ffmpeg", "-y", "-loglevel", "error", "-loop", "1", "-framerate", str(FPS), "-i", str(fundo),
            "-i", str(audio), "-filter_complex", filtro, "-map", "[v]", "-map", "1:a", "-t", f"{total:.2f}",
            "-fps_mode", "cfr", "-r", str(FPS),
-           "-c:v", "libx264", "-preset", "veryfast", "-crf", "23", "-profile:v", "high", "-level", "4.1",
+           "-c:v", "libx264", "-preset", "veryfast", "-crf", "23", "-profile:v", "high",
+           "-level", "5.1" if VIDEO_2K else "4.1", "-maxrate", "14M", "-bufsize", "28M",
            "-pix_fmt", "yuv420p", "-bf", "0", "-g", str(FPS * 2), "-keyint_min", str(FPS * 2),
            "-sc_threshold", "0", "-c:a", "aac", "-b:a", "128k", "-ar", "48000", "-ac", "2",
            "-movflags", "+faststart", "-use_editlist", "0", str(out_mp4)]
