@@ -288,8 +288,9 @@ def tempos_das_frases(frases: list, wav: Path = None, total: float = None) -> li
 
 
 # ------------------------------------------------------------------ tempo de cada palavra
-# Método da skill "remotion-captions" (remotion-dev/skills, a mais instalada para vídeo): passar a
-# fala pelo Whisper para ter o tempo de CADA palavra e mostrar a palavra quando ela é dita.
+# Método das skills "remotion-captions" (remotion-dev/skills) e "captions" da HyperFrames
+# (heygen-com/hyperframes): voz do Gemini -> Whisper para ter o tempo de CADA palavra -> a palavra
+# aparece quando é dita.
 # Aqui: faster-whisper na CPU do GitHub; como o texto falado já é conhecido, o Whisper só dá o
 # tempo, e as palavras do roteiro são alinhadas às reconhecidas.
 def _silabas(palavra: str) -> int:
@@ -466,9 +467,14 @@ def _ts(t: float) -> str:
     return f"{int(h)}:{int(m):02d}:{s:05.2f}"
 
 
+MAX_PALAVRAS_GRUPO = 5   # skill HyperFrames (HeyGen): tom de conversa = grupos de 3 a 5 palavras
+PAUSA_GRUPO = 0.15       # pausa de 150 ms ou mais na fala também fecha o grupo
+
+
 def paginas(palavras_t: list, destaques: list) -> list:
-    """Agrupa as palavras em páginas de até 2 linhas, sem atravessar frases e sem separar um
-    destaque (ex.: "339 vagas") em duas páginas. Devolve [[(palavra, destaque?, início, fim)]]."""
+    """Agrupa as palavras (regras da skill de legendas da HyperFrames/HeyGen): até 5 palavras e
+    2 linhas, quebra no fim da frase e nas pausas da fala, nunca separa um destaque (ex.: "339 vagas").
+    Devolve [[(palavra, destaque?, início, fim)]]."""
     out = []
     frases = {}
     for p, a, b, k in palavras_t:
@@ -478,15 +484,17 @@ def paginas(palavras_t: list, destaques: list) -> list:
         marcas = [d for _, d in _marcar_destaques([p for p, _, _ in ws], destaques)]
         itens = [(p, d, a, b) for (p, a, b), d in zip(ws, marcas)]
         pag, w, linhas = [], 0.0, 1
-        for i, (p, d, a, b) in enumerate(itens):
+        for p, d, a, b in itens:
             lw = _largura(p, d)
-            if pag and w + lw > LEG_W:
-                if linhas == 2 and not (d and pag[-1][1]):  # não quebra no meio de um destaque
-                    out.append(pag)
-                    pag, w, linhas = [], 0.0, 1
-                else:
-                    linhas += 1
-                    w = 0.0
+            dentro_destaque = bool(pag) and d and pag[-1][1]
+            cheia = len(pag) >= MAX_PALAVRAS_GRUPO or (pag and a - pag[-1][3] >= PAUSA_GRUPO)
+            estoura = pag and w + lw > LEG_W and linhas == 2
+            if pag and (cheia or estoura) and not dentro_destaque:
+                out.append(pag)
+                pag, w, linhas = [], 0.0, 1
+            elif pag and w + lw > LEG_W:
+                linhas += 1
+                w = 0.0
             pag.append((p, d, a, b))
             w += lw
         if pag:
@@ -528,10 +536,12 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
             ms = max(round((t(a) - ini) * 1000), 0)
             p = p.replace("{", "(").replace("}", ")")
             fonte_tag = f"\\fn{FONTE_DESTAQUE[0]}\\i1\\fs{FONTE_DESTAQUE[2]}" if d else f"\\fn{nome}\\i0\\fs{tam}"
-            surge = (f"{{{fonte_tag}\\alpha&HFF&\\fscx88\\fscy88"
-                     f"\\t({ms},{ms + 90},\\alpha&H00&\\fscx100\\fscy100)}}")
+            pico = 120 if d else 110  # destaque quebra o padrão: "pop" maior
+            surge = (f"{{{fonte_tag}\\alpha&HFF&\\fscx85\\fscy85"
+                     f"\\t({ms},{ms + 70},\\alpha&H00&\\fscx{pico}\\fscy{pico})"
+                     f"\\t({ms + 70},{ms + 170},\\fscx100\\fscy100)}}")
             partes.append(("" if not partes else (quebra or " ")) + surge + p)
-        eventos.append(f"Dialogue: 0,{_ts(ini)},{_ts(fim)},Base,,0,0,0,,{{\\an4\\pos({M},{LEG_Y})}}"
+        eventos.append(f"Dialogue: 0,{_ts(ini)},{_ts(fim)},Base,,0,0,0,,{{\\an4\\pos({M},{LEG_Y})\\fad(0,120)}}"
                        + "".join(partes))
     Path(out_path).write_text(cab + "\n".join(eventos) + "\n", encoding="utf-8")
     return Path(out_path)

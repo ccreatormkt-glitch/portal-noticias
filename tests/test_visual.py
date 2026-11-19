@@ -266,7 +266,7 @@ def test_destaque_usa_outra_fonte(tmp_path):
     ass = audiograma.legenda_ass(palavras, ["339 vagas"], tmp_path / "l.ass", total=5)
     txt = ass.read_text()
     assert "\\fnInstrument Serif\\i1" in txt and "339" in txt and "Inter Black" in txt
-    assert txt.count("Dialogue:") == 2  # uma página por frase curta
+    assert txt.count("Dialogue:") == 3  # grupos de até 5 palavras (6 + 3 palavras -> 3 grupos)
     # sem destaque do editor, os números ganham a outra fonte
     assert any(d for p, d in audiograma._marcar_destaques("Concurso tem 339 vagas".split(), []) if p == "339")
 
@@ -276,7 +276,7 @@ def test_legenda_dinamica_palavra_entra_quando_e_falada(tmp_path):
     import audiograma
     palavras = [("Chuva", 0.0, 0.5, 0), ("forte", 0.5, 0.9, 0), ("alaga", 0.9, 1.4, 0), ("ruas", 1.4, 1.9, 0)]
     txt = audiograma.legenda_ass(palavras, [], tmp_path / "l.ass", atraso=0.3, total=3).read_text()
-    entradas = [int(x) for x in re.findall(r"\\t\((\d+),", txt)]
+    entradas = [int(x) for x in re.findall(r"\\t\((\d+),\d+,\\alpha&H00&", txt)]
     assert entradas == [0, 500, 900, 1400]  # cada palavra aparece no tempo dela (ms desde o início da página)
     assert txt.count("\\alpha&HFF&") == 4  # antes disso, invisível
 
@@ -365,3 +365,11 @@ def test_sem_redundancia_na_narracao():
              pontos=["339 vagas no concurso de Areia", "Salários de até R$ 4 mil"])
     texto = " ".join(video.roteiro(c))
     assert texto.count("339") == 1 and "Salários" in texto and "adiadas" in texto
+
+
+def test_grupos_quebram_na_pausa_e_no_maximo_de_palavras():
+    import audiograma
+    ws = [("Um", 0.0, 0.2, 0), ("dois", 0.2, 0.4, 0), ("três", 0.4, 0.6, 0), ("quatro", 0.6, 0.8, 0),
+          ("cinco", 0.8, 1.0, 0), ("seis", 1.0, 1.2, 0), ("sete", 1.6, 1.8, 0)]  # pausa antes de "sete"
+    grupos = [[p for p, *_ in g] for g in audiograma.paginas(ws, [])]
+    assert grupos == [["Um", "dois", "três", "quatro", "cinco"], ["seis"], ["sete"]]
