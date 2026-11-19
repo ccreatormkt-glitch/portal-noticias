@@ -74,7 +74,7 @@ def roteiro(card: dict, max_palavras: int = MAX_PALAVRAS) -> list:
         p = p.strip().rstrip(".")
         if p:
             frases.append(p + ".")
-    final = f"Siga o {render.PORTAL_NAME} para mais notícias da Paraíba."
+    final = "Siga o Paraíba Minuto para mais notícias."  # encerramento fixo de todo spot (pedido do Arthur)
     vistas, out = set(), []
     palavras = len(final.split())
     ditas = set()  # palavras importantes já narradas (para não repetir a mesma informação)
