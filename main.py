@@ -101,6 +101,7 @@ def _gerar_video(card, bg, stamp):
         return str(out), str(capa)
     except Exception as e:
         print(f"[reels] não deu para gerar o vídeo ({str(e)[:200]})")
+        card["_erro_video"] = str(e)[:200]
         return None, None
 
 
@@ -280,6 +281,11 @@ def cmd_run(args):
                 json.dumps(card, ensure_ascii=False, indent=2), encoding="utf-8")
             db.update_status(fp, "na_fila")
             print(f"[fila] {stamp}  {card['titulo']}")
+        elif "voz padrão indisponível" in card.get("_erro_video", ""):
+            # sem a voz padrão não sai spot com outra voz: a notícia volta na próxima rodada
+            db.update_status(fp, "falha_publicacao", note=card["_erro_video"])
+            print("[run] voz padrão ocupada: a notícia volta na próxima rodada")
+            continue
         else:
             try:
                 mid = _publish(card, paths)

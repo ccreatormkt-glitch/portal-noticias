@@ -41,13 +41,14 @@ PADRÃO DE REDAÇÃO (o mesmo dos grandes portais de notícia)
   Números em algarismo, dinheiro em "R$ 1,5 mil", siglas conhecidas sem explicar (PM, UEPB, Sine).
   Quando a informação é de uma autoridade, atribua no fim: "..., diz PM", "..., segundo a prefeitura".
   Sem adjetivos, sem caixa alta, sem ponto de exclamação, sem pergunta, sem ponto final.
-- linha_fina: 1 frase de até 20 palavras que acrescenta um dado NOVO ao título (não repete).
-- resumo: lide com 2 frases (30 a 50 palavras) respondendo o quê, quem, onde, quando e como.
+- linha_fina: 1 frase de até 15 palavras que acrescenta um dado NOVO ao título (não repete).
+- resumo: lide com 2 frases curtas (25 a 38 palavras no total) respondendo o quê, quem, onde, quando e como.
+  Todo o texto é narrado no vídeo, que tem no máximo 58 segundos: seja enxuto.
 - formato: escolha UM:
   "noticia" (fato simples), "o_que_se_sabe" (caso em andamento, polícia, acidente),
   "entenda" (assunto que precisa de contexto: lei, obra, aumento, polêmica),
   "servico" (vagas, inscrições, vacinação, mudanças no trânsito, prazos: o leitor precisa agir).
-- pontos: 2 a 4 tópicos curtos (até 12 palavras), adequados ao formato:
+- pontos: 2 ou 3 tópicos curtos (até 10 palavras), adequados ao formato:
   o_que_se_sabe = fatos confirmados; entenda = contexto em ordem lógica;
   servico = passo a passo / quem pode / onde / até quando; noticia = principais dados.
   Lista vazia se não houver fatos suficientes.
@@ -376,7 +377,7 @@ def validate(card: dict) -> dict:
         card["potencial"] = max(1, min(5, int(card.get("potencial", 3))))
     except (TypeError, ValueError):
         card["potencial"] = 3
-    card["pontos"] = [" ".join(str(p).split()) for p in card.get("pontos", []) if str(p).strip()][:4]
+    card["pontos"] = [" ".join(str(p).split()) for p in card.get("pontos", []) if str(p).strip()][:3]
     tags = []
     for h in card.get("hashtags", []):
         h = re.sub(r"[^\wÀ-ÿ]", "", str(h).lstrip("#"))
@@ -403,6 +404,8 @@ def make_card(cluster) -> dict:
 VER_FOTO = """Você ajuda a escolher uma foto de banco de imagens livre para ilustrar uma notícia.
 Descreva a foto recebida (que NÃO será publicada) para achar outra parecida. Responda só JSON:
 {"lugar": nome do lugar reconhecível, se houver (ex.: "Parque do Povo, Campina Grande"), senão "",
+ "cena_en": 1 frase em inglês descrevendo a cena para recriá-la como ilustração (ambiente, objetos,
+            luz), SEM pessoas reconhecíveis, SEM textos, letreiros ou logotipos,
  "busca_lugar": busca curta para o Wikimedia Commons com o nome do lugar, senão "",
  "busca_en": 2 a 5 palavras em inglês descrevendo a cena SEM pessoas identificáveis
             (ex.: "city council chamber", "christmas lights square night"),

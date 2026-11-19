@@ -17,28 +17,64 @@ GUARD = ("Editorial illustration for a news story, painterly digital art, soft c
          "no faces, no weapons, no blood, not a photograph. Scene: ")
 
 
-def ilustracao_ia(card: dict, out_path: Path):
-    """Ilustração gerada pela IA do Google (Gemini) a partir do texto da notícia."""
-    if IMAGE_MODE != "gemini" or not GEMINI_API_KEY:
+def _cena(card: dict) -> str:
+    """O que desenhar: a cena da foto da matéria (descrita pela IA, sem pessoas nem textos);
+    sem ela, o próprio texto da notícia."""
+    v = _visao(card)
+    return v.get("cena_en") or card.get("imagem_prompt") or card.get("foto_busca") or card.get("titulo", "")
+
+
+def _pollinations(prompt: str, out_path: Path):
+    """Reserva gratuita e sem chave para refazer a imagem (image.pollinations.ai, modelo flux).
+    Gera um pouco mais alta e corta a faixa de baixo, onde o serviço pode pôr a marca dele."""
+    import hashlib
+    from urllib.parse import quote
+    from PIL import Image
+    seed = int(hashlib.sha1(prompt.encode()).hexdigest()[:6], 16)
+    url = (f"https://image.pollinations.ai/prompt/{quote(prompt[:900])}"
+           f"?width=1080&height=2048&model=flux&nologo=true&safe=true&seed={seed}")
+    try:
+        r = requests.get(url, headers=UA, timeout=(10, 120))
+        tipo = r.headers.get("content-type", "")
+        if r.status_code != 200 or not tipo.startswith("image/") or len(r.content) < 20_000:
+            print(f"[ilustração] pollinations: HTTP {r.status_code} {tipo[:20]}")
+            return None
+        bruto = Path(out_path).with_suffix(".bruto")
+        bruto.write_bytes(r.content)
+        im = Image.open(bruto).convert("RGB")
+        im = im.crop((0, 0, im.width, int(im.height * 0.93)))  # tira a faixa de baixo
+        destino = Path(out_path).with_suffix(".jpg")
+        im.save(destino, quality=92)
+        bruto.unlink(missing_ok=True)
+        print("[ilustração] gerada com pollinations (flux)")
+        return destino
+    except Exception as e:
+        print(f"[ilustração] pollinations: {type(e).__name__}")
         return None
-    cena = card.get("imagem_prompt") or card.get("foto_busca") or card.get("titulo", "")
-    body = {"contents": [{"parts": [{"text": GUARD + cena}]}],
-            "generationConfig": {"responseModalities": ["IMAGE"]}}
-    for model in [m.strip() for m in GEMINI_IMAGE_MODEL.split(",") if m.strip()]:
-        try:
-            r = requests.post(f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
-                              json=body, headers={"x-goog-api-key": GEMINI_API_KEY}, timeout=(10, 120))
-            if r.status_code != 200:
-                print(f"[ilustração] {model}: HTTP {r.status_code}")
-                continue
-            for part in r.json()["candidates"][0]["content"]["parts"]:
-                data = part.get("inlineData") or part.get("inline_data")
-                if data:
-                    Path(out_path).write_bytes(base64.b64decode(data["data"]))
-                    print(f"[ilustração] gerada com {model}")
-                    return Path(out_path)
-        except Exception as e:
-            print(f"[ilustração] {model}: {type(e).__name__}")
+
+
+def ilustracao_ia(card: dict, out_path: Path):
+    """Refaz a imagem com IA: Gemini (se a chave tiver cota de imagem) ou, de reserva, Pollinations."""
+    prompt = GUARD + _cena(card)
+    if IMAGE_MODE == "gemini" and GEMINI_API_KEY:
+        body = {"contents": [{"parts": [{"text": prompt}]}], "generationConfig": {"responseModalities": ["IMAGE"]}}
+        for model in [m.strip() for m in GEMINI_IMAGE_MODEL.split(",") if m.strip()]:
+            try:
+                r = requests.post(f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
+                                  json=body, headers={"x-goog-api-key": GEMINI_API_KEY}, timeout=(10, 120))
+                if r.status_code != 200:
+                    print(f"[ilustração] {model}: HTTP {r.status_code}")
+                    continue
+                for part in r.json()["candidates"][0]["content"]["parts"]:
+                    data = part.get("inlineData") or part.get("inline_data")
+                    if data:
+                        Path(out_path).write_bytes(base64.b64decode(data["data"]))
+                        print(f"[ilustração] gerada com {model}")
+                        return Path(out_path)
+            except Exception as e:
+                print(f"[ilustração] {model}: {type(e).__name__}")
+    if IMAGE_MODE in ("gemini", "pollinations"):
+        return _pollinations(prompt, Path(out_path))
     return None
 
 
@@ -106,6 +142,9 @@ import re as _re
 
 NAO_E_FOTO = _re.compile(r"\b(map|mapa|carta|planta|brasao|bandeira|flag|coat of arms|escudo|logo|"
                          r"desenho|drawing|gravura|engraving|pintura|painting|diagrama|seal|selo|"
+                         # imagens com texto (o Arthur pediu arte sem imagem com texto)
+                         r"cartaz|poster|banner|placa|sign|signage|letreiro|outdoor|billboard|panfleto|"
+                         r"flyer|screenshot|captura|infografico|infographic|texto|text|jornal|newspaper|"
                          r"1[5-8]\d\d)\b")
 
 
@@ -183,38 +222,65 @@ def _original(card: dict):
     return _ORIG[chave]
 
 
+_VISAO = {}
+
+
+def _visao(card: dict) -> dict:
+    """Descrição da foto da matéria (a foto só é LIDA, nunca publicada), uma vez por notícia."""
+    chave = card.get("fp") or card.get("titulo", "")
+    if chave not in _VISAO:
+        _VISAO[chave] = {}
+        orig = _original(card)
+        if orig:
+            try:
+                import editor
+                _VISAO[chave] = editor.ver_imagem(orig[0], orig[1], f"Notícia: {card.get('titulo', '')}") or {}
+            except Exception as e:
+                print(f"[foto] não consegui descrever a foto original ({str(e)[:80]})")
+    return _VISAO[chave]
+
+
 def foto_parecida(card: dict, base: Path):
-    """Foto livre da CIDADE CITADA na notícia (Wikimedia Commons, conferindo o nome da cidade
-    no arquivo). A foto da matéria original só serve de referência para a busca. Sem foto da
-    cidade, não usa foto nenhuma (a arte sai com o ícone do assunto)."""
-    import editor
+    """Foto livre de um lugar específico da CIDADE CITADA (Wikimedia Commons, conferindo o nome da
+    cidade no arquivo). A foto da matéria original só serve de referência para a busca."""
     cidades = cidades_citadas(card)
     if not cidades:
         return None
     principal = cidades[0]
-    buscas = [card.get("foto_local", "")]
-    orig = _original(card)
-    if orig:
-        try:
-            desc = editor.ver_imagem(orig[0], orig[1], f"Notícia: {card.get('titulo', '')}")
-            buscas.insert(0, desc.get("busca_lugar", ""))
-            if desc.get("busca_en"):
-                buscas.append(f"{desc['busca_en']} {principal}")
-        except Exception as e:
-            print(f"[foto] não consegui descrever a foto original ({str(e)[:80]})")
-    # só lugares específicos (prédio, praça, órgão); busca genérica com o nome solto da cidade
-    # traz mapas e fotos sem relação, então nesse caso a arte usa a ilustração da IA
+    v = _visao(card)
+    buscas = [v.get("busca_lugar", ""), card.get("foto_local", "")]
+    if v.get("busca_en"):
+        buscas.append(f"{v['busca_en']} {principal}")
     destino = Path(f"{base}_foto.jpg")
     vistas = set()
     for q in buscas:
         if not q or q.lower() in vistas:
             continue
         vistas.add(q.lower())
-        achou = buscar_commons(q, destino, exigir=cidades)
+        achou = buscar_commons(q, destino, exigir=cidades, sem=RETRATO)
         if achou:
             print(f"[foto] {principal}: '{q}'")
             return achou
     print(f"[foto] nenhum lugar específico de {principal} no Wikimedia")
+    return None
+
+
+def foto_semelhante(card: dict, base: Path):
+    """Notícia sem cidade da Paraíba (ex.: Brasil): foto livre parecida com a da matéria ou com o
+    tema do texto, sem pessoas em destaque e sem textos (Wikimedia Commons, imagem ilustrativa)."""
+    if cidades_citadas(card):
+        return None  # notícia da Paraíba: só foto da própria cidade
+    v = _visao(card)
+    destino = Path(f"{base}_semelhante.jpg")
+    vistas = set()
+    for q in (v.get("busca_lugar", ""), v.get("busca_en", ""), card.get("foto_busca", "")):
+        if not q or q.lower() in vistas:
+            continue
+        vistas.add(q.lower())
+        achou = buscar_commons(q, destino, sem=RETRATO)
+        if achou:
+            print(f"[foto] semelhante: '{q}'")
+            return achou
     return None
 
 
@@ -243,11 +309,11 @@ def foto_da_cidade(card: dict, base: Path):
 
 
 def imagem_de_fundo(card: dict, base: Path):
-    """Toda arte tem imagem. Ordem:
-    1) foto livre da cidade citada (Wikimedia Commons, com crédito);
-    2) ilustração gerada pela IA do Google a partir do texto ("Ilustração gerada por IA");
-    3) foto da própria matéria, com crédito "Reprodução/<site>" (NUNCA em polícia/tema sensível,
-       para não expor suspeitos ou vítimas);
+    """Toda arte tem imagem, sem textos. A foto da matéria original NUNCA vai para a arte (costuma
+    ter texto, logo ou marca do site): serve só de referência. Ordem:
+    1) foto livre de um lugar específico da cidade citada (Wikimedia Commons, com crédito);
+    2) a imagem refeita por IA a partir da foto original ou do texto ("Ilustração gerada por IA");
+    3) notícia de fora da Paraíba: foto livre parecida, sem pessoas em destaque;
     4) vista geral da cidade citada (Wikimedia Commons, "Imagem ilustrativa");
     5) só se tudo falhar: fundo da marca com ícone."""
     card["_credito"], card["_ilustrativa"] = "", False
@@ -261,14 +327,7 @@ def imagem_de_fundo(card: dict, base: Path):
     if img:
         card["_credito"] = "Ilustração gerada por IA"
         return img
-    if not sensivel:
-        orig = _original(card)
-        if orig:
-            destino = Path(f"{base}_materia.jpg")
-            destino.write_bytes(orig[0])
-            card["_credito"] = f"Foto: Reprodução/{orig[2]}"
-            return destino
-    achou = foto_da_cidade(card, base)  # vale também em polícia: paisagem não expõe ninguém
+    achou = (None if sensivel else foto_semelhante(card, base)) or foto_da_cidade(card, base)
     if achou:
         card["_ilustrativa"], card["_credito"] = True, achou[1]
         return achou[0]

@@ -8,19 +8,22 @@ import base64
 import re
 import shutil
 import subprocess
+import time
 import wave
 from pathlib import Path
 
 import requests
 
 import render
-from config import GEMINI_API_KEY, PIPER_VOICE, STATE_DIR, TTS_MODEL, TTS_VOICE, VOZ_MOTOR
+from config import GEMINI_API_KEY, PIPER_VOICE, STATE_DIR, TTS_MODEL, TTS_VOICE, VOZ_FIXA, VOZ_MOTOR
 
 VW, VH, FPS = 1080, 1920, 30
 PAUSA = 0.28  # usado pelo boletim
 VOZ_DIR = STATE_DIR.parent / "voices"
 HF = "https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/pt/pt_BR"  # versão fixa
-MAX_SEG = 58.0  # vídeos curtos: o upload da Meta recusou os de 60 a 88 s
+MAX_SEG = 58.0  # vídeo de no máximo 58 s
+MAX_FALA = 56.5  # a narração inteira cabe aqui (+ 0,3 s de respiro no início e ~1 s no fim)
+MAX_PALAVRAS = 115  # ~47 s no ritmo da voz padrão; se passar, o roteiro é encurtado e refeito
 DIRECAO = ("Leia como um locutor de telejornal brasileiro: português do Brasil, voz firme e "
            "acolhedora, ritmo natural e claro, sem pressa e sem exageros. Texto:\n\n")
 
@@ -59,8 +62,9 @@ def falar(texto: str, out_wav: Path) -> float:
         return wf.getnframes() / wf.getframerate()
 
 
-def roteiro(card: dict) -> list:
-    """A notícia inteira, escrita para o ouvido: manchete, linha fina, resumo, pontos e chamada."""
+def roteiro(card: dict, max_palavras: int = MAX_PALAVRAS) -> list:
+    """A notícia escrita para o ouvido: manchete, linha fina, resumo, pontos e chamada final.
+    Para na primeira frase que estouraria o limite de palavras (sem pular para frases soltas)."""
     frases = [card["titulo"].rstrip(".") + "."]
     for k in ("linha_fina", "resumo"):
         t = (card.get(k) or "").strip()
@@ -70,18 +74,20 @@ def roteiro(card: dict) -> list:
         p = p.strip().rstrip(".")
         if p:
             frases.append(p + ".")
-    frases.append(f"Siga o {render.PORTAL_NAME} para mais notícias da Paraíba.")
-    # sem repetir frase igual e sem passar de ~55 s (cerca de 2,6 palavras por segundo)
-    vistas, out, palavras = set(), [], 0
-    for f in frases:
+    final = f"Siga o {render.PORTAL_NAME} para mais notícias da Paraíba."
+    vistas, out = set(), []
+    palavras = len(final.split())
+    for i, f in enumerate(frases):
         chave = f.lower()
-        n = len(f.split())
-        if chave in vistas or (palavras + n > 135 and not f.startswith("Siga o")):
+        if chave in vistas:
             continue
+        n = len(f.split())
+        if palavras + n > max_palavras and i > 0:
+            break
         vistas.add(chave)
         out.append(f)
         palavras += n
-    return out
+    return out + [final]
 
 
 _NUM = r"(\d[\d.,]*)"
@@ -107,49 +113,78 @@ def _para_fala(texto: str) -> str:
 
 
 def tts_gemini(texto: str, out_wav: Path):
-    """Voz neural do Gemini (uma chamada para o texto todo). Devolve a duração ou None."""
+    """Voz neural do Gemini (uma chamada para o texto todo). Devolve a duração ou None.
+    Com VOZ_FIXA, usa só a voz padrão (a da 1ª postagem) e insiste nela se estiver ocupada."""
     if not GEMINI_API_KEY:
         return None
     body = {"contents": [{"parts": [{"text": DIRECAO + texto}]}],
             "generationConfig": {"responseModalities": ["AUDIO"],
                                  "speechConfig": {"voiceConfig": {"prebuiltVoiceConfig": {"voiceName": TTS_VOICE}}}}}
-    for model in [m.strip() for m in TTS_MODEL.split(",") if m.strip()]:
-        try:
-            r = requests.post(f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
-                              headers={"x-goog-api-key": GEMINI_API_KEY}, json=body, timeout=(10, 120))
-            if r.status_code != 200:
-                print(f"[voz] {model}: HTTP {r.status_code}")
-                continue
-            parte = r.json()["candidates"][0]["content"]["parts"][0]
-            dados = parte.get("inlineData") or parte.get("inline_data")
-            pcm = base64.b64decode(dados["data"])
-            taxa = int((re.search(r"rate=(\d+)", dados.get("mimeType", "")) or [0, 24000])[1])
-            with wave.open(str(out_wav), "wb") as wf:
-                wf.setnchannels(1)
-                wf.setsampwidth(2)
-                wf.setframerate(taxa)
-                wf.writeframes(pcm)
-            print(f"[voz] Gemini {model} ({TTS_VOICE})")
-            return len(pcm) / 2 / taxa
-        except Exception as e:
-            print(f"[voz] {model}: {type(e).__name__}")
+    modelos = [m.strip() for m in TTS_MODEL.split(",") if m.strip()]
+    if VOZ_FIXA:
+        modelos = modelos[:1]
+    for model in modelos:
+        for tentativa in range(3 if VOZ_FIXA else 1):
+            try:
+                r = requests.post(f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
+                                  headers={"x-goog-api-key": GEMINI_API_KEY}, json=body, timeout=(10, 120))
+                if r.status_code != 200:
+                    print(f"[voz] {model}: HTTP {r.status_code}")
+                    if r.status_code in (429, 500, 503) and tentativa < 2 and VOZ_FIXA:
+                        time.sleep(20 * (tentativa + 1))  # ocupada: espera e tenta a mesma voz
+                        continue
+                    break
+                parte = r.json()["candidates"][0]["content"]["parts"][0]
+                dados = parte.get("inlineData") or parte.get("inline_data")
+                pcm = base64.b64decode(dados["data"])
+                taxa = int((re.search(r"rate=(\d+)", dados.get("mimeType", "")) or [0, 24000])[1])
+                with wave.open(str(out_wav), "wb") as wf:
+                    wf.setnchannels(1)
+                    wf.setsampwidth(2)
+                    wf.setframerate(taxa)
+                    wf.writeframes(pcm)
+                dur = len(pcm) / 2 / taxa
+                print(f"[voz] Gemini {model} ({TTS_VOICE}): {dur:.1f} s")
+                return dur
+            except Exception as e:
+                print(f"[voz] {model}: {type(e).__name__}")
+                break
     return None
 
 
-def narrar(card: dict, pasta: Path):
-    """Narração da notícia inteira. Devolve (arquivo de áudio, duração total do vídeo)."""
-    texto = _para_fala(" ".join(roteiro(card)))
-    wav = pasta / "narracao.wav"
+def _sintetizar(texto: str, wav: Path):
     import voz_clonada
     dur = voz_clonada.sintetizar(texto, wav) if VOZ_MOTOR == "clonada" else None
     if dur is None:
         dur = tts_gemini(texto, wav)
-    if dur is None:  # reserva: Piper, offline
+    if dur is None and not VOZ_FIXA:  # reserva: Piper, offline
         print("[voz] usando a voz de reserva (Piper)")
         dur = falar(texto, wav)
-    total = min(max(dur + 0.8, 5.5), MAX_SEG)
+    if dur is None:
+        raise RuntimeError("voz padrão indisponível agora (limite do Gemini); a notícia volta na próxima rodada")
+    return dur
+
+
+def narrar(card: dict, pasta: Path):
+    """Narração da notícia com no máximo ~57 s, sempre inteira (nada é cortado no meio da frase).
+    Devolve (arquivo de áudio, duração total do vídeo)."""
+    frases = roteiro(card)
+    wav = pasta / "narracao.wav"
+    dur = _sintetizar(_para_fala(" ".join(frases)), wav)
+    if dur > MAX_FALA:  # passou: encurta o roteiro na proporção e narra de novo
+        palavras = sum(len(f.split()) for f in frases)
+        alvo = int(palavras * (MAX_FALA - 2) / dur)
+        frases = roteiro(card, alvo)
+        print(f"[voz] {dur:.1f} s passou do limite; roteiro encurtado para ~{alvo} palavras")
+        dur = _sintetizar(_para_fala(" ".join(frases)), wav)
+    filtro = "adelay=300|300"
+    if dur > MAX_FALA:  # ainda passou (raro): acelera de leve, no máximo 8 %
+        fator = min(dur / MAX_FALA, 1.08)
+        filtro += f",atempo={fator:.3f}"
+        dur = dur / fator
+    total = min(max(dur + 1.3, 5.5), MAX_SEG)
     audio = pasta / "narracao.m4a"
-    _ff(["-i", str(wav), "-af", f"adelay=300|300,apad,atrim=0:{total:.2f}",
+    _ff(["-i", str(wav), "-af", f"{filtro},apad,atrim=0:{total:.2f}",
          "-c:a", "aac", "-b:a", "128k", "-ar", "48000", "-ac", "2", str(audio)])
     return audio, total
 

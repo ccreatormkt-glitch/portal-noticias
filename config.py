@@ -78,8 +78,11 @@ PIPER_VOICE = env("PIPER_VOICE", "pt_BR-faber-medium")   # reserva offline: pt_B
 # voz: "gemini" (voz neural do Google, padrão) ou "clonada" (voz do Arthur via Chatterbox)
 VOZ_MOTOR = env("VOZ_MOTOR", "gemini")  # "clonada" só com máquina mais forte (na CPU grátis passa de 5 min)
 # reserva: TTS do Gemini (neural, português do Brasil, mesma chave do Google)
-# a primeira da lista é a voz da 1ª postagem (gemini-3.1-flash-tts-preview, voz Charon); as outras são reserva
+# Padrão de áudio de todos os spots = o da 1ª postagem: gemini-3.1-flash-tts-preview, voz Charon.
+# Com VOZ_FIXA (padrão), só a 1ª voz da lista é usada: se ela falhar, a notícia espera a próxima
+# rodada em vez de sair com outra voz. Sem VOZ_FIXA, as outras da lista (e o Piper) viram reserva.
 TTS_MODEL = env("TTS_MODEL", "gemini-3.1-flash-tts-preview,gemini-3.8-flash-tts,gemini-2.5-flash-preview-tts")
+VOZ_FIXA = env_bool("VOZ_FIXA", True)
 TTS_VOICE = env("TTS_VOICE", "Charon")  # voz de biblioteca, tom informativo; outras: Kore, Orus, Puck
 
 # ---- Imagem ilustrativa por IA (opcional) --------------------------------------
