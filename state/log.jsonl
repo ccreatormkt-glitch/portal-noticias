@@ -52,3 +52,5 @@
 {"ts": "2026-11-19T21:48:33", "event": "published", "headline": "Procon-JP penaliza 5 comércios e adverte mais 5 em João Pessoa na Black Friday", "source": "PB Agora, g1 Paraíba e +3", "ig_id": "18120271853084474", "note": ""}
 {"ts": "2026-11-19T21:54:43", "event": "gerado", "headline": "Príncipe Harry manifesta prontidão para retomar carreira militar e combater tropas russas", "source": "g1", "ig_id": "", "note": ""}
 {"ts": "2026-11-19T21:54:43", "event": "falha_publicacao", "headline": "Príncipe Harry manifesta prontidão para retomar carreira militar e combater tropas russas", "source": "g1", "ig_id": "", "note": "voz padrão indisponível agora (limite do Gemini); a notícia volta na próxima rodada"}
+{"ts": "2026-11-19T22:06:27", "event": "gerado", "headline": "Anthropic atinge valor de mercado de US$ 2 trilhões em estreia na bolsa Nasdaq", "source": "CNN Brasil, InfoMoney", "ig_id": "", "note": ""}
+{"ts": "2026-11-19T22:07:10", "event": "published", "headline": "Anthropic atinge valor de mercado de US$ 2 trilhões em estreia na bolsa Nasdaq", "source": "CNN Brasil, InfoMoney", "ig_id": "18012804935778215", "note": ""}
