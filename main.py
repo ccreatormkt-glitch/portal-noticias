@@ -256,13 +256,14 @@ def cmd_mesclar(args):
     novos = c.execute("""INSERT INTO posts (ts, fp, stems, headline, source, status, ig_id, note)
         SELECT o.ts, o.fp, o.stems, o.headline, o.source, o.status, o.ig_id, o.note FROM outro.posts o
         WHERE NOT EXISTS (SELECT 1 FROM posts p WHERE p.fp = o.fp AND p.ts = o.ts)""").rowcount
-    for tabela in ("meta", "regiao", "metricas"):
+    for tabela in ("meta", "regiao", "metricas", "publicadas"):
         try:
             c.execute(f"INSERT OR IGNORE INTO {tabela} SELECT * FROM outro.{tabela}")
         except sqlite3.OperationalError:
             pass
     c.commit()
     c.close()
+    db.exportar_csv()  # a planilha do banco de notícias postadas volta completa
     print(f"[histórico] {novos} registro(s) desta rodada juntados ao histórico do repositório")
 
 

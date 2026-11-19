@@ -171,14 +171,22 @@ def registrar_publicada(card: dict, ig_id: str):
              card.get("cidade", ""), card.get("chapeu", ""), " ".join(card.get("links", []) or []))
     with _conn() as c:
         c.execute("INSERT OR REPLACE INTO publicadas VALUES (?,?,?,?,?,?,?,?)", linha)
+    exportar_csv()
+
+
+def exportar_csv():
+    """Reescreve a planilha inteira a partir do banco (assim ela nunca fica com linha faltando)."""
+    import csv
+    with _conn() as c:
+        rows = c.execute("SELECT ts, ig_id, titulo, titulo_fonte, cidade, chapeu, links FROM publicadas "
+                         "ORDER BY ts").fetchall()
     arq = banco_csv()
-    novo = not arq.exists()
     arq.parent.mkdir(parents=True, exist_ok=True)
-    with open(arq, "a", newline="", encoding="utf-8") as f:
+    with open(arq, "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
-        if novo:
-            w.writerow(["data_hora", "post_instagram", "manchete", "manchete_da_fonte", "cidade", "editoria", "links"])
-        w.writerow([time.strftime("%Y-%m-%d %H:%M"), str(ig_id), linha[2], linha[3], linha[5], linha[6], linha[7]])
+        w.writerow(["data_hora", "post_instagram", "manchete", "manchete_da_fonte", "cidade", "editoria", "links"])
+        for ts, ig, tit, tit_f, cid, ch, links in rows:
+            w.writerow([time.strftime("%Y-%m-%d %H:%M", time.gmtime(ts - 3 * 3600)), ig, tit, tit_f, cid, ch, links])
 
 
 def ja_publicada(card: dict, recentes_ig=()) -> str:
