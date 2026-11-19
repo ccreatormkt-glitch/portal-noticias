@@ -286,7 +286,10 @@ def cmd_run(args):
             except Exception as e:
                 db.update_status(fp, "falha_publicacao", note=str(e)[:300])
                 print(f"[run] falha ao publicar: {e}")
-                pub_fail += 1
+                if "ProcessingFailedError" in str(e):
+                    print("[run] instabilidade do servidor de upload da Meta: a notícia volta na próxima rodada")
+                else:
+                    pub_fail += 1  # erro de verdade (token, permissão...): rodada vermelha + e-mail
                 continue
             db.update_status(fp, "published", ig_id=mid)
             print(f"[publicado] {mid}  {card['titulo']}")
