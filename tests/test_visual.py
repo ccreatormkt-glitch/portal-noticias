@@ -265,8 +265,10 @@ def test_destaque_usa_outra_fonte(tmp_path):
                 ("sexta.", 3.7, 4.2, 1)]
     ass = audiograma.legenda_ass(palavras, ["339 vagas"], tmp_path / "l.ass", total=5)
     txt = ass.read_text()
-    assert "\\fnInstrument Serif\\i1" in txt and "339" in txt and "Inter Black" in txt
-    assert txt.count("Dialogue:") == 3  # grupos de até 5 palavras (6 + 3 palavras -> 3 grupos)
+    assert "Instrument Serif" not in txt and "Inter Black" in txt  # uma fonte só
+    caixas = [l for l in txt.splitlines() if l.startswith("Dialogue: 1,") or l.startswith("Dialogue: 2,")]
+    assert any("339" in l for l in caixas)  # destaque = caixa branca
+    assert any("339 \\hvagas" in l for l in txt.splitlines() if l.startswith("Dialogue: 2,"))  # 1 caixa só
     # sem destaque do editor, os números ganham a outra fonte
     assert any(d for p, d in audiograma._marcar_destaques("Concurso tem 339 vagas".split(), []) if p == "339")
 
@@ -276,9 +278,10 @@ def test_legenda_dinamica_palavra_entra_quando_e_falada(tmp_path):
     import audiograma
     palavras = [("Chuva", 0.0, 0.5, 0), ("forte", 0.5, 0.9, 0), ("alaga", 0.9, 1.4, 0), ("ruas", 1.4, 1.9, 0)]
     txt = audiograma.legenda_ass(palavras, [], tmp_path / "l.ass", atraso=0.3, total=3).read_text()
-    entradas = [int(x) for x in re.findall(r"\\t\((\d+),\d+,\\alpha&H00&", txt)]
-    assert entradas == [0, 500, 900, 1400]  # cada palavra aparece no tempo dela (ms desde o início da página)
-    assert txt.count("\\alpha&HFF&") == 4  # antes disso, invisível
+    base = [l for l in txt.splitlines() if l.startswith("Dialogue: 0,")]
+    assert [l.split(",")[1] for l in base] == ["0:00:00.30", "0:00:00.80", "0:00:01.20", "0:00:01.70"]
+    caixas = [l for l in txt.splitlines() if l.startswith("Dialogue: 1,")]
+    assert len(caixas) == 4 and caixas[1].split(",")[1] == "0:00:00.80"  # caixa entra junto com a palavra
 
 
 def test_alinha_palavras_do_roteiro_com_o_whisper():
@@ -373,3 +376,16 @@ def test_grupos_quebram_na_pausa_e_no_maximo_de_palavras():
           ("cinco", 0.8, 1.0, 0), ("seis", 1.0, 1.2, 0), ("sete", 1.6, 1.8, 0)]  # pausa antes de "sete"
     grupos = [[p for p, *_ in g] for g in audiograma.paginas(ws, [])]
     assert grupos == [["Um", "dois", "três", "quatro", "cinco"], ["seis"], ["sete"]]
+
+
+
+def test_capa_uma_fonte_so_e_onda_centralizada(monkeypatch, tmp_path):
+    import audiograma
+    usadas = []
+    original = audiograma.fonte
+    monkeypatch.setattr(audiograma, "fonte", lambda arq, tam: usadas.append(arq) or original(arq, tam))
+    audiograma.capa(card(destaques=["cursos gratuitos"], titulo="Prefeitura abre 339 vagas em cursos gratuitos"),
+                    tmp_path / "c.jpg", None)
+    assert "InstrumentSerif-Italic.ttf" not in usadas  # a serifada fica só na legenda do vídeo
+    x, _, w, _ = audiograma.ONDA
+    assert x + w / 2 == audiograma.W / 2

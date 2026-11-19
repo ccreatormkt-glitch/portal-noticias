@@ -6,7 +6,7 @@ Quadro 1080x1920, sempre igual:
     (lugar que aparece no player, na grade do perfil e fora dos botões do Instagram);
   - a onda da voz, animada com a narração;
   - a legenda sincronizada embaixo, em blocos curtos. Os trechos em destaque (números, nomes,
-    valores) trocam de fonte: Montserrat Black no texto, Instrument Serif itálica no destaque.
+    valores) ganham caixa branca com letra vermelha; tudo numa fonte só (Inter Black).
 A primeira legenda é a manchete inteira, então o primeiro quadro funciona como capa.
 
 O tempo de cada frase vem das pausas reais da narração (ffmpeg silencedetect).
@@ -36,16 +36,19 @@ def z(v):
     """Coordenada do desenho (1080x1920) -> pixel do vídeo (2K)."""
     return round(v * ESCALA)
 M = 80                                   # margem esquerda (área segura do Instagram)
-ONDA = (M, 1010, 800, 90)                # x, y, largura, altura da onda da voz
-LEG_Y = 1360                             # centro vertical da legenda (bloco entre ~1160 e ~1560)
-LEG_W = 800                              # largura máxima da legenda (longe dos botões da direita)
+ONDA = ((W - 800) // 2, 990, 800, 120)   # x, y, largura, altura do visualizador da voz (centralizado)
+LEG_Y = 1300                             # centro da legenda: logo abaixo da onda (mesmo eixo central)
+LEG_W = 820                              # largura máxima da legenda (x 130 a 950, longe dos botões)
 VERMELHO = tuple(int(BRAND_COLOR.lstrip("#")[i:i + 2], 16) for i in (0, 2, 4))
 VERMELHO_ESCURO = tuple(int(c * 0.78) for c in VERMELHO)
 BRANCO = (255, 255, 255)
 
-# fonte da 1ª postagem (Inter) no texto; Instrument Serif itálica só nos destaques
-FONTE_TEXTO = ("Inter Black", "Inter-Black.otf", 80)
-FONTE_DESTAQUE = ("Instrument Serif", "InstrumentSerif-Italic.ttf", 100)
+# uma fonte só (a da capa e da 1ª postagem): Inter Black. Destaque = caixa branca, não outra fonte
+FONTE_TEXTO = ("Inter Black", "Inter-Black.otf", 78)
+FONTE_DESTAQUE = FONTE_TEXTO
+ALTURA_LINHA = 1.24     # entrelinha da legenda (em múltiplos do tamanho da fonte)
+CAIXA = 12              # folga da caixa branca da palavra falada (px no desenho 1080)
+RESPIRO = 18            # espaço extra entre palavras, para a caixa não encostar na vizinha
 MESES = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"]
 
 _cache = {}
@@ -125,13 +128,16 @@ def _tag(d, x, y, texto):
     return y + z(54)
 
 
-def _credito(d, card, y, imagem, x_dir=None):
+def _credito(d, card, y, imagem, x_dir=None, x_esq=None):
     credito = card.get("_credito", "")
     if imagem and credito:
         f_cr = fonte("Inter-Medium.otf", z(18))
         while f_cr.getlength(credito) > z(W - 2 * M) and len(credito) > 10:
             credito = credito[:-2]
-        d.text((x_dir or z(W - M), y), credito, font=f_cr, fill=(255, 230, 225), anchor="rs")
+        if x_esq is not None:
+            d.text((x_esq, y), credito, font=f_cr, fill=(255, 230, 225), anchor="ls")
+        else:
+            d.text((x_dir or z(W - M), y), credito, font=f_cr, fill=(255, 230, 225), anchor="rs")
 
 
 def _palavras_com_fonte(texto: str, destaques: list, tamanho: int):
@@ -154,19 +160,25 @@ def _quebrar(itens, largura):
         w += lw
     if atual:
         linhas.append(atual)
+    # sem palavra sozinha na última linha (viúva): puxa uma palavra da linha de cima
+    if len(linhas) >= 2 and len(linhas[-1]) == 1 and len(linhas[-2]) > 2:
+        cand = [linhas[-2][-1]] + linhas[-1]
+        if sum(f.getlength(p + " ") for p, f, _ in cand) <= largura:
+            linhas[-2], linhas[-1] = linhas[-2][:-1], cand
     return linhas
 
 
 def capa(card: dict, out_path: Path, image_path=None) -> Path:
     """Capa do Reels (padrão da 1ª postagem, aprovado pelo Arthur): foto em tela cheia, degradê
-    VERMELHO da marca embaixo (no lugar do preto), editoria, manchete em Inter Black alinhada à
-    esquerda, cidade/data e crédito. Tudo dentro do corte 3:4 da grade do perfil (y 240 a 1680)."""
+    VERMELHO da marca embaixo (no lugar do preto), editoria, manchete toda em Inter Black (uma fonte
+    só) alinhada à esquerda, cidade/data e crédito. Tudo dentro do corte 3:4 da grade do perfil (y 240 a 1680)."""
     foto = _foto_ou_vazio(image_path, VW, VH)
     img = foto if foto is not None else _sem_foto(card, VW, VH)
 
     largura = z(W - 2 * M - 30)
     for tam in (84, 78, 72, 66, 60, 54):
-        linhas = _quebrar(_palavras_com_fonte(card["titulo"], card.get("destaques", []), z(tam)), largura)
+        f_tit = fonte("Inter-Black.otf", z(tam))  # capa: uma fonte só (sem a serifada dos destaques)
+        linhas = _quebrar([(p, f_tit, False) for p in card["titulo"].split()], largura)
         if len(linhas) <= 5:
             break
     passo = int(z(tam) * 1.13)
@@ -219,9 +231,10 @@ def quadro(card: dict, out_path: Path, image_path=None) -> Path:
     img.paste(lg, (z(M), z(300)), lg)
     fim_tag = _tag(d, z(M), z(396), (card.get("chapeu") or "NOTÍCIA").upper())   # editoria fixa
     cidade = card.get("cidade") or "Paraíba"
-    d.text((z(M), fim_tag + z(52)), f"{cidade}  ·  {_carimbo().replace(' · ', ', ').lower()}",
+    y_meta = fim_tag + z(52)
+    d.text((z(M), y_meta), f"{cidade}  ·  {_carimbo().replace(' · ', ', ').lower()}",
            font=fonte("Inter-SemiBold.otf", z(28)), fill=(255, 236, 232), anchor="ls")
-    _credito(d, card, z(960), foto is not None)
+    _credito(d, card, y_meta + z(36), foto is not None, x_esq=z(M))  # metadado junto da identificação
     img.save(out_path, quality=95)
     return Path(out_path)
 
@@ -409,9 +422,17 @@ def _marcar_destaques(palavras: list, destaques: list) -> list:
     return list(zip(palavras, marcas))
 
 
+def fonte_ass(arq: str, tam: float) -> ImageFont.FreeTypeFont:
+    """A fonte no tamanho em que a legenda (ASS/libass) realmente desenha: no ASS o "tamanho" é a
+    altura da linha (ascendente + descendente), não o corpo da letra como no Pillow."""
+    ref = fonte(arq, 200)
+    asc, desc = ref.getmetrics()
+    return fonte(arq, max(8, round(tam * 200 / (asc + desc))))
+
+
 def _largura(palavra: str, destaque: bool, escala=1.0) -> float:
     nome, arq, tam = FONTE_DESTAQUE if destaque else FONTE_TEXTO
-    return fonte(arq, int(tam * escala)).getlength(palavra + " ")
+    return fonte_ass(arq, tam * escala).getlength(palavra + " ") + RESPIRO
 
 
 def _linhas(itens: list, escala=1.0) -> list:
@@ -510,10 +531,33 @@ def paginas(palavras_t: list, destaques: list) -> list:
     return out
 
 
+def _linhas_da_pagina(pag: list) -> list:
+    linhas, atual, w = [], [], 0.0
+    for item in pag:
+        lw = _largura(item[0], False)
+        if atual and w + lw > LEG_W:
+            levar = []
+            if item[1]:  # não parte um destaque ("jornada 5x2") entre duas linhas
+                while atual and atual[-1][1] and len(atual) > 1:
+                    levar.insert(0, atual.pop())
+            linhas.append(atual)
+            atual = levar
+            w = sum(_largura(i[0], False) for i in atual)
+        atual.append(item)
+        w += lw
+    if atual:
+        linhas.append(atual)
+    return linhas
+
+
 def legenda_ass(palavras_t: list, destaques: list, out_path: Path, atraso=0.3, fator=1.0, total=None) -> Path:
-    """Legenda dinâmica (estilo TikTok/Remotion): cada página fica na tela até a próxima e cada
-    palavra aparece no instante em que é falada, com um leve "pop"."""
-    nome, _, tam = FONTE_TEXTO
+    """Legenda dinâmica, uma fonte só (Inter Black, branca):
+    - cada palavra entra no instante em que é falada;
+    - a palavra que está sendo dita ganha uma caixa branca com letra vermelha e um "pop";
+    - as palavras-chave (destaques: número, valor, prazo) mantêm a caixa até o fim do grupo.
+    As linhas ficam paradas (as palavras já ocupam o lugar, invisíveis), então nada treme."""
+    nome, arq, tam = FONTE_TEXTO
+    verm = "&H{:02X}{:02X}{:02X}&".format(VERMELHO[2], VERMELHO[1], VERMELHO[0])
     cab = f"""[Script Info]
 ScriptType: v4.00+
 PlayResX: {W}
@@ -523,36 +567,128 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Base,{nome},{tam},&H00FFFFFF,&H00FFFFFF,&H00000000,&H64000000,0,0,0,0,100,100,0,0,1,0,2,4,40,40,0,1
+Style: Base,{nome},{tam},&H00FFFFFF,&H00FFFFFF,&H00000000,&H78000000,0,0,0,0,100,100,0,0,1,0,2,5,0,0,0,1
+Style: Caixa,{nome},{tam},{verm},{verm},&H00FFFFFF,&H00FFFFFF,0,0,0,0,100,100,0,0,3,{CAIXA},0,5,0,0,0,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 """
     t = lambda x: x / fator + atraso  # noqa: E731  (tempo do áudio original -> tempo do vídeo)
+    f = fonte_ass(arq, tam)
+    espaco = f.getlength(" ") + RESPIRO
+    lh = tam * ALTURA_LINHA
     pags = paginas(palavras_t, destaques)
     eventos = []
     for n, pag in enumerate(pags):
         ini = t(pag[0][2])
         fim = t(pags[n + 1][0][2]) if n + 1 < len(pags) else (total or t(pag[-1][3]) + 1.0)
-        partes, w = [], 0.0
-        for p, d, a, b in pag:
-            lw = _largura(p, d)
-            quebra = "\\N" if partes and w + lw > LEG_W else ""
-            if quebra:
-                w = 0.0
-            w += lw
-            ms = max(round((t(a) - ini) * 1000), 0)
-            p = p.replace("{", "(").replace("}", ")")
-            fonte_tag = f"\\fn{FONTE_DESTAQUE[0]}\\i1\\fs{FONTE_DESTAQUE[2]}" if d else f"\\fn{nome}\\i0\\fs{tam}"
-            pico = 120 if d else 110  # destaque quebra o padrão: "pop" maior
-            surge = (f"{{{fonte_tag}\\alpha&HFF&\\fscx85\\fscy85"
-                     f"\\t({ms},{ms + 70},\\alpha&H00&\\fscx{pico}\\fscy{pico})"
-                     f"\\t({ms + 70},{ms + 170},\\fscx100\\fscy100)}}")
-            partes.append(("" if not partes else (quebra or " ")) + surge + p)
-        eventos.append(f"Dialogue: 0,{_ts(ini)},{_ts(fim)},Base,,0,0,0,,{{\\an4\\pos({M},{LEG_Y})\\fad(0,120)}}"
-                       + "".join(partes))
+        linhas = _linhas_da_pagina(pag)
+        y0 = LEG_Y - (len(linhas) - 1) * lh / 2
+        for i, linha in enumerate(linhas):
+            y = round(y0 + i * lh)
+            larg = sum(f.getlength(p) for p, *_ in linha) + espaco * (len(linha) - 1)
+            x = W / 2 - larg / 2
+            pos = []  # (x esquerda, largura) de cada palavra da linha
+            xx = x
+            for p, *_ in linha:
+                pos.append((xx, f.getlength(p)))
+                xx += f.getlength(p) + espaco
+            # sequência de palavras-chave (ex.: "jornada 5x2"): uma caixa só, do fim da fala até o fim do grupo
+            j = 0
+            while j < len(linha):
+                if linha[j][1]:
+                    k = j
+                    while k + 1 < len(linha) and linha[k + 1][1]:
+                        k += 1
+                    if k > j:
+                        # " \\h": espaço + espaço fixo, o mesmo respiro das palavras soltas
+                        frase = " \\h".join(w for w, *_ in linha[j:k + 1]).replace("{", "(").replace("}", ")")
+                        xc_f = round((pos[j][0] + pos[k][0] + pos[k][1]) / 2)
+                        eventos.append(f"Dialogue: 2,{_ts(t(linha[k][2]))},{_ts(fim)},Caixa,,0,0,0,,"
+                                       f"{{\\an5\\pos({xc_f},{y})\\fad(0,120)}}{frase}")
+                    j = k + 1
+                else:
+                    j += 1
+            for j, (p, dest, a, b) in enumerate(linha):
+                # cada palavra é um evento com posição própria (texto e caixa no MESMO ponto)
+                txt = p.replace("{", "(").replace("}", ")")
+                w_p = f.getlength(p)
+                xc = round(x + w_p / 2)
+                a_v = t(a)
+                eventos.append(f"Dialogue: 0,{_ts(a_v)},{_ts(fim)},Base,,0,0,0,,"
+                               f"{{\\an5\\pos({xc},{y})\\fad(70,120)\\fscx86\\fscy86"
+                               f"\\t(0,140,\\fscx100\\fscy100)}}{txt}")
+                # caixa branca enquanto a palavra é falada (destaque: fica até o fim do grupo)
+                em_frase = dest and ((j + 1 < len(linha) and linha[j + 1][1]) or (j > 0 and linha[j - 1][1]))
+                b_v = fim if (dest and not em_frase) else max(t(b), a_v + 0.18)
+                if j + 1 < len(linha) and not (dest and not em_frase):
+                    b_v = min(b_v, t(linha[j + 1][2]) + 0.02)
+                eventos.append(f"Dialogue: 1,{_ts(a_v)},{_ts(min(b_v, fim))},Caixa,,0,0,0,,"
+                               f"{{\\an5\\pos({xc},{y})\\fscx82\\fscy82\\t(0,70,\\fscx108\\fscy108)"
+                               f"\\t(70,170,\\fscx100\\fscy100)\\fad(0,{120 if dest else 60})}}{txt}")
+                x += w_p + espaco
     Path(out_path).write_text(cab + "\n".join(eventos) + "\n", encoding="utf-8")
     return Path(out_path)
+
+
+# ------------------------------------------------------------------ visualizador da voz
+BARRAS = 27          # barras do visualizador (ímpar: uma no centro)
+BARRA_L, BARRA_G = 13, 10  # largura e espaço entre barras (px no desenho 1080)
+
+
+def _energias(audio: Path, total: float) -> "list":
+    """Energia por quadro (30 fps) em faixas da voz (120 a 3.200 Hz), cada faixa na própria escala
+    (assim todas as barras se mexem), suavizada: sobe rápido, desce devagar."""
+    import numpy as np
+    sr = 16000
+    bruto = subprocess.run(["ffmpeg", "-v", "error", "-i", str(audio), "-ar", str(sr), "-ac", "1", "-f", "s16le", "-"],
+                           capture_output=True, check=True).stdout
+    x = np.frombuffer(bruto, dtype=np.int16).astype(np.float32) / 32768.0
+    n = int(total * FPS) + 1
+    meio = BARRAS // 2 + 1
+    bordas = np.geomspace(120, 3200, meio + 1)
+    janela = 1024
+    hann = np.hanning(janela)
+    freqs = np.fft.rfftfreq(janela, 1 / sr)
+    sel = [(freqs >= bordas[k]) & (freqs < bordas[k + 1]) for k in range(meio)]
+    e = np.zeros((n, meio), dtype=np.float32)
+    for i in range(n):
+        c = int(i / FPS * sr)
+        seg = x[max(c - janela // 2, 0): c + janela // 2]
+        if len(seg) < janela:
+            seg = np.pad(seg, (0, janela - len(seg)))
+        mag = np.abs(np.fft.rfft(seg * hann))
+        e[i] = [mag[m].mean() if m.any() else 0.0 for m in sel]
+    e = np.log1p(e * 60)
+    for k in range(meio):  # cada faixa na própria escala
+        col = e[:, k]
+        ref = np.percentile(col[col > 0], 95) if (col > 0).any() else 1.0
+        e[:, k] = np.clip(col / (ref or 1.0), 0, 1)
+    for i in range(1, n):
+        e[i] = np.maximum(e[i], e[i - 1] * 0.80)
+    return e
+
+
+def visualizador(audio: Path, total: float):
+    """Gera os quadros (RGBA) das barras: simétricas a partir do centro, cantos arredondados."""
+    import numpy as np
+    e = _energias(audio, total)
+    meio = e.shape[1]
+    lw, gap = z(BARRA_L), z(BARRA_G)
+    larg = BARRAS * lw + (BARRAS - 1) * gap
+    alt = z(ONDA[3])
+    # do centro para as bordas: arco suave (o meio é mais alto), barra mínima visível em silêncio
+    peso = 0.45 + 0.55 * np.cos(np.linspace(0, np.pi / 2, meio)) ** 1.5
+    for i in range(e.shape[0]):
+        img = Image.new("RGBA", (larg, alt), (0, 0, 0, 0))
+        d = ImageDraw.Draw(img)
+        for b in range(BARRAS):
+            k = abs(b - BARRAS // 2)
+            h = max(int(lw * 1.6), int(alt * (0.14 + 0.86 * e[i, k] * peso[k])))
+            x0 = b * (lw + gap)
+            y0 = (alt - h) // 2
+            d.rounded_rectangle((x0, y0, x0 + lw - 1, y0 + h - 1), radius=lw // 2, fill=(255, 255, 255, 240))
+        yield img.tobytes()
 
 
 # ------------------------------------------------------------------ montagem
@@ -570,20 +706,32 @@ def montar(card: dict, image_path, audio: Path, total: float, out_mp4: Path, pas
                                     total=(total - 1.3) if not wav.exists() else None)
     ass = legenda_ass(palavras_t, card.get("destaques", []), pasta / "legenda.ass",
                       atraso=meta.get("atraso", 0.3), fator=meta.get("fator", 1.0), total=total)
-    x, y, w, h = (z(v) for v in ONDA)
-    filtro = (f"[1:a]showwaves=s={w}x{h}:mode=cline:rate={FPS}:colors=white:scale=sqrt:draw=full,"
-              f"format=rgba,colorkey=black:0.1:0.0[onda];"
-              f"[0:v][onda]overlay={x}:{y}:shortest=0,"
+    lw, gap = z(BARRA_L), z(BARRA_G)
+    larg = BARRAS * lw + (BARRAS - 1) * gap
+    alt = z(ONDA[3])
+    x = (VW - larg) // 2                     # visualizador centralizado
+    y = z(ONDA[1])
+    filtro = (f"[2:v]format=rgba[barras];[0:v][barras]overlay={x}:{y}:shortest=0:format=auto,"
               f"subtitles=filename='{ass}':fontsdir='{FONT_DIR}',fps={FPS},format=yuv420p[v]")
     cmd = ["ffmpeg", "-y", "-loglevel", "error", "-loop", "1", "-framerate", str(FPS), "-i", str(fundo),
-           "-i", str(audio), "-filter_complex", filtro, "-map", "[v]", "-map", "1:a", "-t", f"{total:.2f}",
+           "-i", str(audio),
+           "-f", "rawvideo", "-pix_fmt", "rgba", "-s", f"{larg}x{alt}", "-framerate", str(FPS), "-i", "-",
+           "-filter_complex", filtro, "-map", "[v]", "-map", "1:a", "-t", f"{total:.2f}",
            "-fps_mode", "cfr", "-r", str(FPS),
            "-c:v", "libx264", "-preset", "veryfast", "-crf", "23", "-profile:v", "high",
            "-level", "5.1" if VIDEO_2K else "4.1", "-maxrate", "14M", "-bufsize", "28M",
            "-pix_fmt", "yuv420p", "-bf", "0", "-g", str(FPS * 2), "-keyint_min", str(FPS * 2),
            "-sc_threshold", "0", "-c:a", "aac", "-b:a", "128k", "-ar", "48000", "-ac", "2",
            "-movflags", "+faststart", "-use_editlist", "0", str(out_mp4)]
-    r = subprocess.run(cmd, capture_output=True, text=True)
-    if r.returncode != 0:
-        raise RuntimeError("ffmpeg (audiograma): " + r.stderr[-600:])
+    proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+    try:
+        for quadro_barras in visualizador(audio, total):
+            proc.stdin.write(quadro_barras)
+        proc.stdin.close()
+    except BrokenPipeError:
+        pass
+    erro = proc.stderr.read().decode(errors="ignore")
+    if proc.wait() != 0:
+        raise RuntimeError("ffmpeg (audiograma): " + erro[-600:])
     return Path(out_mp4)
+
