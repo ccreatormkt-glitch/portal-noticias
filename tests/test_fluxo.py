@@ -310,3 +310,17 @@ def test_nome_de_evento_nao_conta_como_copia():
                "pontos": [], "legenda": ""}
     assert editor.trechos_repetidos(ok, c) == []
     assert editor.trechos_repetidos(copiado, c)  # "começa nesta quinta-feira" continua tendo que ser reescrito
+
+
+def test_nome_de_evento_recorrente_nao_junta_noticias_diferentes():
+    a = "Procon-CG mobiliza equipe e abre plantão no Natal Iluminado 2026"
+    b = "Natal Iluminado 2026 de Campina Grande começa nesta quinta-feira com show"
+    sources.NOMES_RECORRENTES.clear()
+    assert sources.mesma_historia(a, b)  # sem contexto: o nome do evento junta as duas
+    grupos = sources.cluster_items([item(t, "ParaibaOnline") for t in (
+        a, b, "STTP define plano de mobilidade para o Natal Iluminado 2026", "Natal Iluminado terá 49 dias de festa")])
+    sources.marcar_recorrentes(grupos)
+    assert not sources.mesma_historia(a, b)  # "Natal Iluminado" está em vários assuntos: não serve
+    assert sources.mesma_historia("Corujinha é eleito presidente da Câmara de João Pessoa",
+                                  "Unanimidade elege João Corujinha à frente do Legislativo pessoense")
+    sources.NOMES_RECORRENTES.clear()

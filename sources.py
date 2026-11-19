@@ -319,10 +319,13 @@ def build_clusters(pauta: str = "") -> list:
     """Assuntos do momento. Com `pauta` (ex.: "Natal Iluminado"), busca também esse assunto e
     devolve só os grupos de notícia que falam dele."""
     if not pauta:
-        return cluster_items(fetch_items())
+        grupos = cluster_items(fetch_items())
+        marcar_recorrentes(grupos)
+        return grupos
     extra = {"gn_pauta": gnews(pauta), "gn_pauta_pb": gnews(f"{pauta} Paraíba")}
     frase = " ".join(fold(w) for w in pauta.split())
     grupos = cluster_items(fetch_items(extra=extra))
+    marcar_recorrentes(grupos)
     # o assunto tem que estar na MANCHETE (não basta aparecer de passagem no resumo)
     return [c for c in grupos if any(frase in " ".join(fold(i.title).split()) for i in c.items)]
 
@@ -354,7 +357,22 @@ def mesma_historia(titulo_a: str, titulo_b: str) -> bool:
     jac = len(sa & sb) / len(sa | sb) if sa and sb else 0.0
     if jac >= 0.45:
         return True
-    return bool(nomes_proprios(titulo_a) & nomes_proprios(titulo_b)) and jac >= 0.12
+    # nomes que estão em vários assuntos do momento (ex.: "Natal Iluminado", com dezenas de notícias
+    # diferentes) não dizem que duas notícias são a mesma; a IA decide pelo conteúdo
+    comuns = (nomes_proprios(titulo_a) & nomes_proprios(titulo_b)) - NOMES_RECORRENTES
+    return bool(comuns) and jac >= 0.12
+
+
+NOMES_RECORRENTES = set()  # preenchido a cada coleta (nomes em 3 ou mais assuntos diferentes)
+
+
+def marcar_recorrentes(grupos: list, minimo: int = 3):
+    from collections import Counter
+    cont = Counter()
+    for c in grupos:
+        cont.update(nomes_proprios(c.rep.title))
+    NOMES_RECORRENTES.clear()
+    NOMES_RECORRENTES.update(n for n, k in cont.items() if k >= minimo)
 
 
 # primeira parte do endereço das matérias do G1 que são regionais (sigla do estado)
