@@ -89,6 +89,7 @@ VIDEO_2K = env_bool("VIDEO_2K", True)  # vídeo em 2K (1440x2560); false = 1080x
 # anti-redundância na narração/legenda: uma frase sai se esta fração (ou mais) das palavras
 # importantes dela já foi dita antes (0.6 = 60%). Menor = mais rigoroso; 1.0 = desliga.
 REDUNDANCIA_MAX = float(env("REDUNDANCIA_MAX", "0.6"))
+WHISPER_MODELO = env("WHISPER_MODELO", "base")  # tempo de cada palavra da legenda (faster-whisper, CPU)
 TTS_VOICE = env("TTS_VOICE", "Charon")  # voz de biblioteca, tom informativo; outras: Kore, Orus, Puck
 
 # ---- Imagem ilustrativa por IA (opcional) --------------------------------------

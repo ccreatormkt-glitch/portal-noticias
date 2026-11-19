@@ -1,4 +1,4 @@
-"""Logo do PB Minuto na identidade vermelho e branco (fonte Montserrat Black, a da referência).
+"""Logo do PB Minuto na identidade vermelho e branco (fonte Inter, a da 1ª postagem).
 
   python logo.py   -> gera brand/avatar.png (foto do perfil), brand/logo_vermelho.png e brand/logo_branco.png
 """
@@ -15,8 +15,9 @@ WHITE = (255, 255, 255)
 SS = 4  # superamostragem para bordas suaves
 
 
-def _f(size):
-    return ImageFont.truetype(str(FONT_DIR / "Montserrat-Black.ttf"), size)
+def _f(size, peso="Black"):
+    """Inter, a fonte da 1ª postagem (padrão de toda a marca)."""
+    return ImageFont.truetype(str(FONT_DIR / f"Inter-{peso}.otf"), size)
 
 
 def symbol(size: int, invertido=False) -> Image.Image:
@@ -33,7 +34,7 @@ def symbol(size: int, invertido=False) -> Image.Image:
 def lockup(height: int, fundo_vermelho=True) -> Image.Image:
     """Monograma + MINUTO. No fundo vermelho: quadrado branco e MINUTO branco."""
     cor = WHITE if fundo_vermelho else VERMELHO
-    f = _f(int(height * 0.50))
+    f = _f(int(height * 0.46), "Bold")
     gap = int(height * 0.22)
     w = height + gap + int(f.getlength("MINUTO")) + 6
     img = Image.new("RGBA", (w, height), (0, 0, 0, 0))
@@ -47,7 +48,7 @@ def avatar(size=1080) -> Image.Image:
     img = Image.new("RGBA", (size, size), VERMELHO + (255,))
     d = ImageDraw.Draw(img)
     d.text((size / 2, size * 0.45), "PB", font=_f(int(size * 0.42)), fill=WHITE, anchor="mm")
-    d.text((size / 2, size * 0.69), "MINUTO", font=_f(int(size * 0.115)), fill=WHITE, anchor="mm")
+    d.text((size / 2, size * 0.69), "MINUTO", font=_f(int(size * 0.11), "Bold"), fill=WHITE, anchor="mm")
     return img
 
 

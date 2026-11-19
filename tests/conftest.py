@@ -38,6 +38,9 @@ def isolar(tmp_path, monkeypatch):
         raise RuntimeError("hospedagem pelo GitHub só funciona dentro do GitHub Actions")
     import hospedar
     monkeypatch.setattr(hospedar, "links_publicos", sem_git)
+    monkeypatch.setattr(hospedar, "publicar_arquivos", sem_git)
+    import audiograma  # nos testes, nada de baixar o modelo do Whisper (usa a reserva por sílabas)
+    monkeypatch.setattr(audiograma, "_whisper", lambda wav: [])
     yield tmp_path
 
 

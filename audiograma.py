@@ -36,15 +36,16 @@ def z(v):
     """Coordenada do desenho (1080x1920) -> pixel do vídeo (2K)."""
     return round(v * ESCALA)
 M = 80                                   # margem esquerda (área segura do Instagram)
-ONDA = (M, 1060, 820, 100)               # x, y, largura, altura da onda da voz
-LEG_Y = 1400                             # centro vertical da legenda (entre ~1190 e ~1610)
-LEG_W = 820                              # largura máxima da legenda (longe dos botões da direita)
+ONDA = (M, 1010, 800, 90)                # x, y, largura, altura da onda da voz
+LEG_Y = 1360                             # centro vertical da legenda (bloco entre ~1160 e ~1560)
+LEG_W = 800                              # largura máxima da legenda (longe dos botões da direita)
 VERMELHO = tuple(int(BRAND_COLOR.lstrip("#")[i:i + 2], 16) for i in (0, 2, 4))
 VERMELHO_ESCURO = tuple(int(c * 0.78) for c in VERMELHO)
 BRANCO = (255, 255, 255)
 
-FONTE_TEXTO = ("Montserrat Black", "Montserrat-Black.ttf", 88)
-FONTE_DESTAQUE = ("Instrument Serif", "InstrumentSerif-Italic.ttf", 112)
+# fonte da 1ª postagem (Inter) no texto; Instrument Serif itálica só nos destaques
+FONTE_TEXTO = ("Inter Black", "Inter-Black.otf", 80)
+FONTE_DESTAQUE = ("Instrument Serif", "InstrumentSerif-Italic.ttf", 100)
 MESES = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"]
 
 _cache = {}
@@ -115,29 +116,30 @@ def _sem_foto(card, w, h):
 
 
 def _tag(d, x, y, texto):
-    """Editoria fixa: cápsula branca com texto vermelho."""
-    f_tag = fonte("Montserrat-Black.ttf", z(30))
+    """Editoria fixa, no formato da 1ª postagem (retângulo de canto curto, Inter Bold):
+    branca com texto vermelho, para não sumir sobre o vermelho da marca."""
+    f_tag = fonte("Inter-Bold.otf", z(28))
     tw = int(f_tag.getlength(texto))
-    d.rounded_rectangle((x, y, x + tw + z(48), y + z(60)), radius=z(30), fill=BRANCO)
-    d.text((x + z(24), y + z(31)), texto, font=f_tag, fill=VERMELHO, anchor="lm")
-    return y + z(60)
+    d.rounded_rectangle((x, y, x + tw + z(40), y + z(54)), radius=z(8), fill=BRANCO)
+    d.text((x + z(20), y + z(27)), texto, font=f_tag, fill=VERMELHO, anchor="lm")
+    return y + z(54)
 
 
-def _credito(d, card, y, imagem):
+def _credito(d, card, y, imagem, x_dir=None):
     credito = card.get("_credito", "")
     if imagem and credito:
-        f_cr = fonte("Montserrat-ExtraBold.ttf", z(20))
+        f_cr = fonte("Inter-Medium.otf", z(18))
         while f_cr.getlength(credito) > z(W - 2 * M) and len(credito) > 10:
             credito = credito[:-2]
-        d.text((z(W - M), y), credito, font=f_cr, fill=(255, 230, 225), anchor="rs")
+        d.text((x_dir or z(W - M), y), credito, font=f_cr, fill=(255, 230, 225), anchor="rs")
 
 
 def _palavras_com_fonte(texto: str, destaques: list, tamanho: int):
     """[(palavra, fonte, destaque?)] para desenhar a manchete com os destaques na serifada."""
     out = []
     for p, dest in _marcar_destaques(texto.split(), destaques):
-        arq = "InstrumentSerif-Italic.ttf" if dest else "Montserrat-Black.ttf"
-        out.append((p, fonte(arq, int(tamanho * (1.22 if dest else 1.0))), dest))
+        arq = "InstrumentSerif-Italic.ttf" if dest else "Inter-Black.otf"
+        out.append((p, fonte(arq, int(tamanho * (1.12 if dest else 1.0))), dest))
     return out
 
 
@@ -156,25 +158,28 @@ def _quebrar(itens, largura):
 
 
 def capa(card: dict, out_path: Path, image_path=None) -> Path:
-    """Capa do Reels (padrão aprovado pelo Arthur): foto em tela cheia, degradê VERMELHO da marca
-    embaixo (no lugar do preto), editoria, manchete em Montserrat Black alinhada à esquerda e
-    dentro da área que aparece na grade do perfil (corte 3:4)."""
+    """Capa do Reels (padrão da 1ª postagem, aprovado pelo Arthur): foto em tela cheia, degradê
+    VERMELHO da marca embaixo (no lugar do preto), editoria, manchete em Inter Black alinhada à
+    esquerda, cidade/data e crédito. Tudo dentro do corte 3:4 da grade do perfil (y 240 a 1680)."""
     foto = _foto_ou_vazio(image_path, VW, VH)
     img = foto if foto is not None else _sem_foto(card, VW, VH)
-    img = _degrade(img, 0, z(460), 150, 0)        # topo: deixa a logo legível
-    img = _degrade(img, z(820), z(1330), 0, 238)  # pé: vermelho da marca até o fim
-    d = ImageDraw.Draw(img)
-    lg = logo(z(64))
-    img.paste(lg, (z(M), z(270)), lg)
 
-    largura = z(W - 2 * M - 40)
-    for tam in (96, 88, 80, 72, 66, 60):
+    largura = z(W - 2 * M - 30)
+    for tam in (84, 78, 72, 66, 60, 54):
         linhas = _quebrar(_palavras_com_fonte(card["titulo"], card.get("destaques", []), z(tam)), largura)
         if len(linhas) <= 5:
             break
-    passo = int(z(tam) * 1.12)
-    base_ultima = z(1530)
-    y_tag = base_ultima - passo * (len(linhas) - 1) - int(z(tam) * 0.9) - z(90)
+    passo = int(z(tam) * 1.13)
+    base_ultima = z(1530)                       # última linha da manchete
+    topo_texto = base_ultima - passo * (len(linhas) - 1) - int(z(tam) * 0.8)
+    y_tag = topo_texto - z(34) - z(54)
+    # degradê: transparente bem acima da etiqueta, já forte quando a manchete começa
+    img = _degrade(img, 0, z(470), 150, 0)                        # topo: logo legível
+    img = _degrade(img, y_tag - z(330), topo_texto, 0, 228)       # pé: vermelho da marca
+    d = ImageDraw.Draw(img)
+    lg = logo(z(66))
+    img.paste(lg, (z(M), z(300)), lg)
+
     _tag(d, z(M), y_tag, (card.get("chapeu") or "NOTÍCIA").upper())
     y = base_ultima - passo * (len(linhas) - 1)
     for linha in linhas:
@@ -188,7 +193,7 @@ def capa(card: dict, out_path: Path, image_path=None) -> Path:
         meta.append("Imagem ilustrativa")
     elif "IA" in card.get("_credito", ""):
         meta.append("Ilustração por IA")
-    d.text((z(M), z(1590)), "  ·  ".join(meta), font=fonte("Montserrat-ExtraBold.ttf", z(28)),
+    d.text((z(M), z(1592)), "  ·  ".join(meta), font=fonte("Inter-Medium.otf", z(30)),
            fill=(255, 232, 228), anchor="ls")
     _credito(d, card, z(1648), foto is not None)
     img.save(out_path, quality=94)
@@ -207,16 +212,16 @@ def quadro(card: dict, out_path: Path, image_path=None) -> Path:
         img = Image.blend(duo, foto, 0.38)  # vermelho da marca, mas a foto continua reconhecível
     else:
         img = _sem_foto(card, VW, VH)
-    img = _degrade(img, 0, z(480), 120, 0)
-    img = _degrade(img, z(700), z(1080), 0, 245)
+    img = _degrade(img, 0, z(560), 140, 0)          # topo: identificação legível
+    img = _degrade(img, z(640), z(1000), 0, 245)    # embaixo: vermelho sólido para voz e legenda
     d = ImageDraw.Draw(img)
-    lg = logo(z(64))
-    img.paste(lg, (z(M), z(270)), lg)
-    _tag(d, z(M), z(366), (card.get("chapeu") or "NOTÍCIA").upper())   # editoria fixa, sempre aqui
+    lg = logo(z(66))
+    img.paste(lg, (z(M), z(300)), lg)
+    fim_tag = _tag(d, z(M), z(396), (card.get("chapeu") or "NOTÍCIA").upper())   # editoria fixa
     cidade = card.get("cidade") or "Paraíba"
-    d.text((z(M), z(990)), f"{cidade.upper()}  ·  {_carimbo()}", font=fonte("Montserrat-ExtraBold.ttf", z(26)),
-           fill=(255, 232, 228), anchor="ls")
-    _credito(d, card, z(1030), foto is not None)
+    d.text((z(M), fim_tag + z(52)), f"{cidade}  ·  {_carimbo().replace(' · ', ', ').lower()}",
+           font=fonte("Inter-SemiBold.otf", z(28)), fill=(255, 236, 232), anchor="ls")
+    _credito(d, card, z(960), foto is not None)
     img.save(out_path, quality=95)
     return Path(out_path)
 
@@ -280,6 +285,93 @@ def tempos_das_frases(frases: list, wav: Path = None, total: float = None) -> li
         out.append((t, t + d))
         t += d
     return out
+
+
+# ------------------------------------------------------------------ tempo de cada palavra
+# Método da skill "remotion-captions" (remotion-dev/skills, a mais instalada para vídeo): passar a
+# fala pelo Whisper para ter o tempo de CADA palavra e mostrar a palavra quando ela é dita.
+# Aqui: faster-whisper na CPU do GitHub; como o texto falado já é conhecido, o Whisper só dá o
+# tempo, e as palavras do roteiro são alinhadas às reconhecidas.
+def _silabas(palavra: str) -> int:
+    return max(1, len(re.findall(r"[aeiouáéíóúâêôãõà]+", palavra.lower())) + (2 if re.search(r"\d", palavra) else 0))
+
+
+def _whisper(wav: Path) -> list:
+    """[(palavra, início, fim)] reconhecidas pelo Whisper, ou [] se não estiver disponível."""
+    try:
+        from faster_whisper import WhisperModel
+    except ImportError:
+        return []
+    try:
+        from config import WHISPER_MODELO
+        if "modelo" not in _cache_whisper:
+            _cache_whisper["modelo"] = WhisperModel(WHISPER_MODELO, device="cpu", compute_type="int8")
+        segs, _ = _cache_whisper["modelo"].transcribe(str(wav), language="pt", word_timestamps=True,
+                                                      beam_size=1, vad_filter=False)
+        return [(w.word.strip(), float(w.start), float(w.end)) for sg in segs for w in (sg.words or [])]
+    except Exception as e:
+        print(f"[legenda] Whisper indisponível ({str(e)[:100]}); tempo estimado pelas sílabas")
+        return []
+
+
+_cache_whisper = {}
+
+
+def _norm(p: str) -> str:
+    return re.sub(r"[^\w]", "", _fold(p))
+
+
+def tempo_das_palavras(frases: list, wav: Path = None, total: float = None, reconhecidas=None) -> list:
+    """[(palavra, início, fim, nº da frase)] no tempo do áudio original (sem o respiro inicial)."""
+    palavras = [(p, k) for k, f in enumerate(frases) for p in f.split()]
+    if not palavras:
+        return []
+    if reconhecidas is None and wav and Path(wav).exists():
+        reconhecidas = _whisper(Path(wav))
+    tempos = [None] * len(palavras)
+    if reconhecidas:
+        import difflib
+        a = [_norm(p) for p, _ in palavras]
+        b = [_norm(p) for p, _, _ in reconhecidas]
+        for bloco in difflib.SequenceMatcher(None, a, b, autojunk=False).get_matching_blocks():
+            for j in range(bloco.size):
+                _, ini, fim = reconhecidas[bloco.b + j]
+                tempos[bloco.a + j] = (ini, fim)
+    if sum(t is not None for t in tempos) < len(palavras) * 0.5:
+        # reserva: frases pelas pausas da voz, palavras pelas sílabas dentro de cada frase
+        tempos = [None] * len(palavras)
+        i = 0
+        for (ini, fim), frase in zip(tempos_das_frases(frases, wav, total), frases):
+            ps = frase.split()
+            pesos = [_silabas(p) for p in ps]
+            t = ini
+            for p, w in zip(ps, pesos):
+                d = (fim - ini) * w / sum(pesos)
+                tempos[i] = (t, t + d)
+                t += d
+                i += 1
+        if any(t is None for t in tempos):
+            return []
+        return [(p, a, b, k) for (p, k), (a, b) in zip(palavras, tempos)]
+    # palavras que o Whisper não reconheceu: entre as vizinhas, pelo tamanho
+    i = 0
+    while i < len(tempos):
+        if tempos[i] is None:
+            j = i
+            while j < len(tempos) and tempos[j] is None:
+                j += 1
+            ini = tempos[i - 1][1] if i > 0 else 0.0
+            fim = tempos[j][0] if j < len(tempos) else (ini + 0.35 * (j - i))
+            pesos = [_silabas(palavras[k][0]) for k in range(i, j)]
+            t = ini
+            for k, w in zip(range(i, j), pesos):
+                d = max(fim - ini, 0.05 * (j - i)) * w / sum(pesos)
+                tempos[k] = (t, t + d)
+                t += d
+            i = j
+        else:
+            i += 1
+    return [(p, a, b, k) for (p, k), (a, b) in zip(palavras, tempos)]
 
 
 # ------------------------------------------------------------------ legenda (ASS)
@@ -374,8 +466,37 @@ def _ts(t: float) -> str:
     return f"{int(h)}:{int(m):02d}:{s:05.2f}"
 
 
-def legenda_ass(frases: list, tempos: list, destaques: list, out_path: Path,
-                atraso=0.3, fator=1.0, total=None) -> Path:
+def paginas(palavras_t: list, destaques: list) -> list:
+    """Agrupa as palavras em páginas de até 2 linhas, sem atravessar frases e sem separar um
+    destaque (ex.: "339 vagas") em duas páginas. Devolve [[(palavra, destaque?, início, fim)]]."""
+    out = []
+    frases = {}
+    for p, a, b, k in palavras_t:
+        frases.setdefault(k, []).append((p, a, b))
+    for k in sorted(frases):
+        ws = frases[k]
+        marcas = [d for _, d in _marcar_destaques([p for p, _, _ in ws], destaques)]
+        itens = [(p, d, a, b) for (p, a, b), d in zip(ws, marcas)]
+        pag, w, linhas = [], 0.0, 1
+        for i, (p, d, a, b) in enumerate(itens):
+            lw = _largura(p, d)
+            if pag and w + lw > LEG_W:
+                if linhas == 2 and not (d and pag[-1][1]):  # não quebra no meio de um destaque
+                    out.append(pag)
+                    pag, w, linhas = [], 0.0, 1
+                else:
+                    linhas += 1
+                    w = 0.0
+            pag.append((p, d, a, b))
+            w += lw
+        if pag:
+            out.append(pag)
+    return out
+
+
+def legenda_ass(palavras_t: list, destaques: list, out_path: Path, atraso=0.3, fator=1.0, total=None) -> Path:
+    """Legenda dinâmica (estilo TikTok/Remotion): cada página fica na tela até a próxima e cada
+    palavra aparece no instante em que é falada, com um leve "pop"."""
     nome, _, tam = FONTE_TEXTO
     cab = f"""[Script Info]
 ScriptType: v4.00+
@@ -386,28 +507,32 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Base,{nome},{tam},&H00FFFFFF,&H00FFFFFF,&H00000000,&H50000000,0,0,0,0,100,100,0,0,1,0,2,4,40,40,0,1
+Style: Base,{nome},{tam},&H00FFFFFF,&H00FFFFFF,&H00000000,&H64000000,0,0,0,0,100,100,0,0,1,0,2,4,40,40,0,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 """
+    t = lambda x: x / fator + atraso  # noqa: E731  (tempo do áudio original -> tempo do vídeo)
+    pags = paginas(palavras_t, destaques)
     eventos = []
-    for k, (frase, (ini, fim)) in enumerate(zip(frases, tempos)):
-        ini, fim = ini / fator + atraso, fim / fator + atraso
-        if k + 1 < len(tempos):  # a legenda fica na tela durante a pausa, até a próxima frase
-            fim = tempos[k + 1][0] / fator + atraso
-        elif total:
-            fim = total
-        partes = blocos(frase, destaques, manchete=(k == 0))
-        pesos = [sum(len(p) for linha in ls for p, _ in linha) or 1 for ls, _ in partes]
-        t = ini
-        for (ls, escala), peso in zip(partes, pesos):
-            d = (fim - ini) * peso / sum(pesos)
-            texto = "\\N".join(_ass_linha(linha, escala) for linha in ls)
-            fs = f"\\fs{int(tam * escala)}" if escala != 1.0 else ""
-            efeito = f"{{\\an4\\pos({M},{LEG_Y}){fs}\\fad(90,0)\\fscx96\\fscy96\\t(0,140,\\fscx100\\fscy100)}}"
-            eventos.append(f"Dialogue: 0,{_ts(t)},{_ts(t + d)},Base,,0,0,0,,{efeito}{texto}")
-            t += d
+    for n, pag in enumerate(pags):
+        ini = t(pag[0][2])
+        fim = t(pags[n + 1][0][2]) if n + 1 < len(pags) else (total or t(pag[-1][3]) + 1.0)
+        partes, w = [], 0.0
+        for p, d, a, b in pag:
+            lw = _largura(p, d)
+            quebra = "\\N" if partes and w + lw > LEG_W else ""
+            if quebra:
+                w = 0.0
+            w += lw
+            ms = max(round((t(a) - ini) * 1000), 0)
+            p = p.replace("{", "(").replace("}", ")")
+            fonte_tag = f"\\fn{FONTE_DESTAQUE[0]}\\i1\\fs{FONTE_DESTAQUE[2]}" if d else f"\\fn{nome}\\i0\\fs{tam}"
+            surge = (f"{{{fonte_tag}\\alpha&HFF&\\fscx88\\fscy88"
+                     f"\\t({ms},{ms + 90},\\alpha&H00&\\fscx100\\fscy100)}}")
+            partes.append(("" if not partes else (quebra or " ")) + surge + p)
+        eventos.append(f"Dialogue: 0,{_ts(ini)},{_ts(fim)},Base,,0,0,0,,{{\\an4\\pos({M},{LEG_Y})}}"
+                       + "".join(partes))
     Path(out_path).write_text(cab + "\n".join(eventos) + "\n", encoding="utf-8")
     return Path(out_path)
 
@@ -423,9 +548,9 @@ def montar(card: dict, image_path, audio: Path, total: float, out_mp4: Path, pas
         import video
         frases = [video._para_fala(f) for f in video.roteiro(card)]
     wav = pasta / "narracao.wav"
-    tempos = tempos_das_frases(frases, wav if wav.exists() else None,
-                               total=(total - 1.3) if not wav.exists() else None)
-    ass = legenda_ass(frases, tempos, card.get("destaques", []), pasta / "legenda.ass",
+    palavras_t = tempo_das_palavras(frases, wav if wav.exists() else None,
+                                    total=(total - 1.3) if not wav.exists() else None)
+    ass = legenda_ass(palavras_t, card.get("destaques", []), pasta / "legenda.ass",
                       atraso=meta.get("atraso", 0.3), fator=meta.get("fator", 1.0), total=total)
     x, y, w, h = (z(v) for v in ONDA)
     filtro = (f"[1:a]showwaves=s={w}x{h}:mode=cline:rate={FPS}:colors=white:scale=sqrt:draw=full,"

@@ -260,13 +260,47 @@ def test_blocos_de_legenda_equilibrados():
 
 def test_destaque_usa_outra_fonte(tmp_path):
     import audiograma
-    frases = ["Prefeitura abre 339 vagas em Areia.", "Inscrições vão até sexta."]
-    ass = audiograma.legenda_ass(frases, [(0, 2), (2.4, 4)], ["339 vagas"], tmp_path / "l.ass", total=5)
+    palavras = [("Prefeitura", 0.0, 0.4, 0), ("abre", 0.4, 0.7, 0), ("339", 0.7, 1.4, 0), ("vagas", 1.4, 1.8, 0),
+                ("em", 1.8, 1.9, 0), ("Areia.", 1.9, 2.4, 0), ("Inscrições", 2.9, 3.5, 1), ("até", 3.5, 3.7, 1),
+                ("sexta.", 3.7, 4.2, 1)]
+    ass = audiograma.legenda_ass(palavras, ["339 vagas"], tmp_path / "l.ass", total=5)
     txt = ass.read_text()
-    assert "\\fnInstrument Serif\\i1" in txt and "339" in txt and "Montserrat Black" in txt
-    assert txt.count("Dialogue:") >= 2
+    assert "\\fnInstrument Serif\\i1" in txt and "339" in txt and "Inter Black" in txt
+    assert txt.count("Dialogue:") == 2  # uma página por frase curta
     # sem destaque do editor, os números ganham a outra fonte
     assert any(d for p, d in audiograma._marcar_destaques("Concurso tem 339 vagas".split(), []) if p == "339")
+
+
+def test_legenda_dinamica_palavra_entra_quando_e_falada(tmp_path):
+    import re
+    import audiograma
+    palavras = [("Chuva", 0.0, 0.5, 0), ("forte", 0.5, 0.9, 0), ("alaga", 0.9, 1.4, 0), ("ruas", 1.4, 1.9, 0)]
+    txt = audiograma.legenda_ass(palavras, [], tmp_path / "l.ass", atraso=0.3, total=3).read_text()
+    entradas = [int(x) for x in re.findall(r"\\t\((\d+),", txt)]
+    assert entradas == [0, 500, 900, 1400]  # cada palavra aparece no tempo dela (ms desde o início da página)
+    assert txt.count("\\alpha&HFF&") == 4  # antes disso, invisível
+
+
+def test_alinha_palavras_do_roteiro_com_o_whisper():
+    import audiograma
+    frases = ["Prefeitura de Areia abre 339 vagas.", "Inscrições até sexta."]
+    rec = [("Prefeitura", 0.0, 0.5), ("de", 0.5, 0.6), ("areia", 0.6, 1.0), ("abre", 1.0, 1.3),
+           ("trezentas", 1.3, 1.8), ("vagas", 2.4, 2.8), ("Inscrições", 3.3, 3.9), ("até", 3.9, 4.1), ("sexta", 4.1, 4.6)]
+    pt = audiograma.tempo_das_palavras(frases, reconhecidas=rec)
+    d = {p: (a, b) for p, a, b, _ in pt}
+    assert d["Areia"] == (0.6, 1.0) and d["vagas."] == (2.4, 2.8) and d["sexta."] == (4.1, 4.6)
+    assert 1.3 <= d["339"][0] < d["339"][1] <= 2.4  # número falado por extenso: fica entre os vizinhos
+
+
+def test_pagina_nao_separa_destaque():
+    import audiograma
+    ws = [(p, i * 0.3, i * 0.3 + 0.3, 0) for i, p in enumerate(
+        "O governo federal anuncia novo salário mínimo de R$ 1.630 para o próximo ano em todo o país".split())]
+    pags = audiograma.paginas(ws, ["salário mínimo"])
+    for pg in pags:
+        textos = [p for p, *_ in pg]
+        if "salário" in textos:
+            assert "mínimo" in textos
 
 
 @pytest.mark.skipif(not shutil.which("ffmpeg"), reason="ffmpeg não instalado")
