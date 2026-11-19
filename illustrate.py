@@ -109,7 +109,7 @@ NAO_E_FOTO = _re.compile(r"\b(map|mapa|carta|planta|brasao|bandeira|flag|coat of
                          r"1[5-8]\d\d)\b")
 
 
-def buscar_commons(busca: str, out_path: Path, exigir=()):
+def buscar_commons(busca: str, out_path: Path, exigir=(), repetir=False, sem=None):
     """Wikimedia Commons: ótimo para lugares (praças, prédios, ruas) de CG e JP. Exige crédito.
     `exigir`: palavras que precisam estar no nome ou na descrição do arquivo (ex.: a cidade),
     para não pegar um prédio parecido de outro país."""
@@ -127,10 +127,12 @@ def buscar_commons(busca: str, out_path: Path, exigir=()):
             meta = info.get("extmetadata", {})
             lic = (meta.get("LicenseShortName") or {}).get("value", "")
             pid = "commons:" + str(p.get("pageid"))
-            if pid in usadas or info.get("width", 0) < 1000 or not _licenca_ok(lic):
+            if (pid in usadas and not repetir) or info.get("width", 0) < 1000 or not _licenca_ok(lic):
                 continue
             onde = _fold(p.get("title", "") + " " + _texto((meta.get("ImageDescription") or {}).get("value", "")))
             if exigir and not any(_fold(x) in onde for x in exigir):
+                continue
+            if sem is not None and sem.search(onde):
                 continue
             if NAO_E_FOTO.search(_fold(p.get("title", ""))) or info.get("mime") not in (None, "image/jpeg"):
                 continue  # mapas, brasões, bandeiras, desenhos antigos: não servem de foto de notícia
@@ -212,7 +214,31 @@ def foto_parecida(card: dict, base: Path):
         if achou:
             print(f"[foto] {principal}: '{q}'")
             return achou
-    print(f"[foto] nenhuma foto livre de {principal}; arte com ícone")
+    print(f"[foto] nenhum lugar específico de {principal} no Wikimedia")
+    return None
+
+
+RETRATO = _re.compile(r"\b(retrato|portrait|selfie|deputad|vereador|prefeit|governador|senador|candidat)")
+
+
+def foto_da_cidade(card: dict, base: Path):
+    """Reserva: vista geral da cidade citada (Wikimedia Commons), marcada como imagem ilustrativa.
+    Sem mapas, brasões ou retratos de pessoas. Repete uma foto já usada só se não houver outra."""
+    cidades = cidades_citadas(card)
+    if not cidades:
+        return None
+    cidade = cidades[0]
+    destino = Path(f"{base}_cidade.jpg")
+    buscas = [f"{cidade} Paraíba", f"vista {cidade}", f"centro {cidade}", cidade]
+    if cidade == "Paraíba":
+        buscas = ["Paraíba Brasil paisagem", "João Pessoa orla", "Campina Grande"]
+    for repetir in (False, True):
+        for q in buscas:
+            achou = buscar_commons(q, destino, exigir=[cidade, "Paraiba"] if cidade == "Paraíba" else [cidade],
+                                   repetir=repetir, sem=RETRATO)
+            if achou:
+                print(f"[foto] vista geral de {cidade}: '{q}'")
+                return achou
     return None
 
 
@@ -222,7 +248,8 @@ def imagem_de_fundo(card: dict, base: Path):
     2) ilustração gerada pela IA do Google a partir do texto ("Ilustração gerada por IA");
     3) foto da própria matéria, com crédito "Reprodução/<site>" (NUNCA em polícia/tema sensível,
        para não expor suspeitos ou vítimas);
-    4) só se tudo falhar: fundo da marca com ícone."""
+    4) vista geral da cidade citada (Wikimedia Commons, "Imagem ilustrativa");
+    5) só se tudo falhar: fundo da marca com ícone."""
     card["_credito"], card["_ilustrativa"] = "", False
     sensivel = card.get("chapeu") in SEM_FOTO or card.get("risco") == "cuidado"
     if not sensivel:
@@ -241,4 +268,9 @@ def imagem_de_fundo(card: dict, base: Path):
             destino.write_bytes(orig[0])
             card["_credito"] = f"Foto: Reprodução/{orig[2]}"
             return destino
+    achou = foto_da_cidade(card, base)  # vale também em polícia: paisagem não expõe ninguém
+    if achou:
+        card["_ilustrativa"], card["_credito"] = True, achou[1]
+        return achou[0]
+    print("[foto] sem imagem nenhuma; arte com ícone")
     return None

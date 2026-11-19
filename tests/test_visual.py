@@ -1,3 +1,4 @@
+from pathlib import Path
 import shutil
 import subprocess
 
@@ -97,3 +98,25 @@ def test_foto_so_da_cidade_citada():
     c = card(titulo="Homem é preso em Patos", cidade="Paraíba", resumo="Caso no Sertão.")
     assert illustrate.cidades_citadas(c) == ["Patos"]
     assert illustrate.cidades_citadas(card(titulo="Inflação sobe no país", cidade="Brasil", resumo="")) == []
+
+
+def test_reserva_vista_geral_da_cidade(monkeypatch, tmp_path):
+    """Sem foto específica, sem IA e sem foto da matéria: usa a vista geral da cidade citada."""
+    import illustrate
+    c = card(titulo="Atlético e Campinense jogam em Cajazeiras", cidade="Cajazeiras", chapeu="ESPORTE")
+    monkeypatch.setattr(illustrate, "foto_parecida", lambda card, base: None)
+    monkeypatch.setattr(illustrate, "ilustracao_ia", lambda card, out: None)
+    monkeypatch.setattr(illustrate, "_original", lambda card: None)
+    buscas = []
+
+    def commons(q, out, exigir=(), repetir=False, sem=None):
+        buscas.append((q, tuple(exigir), repetir))
+        if repetir:
+            Path(out).write_bytes(b"x")
+            return Path(out), "Foto: Fulano / Wikimedia Commons (CC BY-SA 4.0)"
+        return None
+    monkeypatch.setattr(illustrate, "buscar_commons", commons)
+    img = illustrate.imagem_de_fundo(c, tmp_path / "b")
+    assert img and c["_ilustrativa"] and "Wikimedia" in c["_credito"]
+    assert buscas[0] == ("Cajazeiras Paraíba", ("Cajazeiras",), False)
+    assert illustrate.RETRATO.search("retrato do deputado fulano")

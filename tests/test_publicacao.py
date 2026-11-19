@@ -137,30 +137,41 @@ def test_errata_exige_id_numerico(monkeypatch):
         main.cmd_errata(types.SimpleNamespace(post_id="123/../me", texto="x"))
 
 
-def test_reels_recusado_vai_por_link_publico(api, monkeypatch, tmp_path):
-    """Servidor de upload da Meta recusa o arquivo: o vídeo vai por link público (ramo "midia")."""
-    import requests
+def test_reels_vai_primeiro_por_link_publico(api, monkeypatch, tmp_path):
+    """No GitHub, o vídeo vai por link público (ramo "midia"); a Meta baixa por lá."""
     import hospedar
-    original = requests.post
-
-    def post(url, data=None, headers=None, timeout=0, **k):
-        if "rupload" in url:
-            api.append(("POST", url, len(data), headers))
-            return Resp({"debug_info": {"type": "ProcessingFailedError"}}, code=400)
-        return original(url, data=data, headers=headers, timeout=timeout)
-    monkeypatch.setattr(requests, "post", post)
-    monkeypatch.setattr(publish.time, "sleep", lambda s: None)
     monkeypatch.setattr(hospedar, "links_publicos",
                         lambda p: ["https://cdn.jsdelivr.net/gh/o/r@abc/v.mp4", "https://raw.githubusercontent.com/o/r/abc/v.mp4"])
     v = tmp_path / "v.mp4"
     v.write_bytes(b"0" * 50)
     assert publish.post_reel(v, "legenda") == "POST1"
-    criados = [c for c in api if c[0] == "POST" and c[1].endswith("/media")]
-    assert [c[2].get("upload_type") for c in criados[:2]] == ["resumable", "resumable"]
-    assert criados[-1][2]["video_url"].startswith("https://cdn.jsdelivr.net/") and "upload_type" not in criados[-1][2]
+    assert not any("rupload" in c[1] for c in api)
+    cria = [c for c in api if c[0] == "POST" and c[1].endswith("/media")][0]
+    assert cria[2]["video_url"].startswith("https://cdn.jsdelivr.net/") and "upload_type" not in cria[2]
+    assert cria[2]["share_to_feed"] == "true"
 
 
-def test_reels_sem_link_publico_continua_sendo_instabilidade(api, monkeypatch, tmp_path):
+def test_reels_link_com_erro_tenta_o_outro_e_depois_direto(api, monkeypatch, tmp_path):
+    import hospedar
+    monkeypatch.setattr(hospedar, "links_publicos", lambda p: ["https://a.example/v.mp4", "https://b.example/v.mp4"])
+    tentativas = []
+
+    def esperar(cid):  # os dois links dão erro no processamento; o envio direto passa
+        tentativas.append(cid)
+        if len(tentativas) <= 2:
+            raise RuntimeError("Reels com erro no processamento: ERROR")
+        return "POST1"
+    monkeypatch.setattr(publish, "_esperar_processar", esperar)
+    v = tmp_path / "v.mp4"
+    v.write_bytes(b"0" * 50)
+    assert publish.post_reel(v, "legenda") == "POST1"
+    criados = [c[2] for c in api if c[0] == "POST" and c[1].endswith("/media")]
+    assert [c.get("video_url", c.get("upload_type")) for c in criados] == [
+        "https://a.example/v.mp4", "https://b.example/v.mp4", "resumable"]
+    assert any("rupload" in c[1] for c in api)
+
+
+def test_reels_recusado_sem_link_continua_sendo_instabilidade(api, monkeypatch, tmp_path):
     import requests
     original = requests.post
 
@@ -169,8 +180,6 @@ def test_reels_sem_link_publico_continua_sendo_instabilidade(api, monkeypatch, t
             return Resp({"debug_info": {"type": "ProcessingFailedError"}}, code=400)
         return original(url, data=data, headers=headers, timeout=timeout)
     monkeypatch.setattr(requests, "post", post)
-    monkeypatch.setattr(publish.time, "sleep", lambda s: None)
-    monkeypatch.delenv("GITHUB_ACTIONS", raising=False)  # fora do GitHub não há link público
     v = tmp_path / "v.mp4"
     v.write_bytes(b"0" * 50)
     with pytest.raises(RuntimeError, match="ProcessingFailedError"):

@@ -33,6 +33,11 @@ def isolar(tmp_path, monkeypatch):
     monkeypatch.setattr(requests, "get", sem_rede)
     monkeypatch.setattr(requests, "post", sem_rede)
     monkeypatch.setattr(requests.Session, "request", sem_rede)
+
+    def sem_git(*a, **k):  # nos testes nunca publica nada no repositório
+        raise RuntimeError("hospedagem pelo GitHub só funciona dentro do GitHub Actions")
+    import hospedar
+    monkeypatch.setattr(hospedar, "links_publicos", sem_git)
     yield tmp_path
 
 
