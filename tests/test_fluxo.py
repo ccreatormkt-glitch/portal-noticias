@@ -298,3 +298,15 @@ def test_pauta_exige_o_assunto_na_manchete(monkeypatch):
         item("Natal Iluminado de Campina Grande abre com show e milhares de pessoas", "ParaibaOnline")])
     grupos = sources.build_clusters("Natal Iluminado")
     assert [c.rep.title[:13] for c in grupos] == ["Natal Ilumina"]
+
+
+def test_nome_de_evento_nao_conta_como_copia():
+    """ "Natal Iluminado 2026 de Campina Grande" não tem como ser reescrito: não barra a notícia."""
+    c = sources.cluster_items([item("Natal Iluminado 2026 de Campina Grande começa nesta quinta-feira", "ParaibaOnline"),
+                               item("Natal Iluminado 2026 de Campina Grande começa nesta quinta-feira", "Jornal da Paraíba")])[0]
+    ok = {"titulo": "Luzes do Natal Iluminado 2026 de Campina Grande acendem hoje", "linha_fina": "", "resumo": "",
+          "pontos": [], "legenda": ""}
+    copiado = {"titulo": "Evento em Campina Grande começa nesta quinta-feira com luzes", "linha_fina": "", "resumo": "",
+               "pontos": [], "legenda": ""}
+    assert editor.trechos_repetidos(ok, c) == []
+    assert editor.trechos_repetidos(copiado, c)  # "começa nesta quinta-feira" continua tendo que ser reescrito

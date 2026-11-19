@@ -272,6 +272,25 @@ def _ngramas(texto: str, n: int) -> set:
     return {" ".join(w[i:i + n]) for i in range(len(w) - n + 1)}
 
 
+_LIGACAO = {"de", "da", "do", "das", "dos", "e", "em", "a", "o", "as", "os", "no", "na", "nos", "nas"}
+
+
+def _nomes_proprios(cluster) -> set:
+    """Palavras que aparecem com inicial maiúscula nas fontes (nomes de eventos, órgãos, cidades)."""
+    out = set()
+    for it in cluster.items:
+        for w in re.findall(r"[A-Za-zÀ-ÿ0-9]+", it.title + " " + it.summary):
+            if w[0].isupper() or w.isdigit():
+                out.add(w.lower())
+    return out
+
+
+def _inevitavel(ngrama: str, nomes: set) -> bool:
+    """Sequência feita só de nomes próprios, números e ligações ("natal iluminado 2026 de campina"):
+    não dá para reescrever, então não conta como cópia."""
+    return all(t in nomes or t in _LIGACAO or t.isdigit() for t in ngrama.split())
+
+
 def trechos_repetidos(card: dict, cluster, tolerancia=2) -> list:
     """O que ainda está copiado da fonte. Regras (pensadas para não barrar nomes próprios):
     - manchete: nenhuma sequência de 5 palavras igual à manchete de outro veículo;
@@ -280,13 +299,14 @@ def trechos_repetidos(card: dict, cluster, tolerancia=2) -> list:
     titulos = set()
     for it in cluster.items:
         titulos |= _ngramas(it.title, 5)
-    achados = [g for g in _ngramas(card.get("titulo", ""), 5) if g in titulos]
+    nomes = _nomes_proprios(cluster)
+    achados = [g for g in _ngramas(card.get("titulo", ""), 5) if g in titulos and not _inevitavel(g, nomes)]
     fontes = set()
     for t in [it.title + " " + it.summary for it in cluster.items] + [getattr(cluster, "corpo", "") or ""]:
         fontes |= _ngramas(t, 6)
     nosso = " ".join([card.get("linha_fina", ""), card.get("resumo", ""),
                       " ".join(card.get("pontos", [])), card.get("legenda", "")])
-    corpo = [g for g in _ngramas(nosso, 6) if g in fontes]
+    corpo = [g for g in _ngramas(nosso, 6) if g in fontes and not _inevitavel(g, nomes)]
     if len(corpo) > tolerancia:
         achados += corpo
     return sorted(set(achados))
