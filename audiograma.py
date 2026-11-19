@@ -307,9 +307,17 @@ def _whisper(wav: Path) -> list:
         from config import WHISPER_MODELO
         if "modelo" not in _cache_whisper:
             _cache_whisper["modelo"] = WhisperModel(WHISPER_MODELO, device="cpu", compute_type="int8")
-        segs, _ = _cache_whisper["modelo"].transcribe(str(wav), language="pt", word_timestamps=True,
+        # o áudio vai já decodificado (16 kHz, mono): a leitura própria do faster-whisper usa o
+        # PyAV, que mudou de versão e quebrava ("metadata_errors")
+        import numpy as np
+        bruto = subprocess.run(["ffmpeg", "-v", "error", "-i", str(wav), "-ar", "16000", "-ac", "1",
+                                "-f", "s16le", "-"], capture_output=True, check=True).stdout
+        audio = np.frombuffer(bruto, dtype=np.int16).astype(np.float32) / 32768.0
+        segs, _ = _cache_whisper["modelo"].transcribe(audio, language="pt", word_timestamps=True,
                                                       beam_size=1, vad_filter=False)
-        return [(w.word.strip(), float(w.start), float(w.end)) for sg in segs for w in (sg.words or [])]
+        palavras = [(w.word.strip(), float(w.start), float(w.end)) for sg in segs for w in (sg.words or [])]
+        print(f"[legenda] Whisper {WHISPER_MODELO}: {len(palavras)} palavras com tempo")
+        return palavras
     except Exception as e:
         print(f"[legenda] Whisper indisponível ({str(e)[:100]}); tempo estimado pelas sílabas")
         return []
