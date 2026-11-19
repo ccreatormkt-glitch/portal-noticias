@@ -241,15 +241,16 @@ def _ler(name, url):
         return name, None, f"{type(e).__name__}: {str(e)[:60]}"
 
 
-def fetch_items(verbose=False) -> list:
+def fetch_items(verbose=False, extra=None) -> list:
     from concurrent.futures import ThreadPoolExecutor
 
+    feeds = {**FEEDS, **(extra or {})}
     items = []
-    diretos = [(k, v) for k, v in FEEDS.items() if not k.startswith("gn_")]
+    diretos = [(k, v) for k, v in feeds.items() if not k.startswith("gn_")]
     with ThreadPoolExecutor(max_workers=8) as ex:
         resultados = list(ex.map(lambda kv: _ler(*kv), diretos))
     # Google Notícias: uma busca por vez, com pausa (muitas juntas dão "429 Too Many Requests")
-    for k, v in FEEDS.items():
+    for k, v in feeds.items():
         if k.startswith("gn_"):
             r = _ler(k, v)
             if r[2] and "429" in r[2]:
@@ -314,8 +315,16 @@ def cluster_items(items: list) -> list:
     return clusters
 
 
-def build_clusters() -> list:
-    return cluster_items(fetch_items())
+def build_clusters(pauta: str = "") -> list:
+    """Assuntos do momento. Com `pauta` (ex.: "Natal Iluminado"), busca também esse assunto e
+    devolve só os grupos de notícia que falam dele."""
+    if not pauta:
+        return cluster_items(fetch_items())
+    extra = {"gn_pauta": gnews(pauta), "gn_pauta_pb": gnews(f"{pauta} Paraíba")}
+    palavras = [fold(w) for w in pauta.split() if len(w) >= 3]
+    grupos = cluster_items(fetch_items(extra=extra))
+    return [c for c in grupos
+            if all(w in fold(" ".join(i.title + " " + i.summary for i in c.items)) for w in palavras)]
 
 
 # nomes muito comuns nas manchetes locais: não servem para dizer que duas notícias são a mesma

@@ -12,6 +12,7 @@
   python main.py historico            últimos posts com as fontes de cada notícia
 """
 import argparse
+import os
 import socket
 import json
 import shutil
@@ -148,6 +149,7 @@ def _cache_save(itens):
 
 
 _IG_LEGENDAS = {}
+_PAUTA = {}
 
 
 def _legendas_ig(atualizar=False) -> list:
@@ -177,7 +179,7 @@ def _candidatos(clusters, quantos, mode) -> list:
     brasil = [c for c in clusters if not c.is_local and any(sources.nacional(i) for i in c.items)]
     # mais relevante primeiro: o mesmo fato em mais veículos e nas manchetes principais do país
     brasil.sort(key=lambda c: (any(i.feed == "gn_brasil_top" for i in c.items), c.n_sources), reverse=True)
-    vez_brasil = config.BRASIL_A_CADA > 0 and db.vez_do_brasil(config.BRASIL_A_CADA)
+    vez_brasil = config.BRASIL_A_CADA > 0 and db.vez_do_brasil(config.BRASIL_A_CADA) and not _PAUTA.get("ativa")
     if vez_brasil and brasil:
         print("[run] vez de uma notícia do Brasil (G1)")
         fila = brasil + locais
@@ -190,7 +192,10 @@ def _candidatos(clusters, quantos, mode) -> list:
             print("[run] tempo de escrita esgotado; seguindo com os candidatos que já tenho")
             break
         confirmed = c.n_sources >= config.MIN_SOURCES or (config.TRUSTED_SINGLE_SOURCE and c.trusted)
-        if not confirmed or c.fingerprint in ja or db.seen(c.fingerprint, c.stems):
+        # na pauta pedida, uma tentativa anterior descartada (ex.: texto parecido) pode ser refeita;
+        # o que já foi PUBLICADO continua barrado pelo banco de notícias postadas
+        visto = db.seen(c.fingerprint, c.stems) if not _PAUTA.get("ativa") else False
+        if not confirmed or c.fingerprint in ja or visto:
             continue
         if not c.is_local and not vez_brasil:
             print(f"[run] sem novidade da Paraíba; notícia do Brasil (G1): {c.rep.title[:60]}")
@@ -307,7 +312,12 @@ def cmd_run(args):
         restante = publish.quota_left()
         limit = min(limit, config.MAX_POSTS_PER_DAY - done_today, restante if restante > 0 else limit)
 
-    clusters = sources.build_clusters()
+    pauta = (getattr(args, "pauta", None) or os.environ.get("PAUTA") or "").strip()
+    clusters = sources.build_clusters(pauta) if pauta else sources.build_clusters()
+    if pauta:
+        print(f"[run] pauta pedida: \"{pauta}\" ({len(clusters)} grupo(s) de notícia sobre o assunto)")
+        limit = 1
+        _PAUTA["ativa"] = True
     print(f"[run] {len(clusters)} assuntos encontrados, modo={mode}")
     cards = _candidatos(clusters, max(config.CANDIDATOS, limit), mode)
     for c in cards:
@@ -540,6 +550,7 @@ def main():
     r = sub.add_parser("run")
     r.add_argument("--dry-run", action="store_true")
     r.add_argument("--count", type=int)
+    r.add_argument("--pauta", help='assunto pedido (ex.: "Natal Iluminado"): busca e publica a notícia dele')
     m = sub.add_parser("mesclar", help="junta o histórico de uma rodada ao do repositório")
     m.add_argument("banco")
     m.set_defaults(fn=cmd_mesclar)

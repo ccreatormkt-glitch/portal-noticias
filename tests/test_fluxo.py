@@ -248,3 +248,25 @@ def test_banco_de_noticias_ja_postadas_barra_repeticao(ambiente, monkeypatch):
     nova = {"titulo": "Temporal deixa ruas da Torre alagadas em João Pessoa", "titulo_fonte": "Chuva na Torre", "links": []}
     assert not db.ja_publicada(nova)
     assert db.ja_publicada(nova, ["🌧️ Temporal deixa ruas da Torre alagadas em João Pessoa\n\nTexto..."])
+
+
+def test_pauta_pedida_busca_e_refaz_noticia_descartada(ambiente, monkeypatch):
+    """Pauta "Natal Iluminado": só notícias do assunto; uma tentativa antiga descartada pode ser refeita."""
+    tema = "Natal Iluminado 2026 de Campina Grande começa nesta quinta-feira com programação"
+    monkeypatch.setattr(sources, "fetch_items", lambda verbose=False, extra=None: [
+        item(tema, "ParaibaOnline"), item(tema, "Jornal da Paraíba"),
+        item("Chuva forte alaga ruas do bairro da Torre em João Pessoa nesta tarde", "ParaibaOnline")])
+    monkeypatch.setattr(sources, "build_clusters", lambda pauta="": [
+        c for c in sources.cluster_items(sources.fetch_items()) if not pauta or "natal" in c.rep.title.lower()])
+    c0 = sources.cluster_items([item(tema, "ParaibaOnline"), item(tema, "Jornal da Paraíba")])[0]
+    db.record(c0.fingerprint, c0.stems, tema, "", "pulado", note="texto ainda parecido com a fonte")
+    gerar = editor.generate
+
+    def fake(prompt, system=None):
+        if "Natal Iluminado" in prompt:
+            return json.dumps(card(chapeu="CULTURA", titulo="Luzes de Natal acendem no Açude Velho em CG",
+                                   resumo="Fatos.", legenda="a\n\nb\n\nc", pontos=[], linha_fina="x"), ensure_ascii=False)
+        return gerar(prompt, system)
+    monkeypatch.setattr(editor, "generate", fake)
+    main.cmd_run(argparse.Namespace(dry_run=False, count=None, pauta="Natal Iluminado"))
+    assert ambiente == ["CULTURA"]

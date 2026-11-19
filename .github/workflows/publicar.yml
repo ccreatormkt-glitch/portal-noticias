@@ -16,6 +16,10 @@ on:
         type: choice
         options: [auto, review, dry]
         default: "auto"
+      pauta:
+        description: 'assunto para buscar e publicar agora (ex.: Natal Iluminado); vazio = rodada normal'
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -97,6 +101,7 @@ jobs:
           WHISPER_MODELO: ${{ vars.WHISPER_MODELO }}
           VOZ_REFERENCIA_B64: ${{ secrets.VOZ_REFERENCIA_B64 }}
           MODO: ${{ github.event.inputs.modo }}
+          PAUTA: ${{ github.event.inputs.pauta }}
         run: |
           if [ "$(date -u +%M)" -lt 10 ]; then python main.py insights || echo "métricas indisponíveis nesta rodada"; fi  # métricas 1x por hora
           if [ "$MODO" = "dry" ]; then
