@@ -35,6 +35,12 @@ FEEDS = {
     "gn_joaopessoa": gnews('"João Pessoa"'),
     "gn_paraiba": gnews("Paraíba"),
     "gn_sertao": gnews("Patos OR Sousa OR Cajazeiras Paraíba"),
+    # mais cidades e temas da Paraíba (menos rodadas sem notícia nova)
+    "gn_metropolitana": gnews("Cabedelo OR Bayeux OR \"Santa Rita\" OR Conde OR Lucena Paraíba"),
+    "gn_agreste": gnews("Guarabira OR Queimadas OR Esperança OR Areia OR Bananeiras OR \"Lagoa Seca\" Paraíba"),
+    "gn_cariri_brejo": gnews("Monteiro OR Sumé OR Picuí OR Solânea OR Mamanguape OR Sapé Paraíba"),
+    "gn_servico_pb": gnews("Paraíba (concurso OR vagas OR inscrições OR vacinação OR seleção)"),
+    "gn_esporte_pb": gnews("Botafogo-PB OR Treze OR Campinense OR \"Sousa Esporte\" OR \"Atlético Cajazeirense\""),
     # sites da lista sem RSS público (verificado em 19/11/2026): entram pela busca filtrada por site
     "gn_blogs_cg": gnews("site:blogdomarciorangel.com.br OR site:blogdorenatodiniz.com.br OR site:paraibao.com.br"),
     "gn_sertao_sites": gnews("site:patosonline.com OR site:portalpatos.com OR site:pabhlonoticias.com "

@@ -191,3 +191,17 @@ def test_brasil_so_editorias_nacionais_do_g1():
                link="https://g1.globo.com/am/amazonas/noticia/2026/11/19/palhaco.ghtml")
     pb = item("Chuva em João Pessoa", "g1", feed="g1_pb", link="https://g1.globo.com/pb/paraiba/noticia/x.ghtml")
     assert sources.g1_nacional(nac) and not sources.g1_nacional(reg) and not sources.g1_nacional(pb)
+
+
+def test_ritmo_recupera_com_dois_posts_quando_atrasado(ambiente, monkeypatch):
+    """Última hora abaixo da meta (~5/h): a rodada publica até 2; no ritmo, publica 1."""
+    monkeypatch.setattr(config, "CANDIDATOS", 1)
+    monkeypatch.setattr(config, "POSTS_PER_RUN", 2)
+    monkeypatch.setattr(config, "BRASIL_A_CADA", 0)
+    sem_count = argparse.Namespace(dry_run=False, count=None)  # como roda no GitHub
+    main.cmd_run(sem_count)
+    assert len(ambiente) == 2  # nenhuma na última hora -> recupera com 2
+    for i in range(3):
+        db.record(f"x{i}", set(), f"manchete {i}", "", "published")
+    main.cmd_run(sem_count)
+    assert len(ambiente) == 3  # 5 na última hora (meta ~5) -> só 1

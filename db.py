@@ -109,6 +109,12 @@ def update_status(fp, status, ig_id="", note=""):
          "ig_id": ig_id, "note": note})
 
 
+def published_since(segundos: float) -> int:
+    with _conn() as c:
+        return c.execute("SELECT COUNT(*) FROM posts WHERE status='published' AND ts > ?",
+                         (time.time() - segundos,)).fetchone()[0]
+
+
 def published_today() -> int:
     since = time.time() - 24 * 3600
     with _conn() as c:

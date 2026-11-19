@@ -252,7 +252,16 @@ def cmd_run(args):
         if publish.quota_left() == 0:
             print("[run] limite de publicações da API do Instagram atingido. Tentando na próxima.")
             return
-        limit = min(limit, config.MAX_POSTS_PER_DAY - done_today)
+        # ritmo: ~5 posts por hora o dia todo; se a última hora ficou abaixo (rodadas sem notícia
+        # nova ou recusa da Meta), esta rodada recupera com até POSTS_PER_RUN posts
+        if not args.count:
+            meta_hora = config.MAX_POSTS_PER_DAY / config.HORAS_ATIVAS
+            ultima_hora = db.published_since(3600)
+            atraso = int(meta_hora - ultima_hora + 0.5)
+            limit = max(1, min(config.POSTS_PER_RUN, atraso))
+            print(f"[run] ritmo: {ultima_hora} post(s) na última hora (meta ~{meta_hora:.0f}/h) -> até {limit} nesta rodada")
+        restante = publish.quota_left()
+        limit = min(limit, config.MAX_POSTS_PER_DAY - done_today, restante if restante > 0 else limit)
 
     clusters = sources.build_clusters()
     print(f"[run] {len(clusters)} assuntos encontrados, modo={mode}")

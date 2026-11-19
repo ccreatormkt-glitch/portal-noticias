@@ -1,6 +1,6 @@
 name: publicar-noticias
 
-# Ritmo: uma rodada a cada ~10 minutos, das 06h às 23h50 (horário de Fortaleza/João Pessoa).
+# Ritmo: uma rodada a cada ~8 minutos (até 2 posts quando atrasado), das 06h às 23h50 (horário de Fortaleza/João Pessoa).
 # Como o agendamento do GitHub costuma atrasar ou pular execuções, cada rodada automática
 # chama a próxima no fim (passo "Próxima rodada"). O agendamento abaixo só (re)liga a sequência:
 # às 06h05 e, de reserva, a cada hora (se a sequência já estiver rodando, ele não duplica).
@@ -134,7 +134,7 @@ jobs:
           git config user.email "pbminuto-bot@users.noreply.github.com"
           git add state queue
           git diff --cached --quiet || (git commit -m "histórico $(date -u +%F_%H%M)" && git pull --rebase && git push)
-      - name: Próxima rodada (a cada ~10 min, das 06h às 23h50)
+      - name: Próxima rodada (a cada ~8 min, das 06h às 23h50)
         if: always() && github.event.inputs.modo != 'dry' && github.event.inputs.modo != 'review'
         env:
           GH_TOKEN: ${{ github.token }}
@@ -145,6 +145,6 @@ jobs:
           outras=$(gh run list -R "$GITHUB_REPOSITORY" --workflow publicar.yml --json databaseId,status \
             --jq "[.[] | select((.status==\"queued\" or .status==\"in_progress\" or .status==\"waiting\" or .status==\"pending\") and .databaseId != $GITHUB_RUN_ID)] | length")
           if [ "$outras" -gt 0 ]; then echo "já existe rodada na fila ($outras)"; exit 0; fi
-          espera=$(( 600 - ($(date +%s) - INICIO) ))
+          espera=$(( 480 - ($(date +%s) - INICIO) ))   # uma rodada a cada ~8 min
           if [ "$espera" -gt 0 ]; then sleep "$espera"; fi
           gh workflow run publicar.yml -R "$GITHUB_REPOSITORY" -f modo=auto
