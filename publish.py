@@ -235,8 +235,6 @@ def build_caption(card: dict, source_line: str = "") -> str:
                       + "\n".join(f"• {p}" for p in pontos))
     if chamada:
         partes.append(chamada)
-    if card.get("_reels"):
-        partes.append("🎙️ Narração com voz gerada por IA.")
     partes.append(f"👉 Siga {PORTAL_HANDLE} para acompanhar Campina Grande, João Pessoa e toda a Paraíba.")
     tags = []
     for t in card.get("hashtags", []):  # limpeza defensiva: sem '#' duplo nem espaços

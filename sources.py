@@ -44,6 +44,8 @@ FEEDS = {
     "gn_tv": gnews('"TV Tambaú" OR "TV Arapuan" OR "CBN João Pessoa" OR "CBN Campina Grande"'),
     # 1. portais estaduais e Grande João Pessoa
     "g1_pb": "https://g1.globo.com/rss/g1/pb/paraiba/",
+    # reserva: notícias gerais do Brasil (usadas só quando não houver nada novo da Paraíba)
+    "g1_brasil": "https://g1.globo.com/rss/g1/",
     "portalcorreio": "https://portalcorreio.com.br/feed/",
     "clickpb": "https://www.clickpb.com.br/feed/",
     "jornaldaparaiba": "https://jornaldaparaiba.com.br/feed",
@@ -66,7 +68,7 @@ FEEDS = {
 
 # nome amigável usado no crédito interno quando o item vem de RSS direto
 FEED_SOURCE_NAME = {
-    "g1_pb": "g1 Paraíba", "paraibaonline": "ParaibaOnline", "portalcorreio": "Portal Correio",
+    "g1_pb": "g1 Paraíba", "g1_brasil": "g1", "paraibaonline": "ParaibaOnline", "portalcorreio": "Portal Correio",
     "clickpb": "ClickPB", "pbagora": "PB Agora", "jornaldaparaiba": "Jornal da Paraíba",
     "maispb": "MaisPB", "polemicaparaiba": "Polêmica Paraíba", "fonte83": "Fonte 83",
     "correioparaibano": "Correio Paraibano", "rotapb": "RotaPB", "marciorangel": "Blog do Márcio Rangel",

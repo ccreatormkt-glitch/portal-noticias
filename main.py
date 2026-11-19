@@ -148,15 +148,23 @@ def _candidatos(clusters, quantos, mode) -> list:
     ja = {c["fp"] for c in cards}
     tentativas = fails = 0
     prazo = time.monotonic() + 7 * 60  # rodada a cada 10 min: escrever rápido e publicar
-    for c in clusters:
+    locais = [c for c in clusters if c.is_local]
+    # reserva: notícias gerais do Brasil (G1) quando não houver nada novo da Paraíba
+    brasil = [c for c in clusters if not c.is_local and any(i.feed == "g1_brasil" for i in c.items)]
+    fila = locais + (brasil if config.BRASIL_RESERVA else [])
+    for c in fila:
         if len(cards) >= quantos or tentativas >= quantos + 3:
             break
+        if not c.is_local and cards:
+            break  # só vai para o Brasil se a Paraíba não rendeu nenhum post
         if time.monotonic() > prazo and cards:
             print("[run] tempo de escrita esgotado; seguindo com os candidatos que já tenho")
             break
         confirmed = c.n_sources >= config.MIN_SOURCES or (config.TRUSTED_SINGLE_SOURCE and c.trusted)
-        if not confirmed or not c.is_local or c.fingerprint in ja or db.seen(c.fingerprint, c.stems):
+        if not confirmed or c.fingerprint in ja or db.seen(c.fingerprint, c.stems):
             continue
+        if not c.is_local:
+            print(f"[run] sem novidade da Paraíba; notícia do Brasil (G1): {c.rep.title[:60]}")
         repetida = db.manchete_repetida(c.rep.title) or next(
             (k["titulo"] for k in cards if sources.mesma_historia(c.rep.title, k["titulo"])
              or sources.mesma_historia(c.rep.title, k.get("titulo_fonte", ""))), "")

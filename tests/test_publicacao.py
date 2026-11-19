@@ -79,7 +79,7 @@ def test_legenda_completa_sem_fonte(monkeypatch):
     txt = publish.build_caption(c)
     assert txt.startswith("🎓 Qualificação sem custo em CG")
     assert "📌 Veja como fazer:\n• Capacitação sem custo\n• Cadastro até sexta" in txt
-    assert "Narração com voz gerada por IA" in txt and "Siga @pbminuto" in txt
+    assert "Narração com voz gerada por IA" not in txt and "Siga @pbminuto" in txt  # aviso retirado a pedido do Arthur
     assert "Fonte" not in txt
     assert txt.rstrip().endswith("#campinagrande #paraiba #cursosgratuitos")
     assert len(txt) <= 2200

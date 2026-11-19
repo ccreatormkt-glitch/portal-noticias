@@ -141,3 +141,18 @@ def test_gpt_primeiro_e_gemini_de_reserva(monkeypatch):
     monkeypatch.setattr(editor, "_openai", gpt_fora)
     monkeypatch.setattr(editor, "_gemini", lambda p, s: '{"ok": true}')
     assert editor.generate("p") == '{"ok": true}'
+
+
+def test_sem_novidade_da_paraiba_publica_noticia_do_brasil(ambiente, monkeypatch):
+    nacional = "Governo federal anuncia novo calendário de pagamento do Bolsa Família em dezembro"
+
+    def clusters():
+        return sources.cluster_items([item(nacional, "g1", feed="g1_brasil")])
+    monkeypatch.setattr(sources, "build_clusters", clusters)
+
+    def fake(prompt, system=None):
+        return json.dumps(card(chapeu="BRASIL", cidade="Brasil", titulo="Bolsa Família tem novas datas de pagamento em dezembro",
+                               resumo="Fatos.", legenda="a\n\nb\n\nc", pontos=[], linha_fina="x"), ensure_ascii=False)
+    monkeypatch.setattr(editor, "generate", fake)
+    rodar()
+    assert ambiente == ["BRASIL"]

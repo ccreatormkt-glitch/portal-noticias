@@ -52,6 +52,7 @@ DEDUPE_HOURS = int(env("DEDUPE_HOURS", "168"))  # 7 dias de memória contra repe
 MAX_STORY_AGE_HOURS = int(env("MAX_STORY_AGE_HOURS", "12"))
 # carrossel de 2 lâminas (capa + detalhes). Desligado: o post é só a capa + legenda completa
 # quantas notícias a IA avalia por rodada para escolher a de maior potencial
+BRASIL_RESERVA = env_bool("BRASIL_RESERVA", True)  # sem novidade da Paraíba: notícia geral do Brasil (G1)
 CANDIDATOS = int(env("CANDIDATOS", "1"))  # 1 = mais rápido (uma notícia por rodada de 10 min)
 CAROUSEL = env_bool("CAROUSEL", False)  # padrão: só a capa; detalhes vão na legenda
 
@@ -84,8 +85,8 @@ TTS_VOICE = env("TTS_VOICE", "Charon")  # voz de biblioteca, tom informativo; ou
 # none = card só tipográfico (padrão, custo zero)
 # gemini = gera uma ilustração de fundo (nunca pessoas reais nem "foto" do fato).
 #          ATENÇÃO: modelos de imagem do Gemini são pagos; o padrão grátis é a foto do Pexels.
-IMAGE_MODE = env("IMAGE_MODE", "none")  # desligado: a regra é usar só foto real da cidade citada
-GEMINI_IMAGE_MODEL = env("GEMINI_IMAGE_MODEL", "gemini-3.1-flash-image")
+IMAGE_MODE = env("IMAGE_MODE", "gemini")  # ilustração por IA quando não houver foto livre da cidade
+GEMINI_IMAGE_MODEL = env("GEMINI_IMAGE_MODEL", "gemini-3.1-flash-image,gemini-2.5-flash-image,gemini-3-pro-image")
 
 # ---- Instagram (API oficial da Meta) --------------------------------------------
 IG_USER_ID = env("IG_USER_ID")
