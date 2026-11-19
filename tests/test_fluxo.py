@@ -324,3 +324,29 @@ def test_nome_de_evento_recorrente_nao_junta_noticias_diferentes():
     assert sources.mesma_historia("Corujinha é eleito presidente da Câmara de João Pessoa",
                                   "Unanimidade elege João Corujinha à frente do Legislativo pessoense")
     sources.NOMES_RECORRENTES.clear()
+
+
+def test_refazer_post_com_foto_escolhida(ambiente, monkeypatch, tmp_path):
+    """Pedido do Arthur: postar de novo (já tinha saído) usando a foto dele."""
+    from PIL import Image
+    foto = tmp_path / "papai_noel.jpg"
+    Image.new("RGB", (1080, 1920), (200, 30, 30)).save(foto)
+    tema = "Procon-CG inicia plantão especial de atendimento durante o Natal Iluminado"
+    monkeypatch.setattr(sources, "build_clusters", lambda pauta="": sources.cluster_items(
+        [item(tema, "ParaibaOnline"), item(tema, "Jornal da Paraíba")]))
+    c0 = sources.cluster_items([item(tema, "ParaibaOnline"), item(tema, "Jornal da Paraíba")])[0]
+    db.record(c0.fingerprint, c0.stems, "Procon-CG mobiliza equipe e abre plantão no Natal Iluminado 2026", "",
+              "published", ig_id="IGvelho")
+    gerar = editor.generate
+    usados = []
+    monkeypatch.setattr(main, "_gerar_video", lambda c, bg, s: (usados.append(str(bg)) or ("v.mp4", "c.jpg")))
+
+    def fake(prompt, system=None):
+        if "Procon" in prompt:
+            return json.dumps(card(chapeu="SERVIÇO", titulo="Procon de CG faz plantão no Natal Iluminado",
+                                   resumo="Fatos.", legenda="a\n\nb\n\nc", pontos=[], linha_fina="x"), ensure_ascii=False)
+        return gerar(prompt, system)
+    monkeypatch.setattr(editor, "generate", fake)
+    main.cmd_run(argparse.Namespace(dry_run=False, count=None, pauta="Procon Natal Iluminado",
+                                    foto=str(foto), refazer=True))
+    assert ambiente == ["SERVIÇO"] and usados == [str(foto)]

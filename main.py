@@ -192,7 +192,9 @@ def _candidatos(clusters, quantos, mode) -> list:
     # mais relevante primeiro: o mesmo fato em mais veículos e nas manchetes principais do país
     brasil.sort(key=lambda c: (any(i.feed == "gn_brasil_top" for i in c.items), c.n_sources), reverse=True)
     vez_brasil = config.BRASIL_A_CADA > 0 and db.vez_do_brasil(config.BRASIL_A_CADA) and not _PAUTA.get("ativa")
-    if vez_brasil and brasil:
+    if _PAUTA.get("ativa"):  # pauta pedida: os grupos já são só do assunto (locais ou não)
+        fila = sorted(clusters, key=lambda c: c.n_sources, reverse=True)
+    elif vez_brasil and brasil:
         print("[run] vez de uma notícia do Brasil (G1)")
         fila = brasil + locais
     else:
@@ -206,12 +208,13 @@ def _candidatos(clusters, quantos, mode) -> list:
         confirmed = c.n_sources >= config.MIN_SOURCES or (config.TRUSTED_SINGLE_SOURCE and c.trusted)
         # na pauta pedida, uma tentativa anterior descartada (ex.: texto parecido) pode ser refeita;
         # o que já foi PUBLICADO continua barrado pelo banco de notícias postadas
-        visto = db.ja_postado(c.fingerprint, c.stems) if _PAUTA.get("ativa") else db.seen(c.fingerprint, c.stems)
+        visto = (False if _PAUTA.get("refazer") else
+                 db.ja_postado(c.fingerprint, c.stems) if _PAUTA.get("ativa") else db.seen(c.fingerprint, c.stems))
         if not confirmed or c.fingerprint in ja or visto:
             continue
         if not c.is_local and not vez_brasil:
             print(f"[run] sem novidade da Paraíba; notícia do Brasil (G1): {c.rep.title[:60]}")
-        repetida = db.manchete_repetida(c.rep.title) or next(
+        repetida = "" if _PAUTA.get("refazer") else db.manchete_repetida(c.rep.title) or next(
             (k["titulo"] for k in cards if sources.mesma_historia(c.rep.title, k["titulo"])
              or sources.mesma_historia(c.rep.title, k.get("titulo_fonte", ""))), "")
         if repetida:
@@ -238,17 +241,17 @@ def _candidatos(clusters, quantos, mode) -> list:
             db.record(c.fingerprint, c.stems, c.rep.title, "", "pulado", note=card.get("motivo", ""))
             print(f"[run] pulado ({card.get('motivo', '')[:60]}): {c.rep.title[:60]}")
             continue
-        parecida = db.manchete_repetida(card["titulo"]) or next(
+        parecida = "" if _PAUTA.get("refazer") else db.manchete_repetida(card["titulo"]) or next(
             (k["titulo"] for k in cards if sources.mesma_historia(card["titulo"], k["titulo"])), "")
         if parecida:
             db.record(c.fingerprint, c.stems, c.rep.title, "", "pulado", note="repetida: " + parecida[:80])
             print(f"[run] pulado (já publicamos algo igual: {parecida[:60]})")
             continue
         # banco de notícias já postadas (+ legendas do próprio Instagram)
-        motivo = db.ja_publicada({**card, "fp": c.fingerprint, "titulo_fonte": c.rep.title,
-                                  "links": [i.link for i in c.items[:4]]},
-                                 _legendas_ig() if mode == "auto" else ())
-        if not motivo:
+        motivo = "" if _PAUTA.get("refazer") else db.ja_publicada(
+            {**card, "fp": c.fingerprint, "titulo_fonte": c.rep.title, "links": [i.link for i in c.items[:4]]},
+            _legendas_ig() if mode == "auto" else ())
+        if not motivo and not _PAUTA.get("refazer"):
             motivo = _repetida_pela_ia(card)
         if motivo:
             db.record(c.fingerprint, c.stems, c.rep.title, "", "pulado", note=motivo[:120])
@@ -332,6 +335,15 @@ def cmd_run(args):
         print(f"[run] pauta pedida: \"{pauta}\" ({len(clusters)} grupo(s) de notícia sobre o assunto)")
         limit = 1
         _PAUTA["ativa"] = True
+        # refazer = o Arthur pediu para postar de novo (ex.: com a foto certa): não barra por repetição
+        _PAUTA["refazer"] = (getattr(args, "refazer", False) or os.environ.get("REFAZER", "").lower() == "true")
+        foto = (getattr(args, "foto", None) or os.environ.get("FOTO") or "").strip()
+        if foto and Path(foto).exists():
+            _PAUTA["foto"] = foto
+            _PAUTA["credito"] = (os.environ.get("CREDITO") or "").strip()
+            print(f"[run] foto escolhida pelo Arthur: {foto}")
+        if _PAUTA["refazer"]:
+            print("[run] refazendo um post a pedido: sem bloqueio de repetição")
     print(f"[run] {len(clusters)} assuntos encontrados, modo={mode}")
     cards = _candidatos(clusters, max(config.CANDIDATOS, limit), mode)
     for c in cards:
@@ -345,7 +357,11 @@ def cmd_run(args):
     for card in escolhidos:
         fp = card["fp"]
         stamp = time.strftime("%Y%m%d_%H%M%S") + f"_{fp[:6]}"
-        bg = illustrate.imagem_de_fundo(card, config.OUT_DIR / stamp)
+        if _PAUTA.get("foto"):  # foto escolhida pelo Arthur
+            bg = Path(_PAUTA["foto"])
+            card["_credito"], card["_ilustrativa"] = _PAUTA.get("credito", ""), False
+        else:
+            bg = illustrate.imagem_de_fundo(card, config.OUT_DIR / stamp)
         paths = render.render_post(card, config.OUT_DIR / stamp, "", bg, config.CAROUSEL)
         t0 = time.monotonic()
         print(f"[run] montando o vídeo: {card['titulo'][:70]}")
@@ -379,7 +395,7 @@ def cmd_run(args):
             continue
         else:
             # última conferência, logo antes de soltar (outra rodada pode ter postado o mesmo fato)
-            motivo = db.ja_publicada(card, _legendas_ig(atualizar=True))
+            motivo = "" if _PAUTA.get("refazer") else db.ja_publicada(card, _legendas_ig(atualizar=True))
             if motivo:
                 db.update_status(fp, "pulado", note=motivo[:120])
                 print(f"[run] não publicado ({motivo})")
@@ -565,6 +581,8 @@ def main():
     r.add_argument("--dry-run", action="store_true")
     r.add_argument("--count", type=int)
     r.add_argument("--pauta", help='assunto pedido (ex.: "Natal Iluminado"): busca e publica a notícia dele')
+    r.add_argument("--foto", help="foto a usar na capa e no vídeo (caminho no repositório)")
+    r.add_argument("--refazer", action="store_true", help="posta de novo mesmo se a notícia já saiu")
     m = sub.add_parser("mesclar", help="junta o histórico de uma rodada ao do repositório")
     m.add_argument("banco")
     m.set_defaults(fn=cmd_mesclar)

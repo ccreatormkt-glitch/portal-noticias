@@ -323,11 +323,11 @@ def build_clusters(pauta: str = "") -> list:
         marcar_recorrentes(grupos)
         return grupos
     extra = {"gn_pauta": gnews(pauta), "gn_pauta_pb": gnews(f"{pauta} Paraíba")}
-    frase = " ".join(fold(w) for w in pauta.split())
+    palavras = [fold(w) for w in re.findall(r"[\wÀ-ÿ-]+", pauta) if len(w) >= 3]
     grupos = cluster_items(fetch_items(extra=extra))
     marcar_recorrentes(grupos)
-    # o assunto tem que estar na MANCHETE (não basta aparecer de passagem no resumo)
-    return [c for c in grupos if any(frase in " ".join(fold(i.title).split()) for i in c.items)]
+    # todas as palavras do assunto têm que estar na MANCHETE (não basta aparecer de passagem no resumo)
+    return [c for c in grupos if any(all(w in fold(i.title) for w in palavras) for i in c.items)]
 
 
 # nomes muito comuns nas manchetes locais: não servem para dizer que duas notícias são a mesma

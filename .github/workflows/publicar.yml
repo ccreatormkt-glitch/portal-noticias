@@ -20,6 +20,18 @@ on:
         description: 'assunto para buscar e publicar agora (ex.: Natal Iluminado); vazio = rodada normal'
         required: false
         default: ""
+      foto:
+        description: "foto da pauta (caminho no repositório, ex.: fotos/natal.jpg); vazio = o robô escolhe"
+        required: false
+        default: ""
+      credito:
+        description: "crédito da foto (opcional)"
+        required: false
+        default: ""
+      refazer:
+        description: "postar de novo mesmo se a notícia já saiu (ex.: trocar a foto)"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -103,6 +115,9 @@ jobs:
           VOZ_REFERENCIA_B64: ${{ secrets.VOZ_REFERENCIA_B64 }}
           MODO: ${{ github.event.inputs.modo }}
           PAUTA: ${{ github.event.inputs.pauta }}
+          FOTO: ${{ github.event.inputs.foto }}
+          CREDITO: ${{ github.event.inputs.credito }}
+          REFAZER: ${{ github.event.inputs.refazer }}
         run: |
           if [ "$(date -u +%M)" -lt 10 ]; then python main.py insights || echo "métricas indisponíveis nesta rodada"; fi  # métricas 1x por hora
           if [ "$MODO" = "dry" ]; then
