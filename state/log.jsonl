@@ -186,3 +186,5 @@
 {"ts": "2026-11-20T16:46:37", "event": "pulado", "headline": "Idoso de 67 anos é encontrado morto dentro de casa, na Paraíba", "source": "", "ig_id": "", "note": "mesmo link de uma notícia já postada (Polícia investiga homicídio de homem atingido por disparos e)"}
 {"ts": "2026-11-20T16:50:14", "event": "gerado", "headline": "Polícia prende dois suspeitos de matar idoso a tiro em Araçagi", "source": "Portal Correio", "ig_id": "", "note": ""}
 {"ts": "2026-11-20T16:51:31", "event": "published", "headline": "Polícia prende dois suspeitos de matar idoso a tiro em Araçagi", "source": "Portal Correio", "ig_id": "18226400935352514", "note": ""}
+{"ts": "2026-11-20T16:57:26", "event": "gerado", "headline": "Sindicato e estudantes promovem greve geral na Itália por verbas públicas e reajuste", "source": "Agência Brasil", "ig_id": "", "note": ""}
+{"ts": "2026-11-20T16:58:27", "event": "published", "headline": "Sindicato e estudantes promovem greve geral na Itália por verbas públicas e reajuste", "source": "Agência Brasil", "ig_id": "17977224111156397", "note": ""}
