@@ -439,3 +439,16 @@ def test_capa_no_formato_feed(tmp_path):
     import audiograma
     out = audiograma.capa(card(), tmp_path / "f.jpg", None, formato="feed")
     assert Image.open(out).size == (audiograma.z(1080), audiograma.z(1350))
+
+
+def test_barra_do_video_no_topo_e_capa_mantida(tmp_path):
+    import audiograma
+    import layout as L
+    q = Image.open(audiograma.quadro(card(), tmp_path / "q.jpg", None)).convert("RGB")
+    r, g, b = q.getpixel((10, audiograma.z(40)))                 # vídeo: barra colada no topo
+    assert r > 150 and g < 90 and b < 80
+    r, g, b = q.getpixel((10, audiograma.z(L.barra_video()["fim"] + 60)))   # logo abaixo: já é a foto
+    assert not (r > 150 and g < 90)
+    c = Image.open(audiograma.capa(card(), tmp_path / "c.jpg", None)).convert("RGB")
+    r, g, b = c.getpixel((10, audiograma.z(300)))                # capa: barra alta, como estava
+    assert r > 150 and g < 90 and b < 80

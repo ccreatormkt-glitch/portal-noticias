@@ -121,8 +121,16 @@ def barra(fmt: dict) -> dict:
                 borda=max(2, K))  # filete da cor secundária no pé da barra
 
 
+def barra_video() -> dict:
+    """Barra do vídeo: colada no topo da tela, na proporção exata do cabeçalho do g1 (74 x K de
+    altura, logo de 48 x K no centro). A capa mantém a barra alta, pensada para o corte da grade."""
+    alt = G1["barra"]["altura"] * K
+    return dict(fim=alt, logo=G1["barra"]["logo"] * K, centro=alt // 2, borda=max(2, K))
+
+
 # Vídeo do Reels: posições ajustadas com o Arthur (onda centralizada, legenda abaixo dela).
 VIDEO = {
+    "topo_seguro": 250,                 # chapéu e data abaixo da faixa que o Instagram cobre
     "fundo_preto": (840, 1150),         # onde o preto começa e fica sólido (onda + legenda)
     "onda": ((1080 - 800) // 2, 1190, 800, 104),   # x, y, largura, altura do visualizador
     "legenda_y": 1420,                  # centro da legenda

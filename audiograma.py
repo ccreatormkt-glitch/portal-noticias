@@ -181,10 +181,10 @@ def _com_sombra(img: Image.Image, camada: Image.Image) -> Image.Image:
     return base.convert("RGB")
 
 
-def _barra(img: Image.Image, formato="reels") -> Image.Image:
+def _barra(img: Image.Image, formato="reels", b=None) -> Image.Image:
     """Barra vermelha do topo com a logo no centro (cabeçalho no padrão do g1)."""
     import logo as _logo
-    b = L.barra(L.FORMATOS[formato])
+    b = b or L.barra(L.FORMATOS[formato])
     br = _logo.barra(img.width, z(b["fim"]), z(b["logo"]), z(b["centro"]), z(b["borda"]))
     base = img.convert("RGBA")
     base.alpha_composite(br, (0, 0))
@@ -306,7 +306,7 @@ def capa(card: dict, out_path: Path, image_path=None, formato: str = "reels") ->
 
 def quadro(card: dict, out_path: Path, image_path=None) -> Path:
     """Fundo fixo do vídeo: a MESMA imagem da capa com efeito vermelho (duotone da marca), a barra
-    vermelha do topo, chapéu e data logo abaixo dela; embaixo, fundo preto (foto desfocada sob o
+    vermelha colada no topo da tela (como o cabeçalho do g1), chapéu e data logo abaixo dela; embaixo, fundo preto (foto desfocada sob o
     preto) para a onda da voz e a legenda branca."""
     from PIL import ImageOps
     foto = _foto_ou_vazio(image_path, VW, VH)
@@ -317,8 +317,9 @@ def quadro(card: dict, out_path: Path, image_path=None) -> Path:
         img = Image.blend(duo, foto, 0.38)  # vermelho da marca, mas a foto continua reconhecível
     else:
         img = _sem_foto(card, VW, VH)
-    b = L.barra(REELS)
-    img = _degrade(img, z(b["fim"]), z(b["fim"] + 300), 150, 0, cor=PRETO)   # sob a barra: leitura
+    b = L.barra_video()                                              # barra colada no topo
+    y_texto = max(b["fim"] + L.esp(3), L.VIDEO["topo_seguro"])       # topo do chapéu
+    img = _degrade(img, z(b["fim"]), z(y_texto + 260), 150, 0, cor=PRETO)   # sob a barra: leitura
     y0, y1 = L.VIDEO["fundo_preto"]
     if foto is not None:
         img = _material(img, z(y0), z(y1), tinta=0.86, cor=PRETO)
@@ -330,7 +331,7 @@ def quadro(card: dict, out_path: Path, image_path=None) -> Path:
     man0 = L.PAPEIS["manchete"]["tamanhos"][0]
     t_ch, t_meta = L.tam("chapeu", man0), L.tam("meta", man0)
     cap = lambda t: round(t * L.ALTURA_MAIUSCULA)  # noqa: E731
-    y_ch = b["fim"] + L.esp(3) + cap(t_ch)                                     # barra -> chapéu: 48
+    y_ch = y_texto + cap(t_ch)                                                 # barra -> chapéu
     _texto(d, (z(M), z(y_ch)), _chapeu(card), fonte(L.PAPEIS["chapeu"]["fonte"], z(t_ch)),
            L.COR["texto"], track=L.PAPEIS["chapeu"]["track"])
     y_meta = y_ch + round(t_ch * L.DESCENDENTE) + L.esp(1) + cap(t_meta)       # chapéu -> data: 16
@@ -340,7 +341,7 @@ def quadro(card: dict, out_path: Path, image_path=None) -> Path:
     y_cred = y_meta + round(t_meta * L.DESCENDENTE) + L.esp(1) + cap(t_cred)
     _credito(d, _linha_credito(card, foto is not None), z(y_cred), z(M), z(REELS["direita_segura"] - M))
     img = _com_sombra(img, camada)
-    img = _barra(img, "reels")
+    img = _barra(img, b=b)
     img.save(out_path, quality=95)
     return Path(out_path)
 
