@@ -186,3 +186,29 @@ jobs:
             --jq "[.[] | select((.status==\"queued\" or .status==\"in_progress\" or .status==\"waiting\" or .status==\"pending\") and .databaseId != $GITHUB_RUN_ID)] | length")
           if [ "$outras" -gt 0 ]; then echo "já existe rodada na fila ($outras)"; exit 0; fi
           gh workflow run publicar.yml -R "$GITHUB_REPOSITORY" -f modo=auto
+
+  # O agendamento do GitHub falha com frequência (no dia 20/11 nenhum dos horários das 06h05 em
+  # diante disparou). Então a própria sequência atravessa a madrugada: a rodada depois da meia-noite
+  # espera aqui até as 06h (no máximo 5h40 por vez, por causa do limite de 6h do GitHub) e chama a
+  # próxima. Às 06h a sequência normal recomeça sozinha, sem depender do agendamento.
+  madrugada:
+    needs: run
+    if: always() && github.event.inputs.modo != 'dry' && github.event.inputs.modo != 'review' && github.event.inputs.pauta == ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - name: Esperar até as 06h e religar a sequência
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          h=$(TZ=America/Fortaleza date +%-H)
+          if [ "$h" -ge 6 ]; then echo "dentro do horário: a sequência normal cuida"; exit 0; fi
+          alvo=$(TZ=America/Fortaleza date -d "today 06:01" +%s)
+          espera=$(( alvo - $(date +%s) ))
+          if [ "$espera" -gt 20400 ]; then espera=20400; fi   # 5h40 no máximo; a próxima rodada continua a espera
+          echo "madrugada: esperando $espera s"
+          if [ "$espera" -gt 0 ]; then sleep "$espera"; fi
+          outras=$(gh run list -R "$GITHUB_REPOSITORY" --workflow publicar.yml --json databaseId,status \
+            --jq "[.[] | select((.status==\"queued\" or .status==\"in_progress\" or .status==\"waiting\" or .status==\"pending\") and .databaseId != $GITHUB_RUN_ID)] | length")
+          if [ "$outras" -gt 0 ]; then echo "já existe rodada na fila ($outras)"; exit 0; fi
+          gh workflow run publicar.yml -R "$GITHUB_REPOSITORY" -f modo=auto

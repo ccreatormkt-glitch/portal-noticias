@@ -309,6 +309,15 @@ def cmd_run(args):
         print("[run] aguardando configuração. Falta: " + ", ".join(faltando) + " (veja SETUP.md)")
         return
 
+    pauta_pedida = (getattr(args, "pauta", None) or os.environ.get("PAUTA") or "").strip()
+    if mode == "auto" and not pauta_pedida and not args.count:
+        import datetime as _dt
+        from zoneinfo import ZoneInfo
+        hora = _dt.datetime.now(ZoneInfo(config.TIMEZONE)).hour
+        if hora < config.HORA_INICIO:  # madrugada: a sequência só espera (pauta pedida posta a qualquer hora)
+            print(f"[run] madrugada ({hora}h): sem postagem até as {config.HORA_INICIO}h.")
+            return
+
     if mode == "auto":
         done_today = db.published_today()
         if done_today >= config.MAX_POSTS_PER_DAY:

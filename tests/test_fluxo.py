@@ -350,3 +350,16 @@ def test_refazer_post_com_foto_escolhida(ambiente, monkeypatch, tmp_path):
     main.cmd_run(argparse.Namespace(dry_run=False, count=None, pauta="Procon Natal Iluminado",
                                     foto=str(foto), refazer=True))
     assert ambiente == ["SERVIÇO"] and usados == [str(foto)]
+
+
+def test_madrugada_nao_posta_mas_pauta_pedida_sim(monkeypatch, capsys):
+    import argparse
+    import config
+    import main
+    monkeypatch.setattr(config, "POST_MODE", "auto")
+    monkeypatch.setattr(config, "HORA_INICIO", 25)  # qualquer hora conta como madrugada
+    monkeypatch.setattr(config, "IG_USER_ID", "1")
+    monkeypatch.setattr(config, "IG_ACCESS_TOKEN", "x")
+    monkeypatch.setattr(config, "GEMINI_API_KEY", "x")
+    main.cmd_run(argparse.Namespace(dry_run=False, count=None))
+    assert "madrugada" in capsys.readouterr().out

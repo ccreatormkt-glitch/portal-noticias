@@ -44,6 +44,7 @@ POST_MODE = env("POST_MODE", "auto")
 POSTS_PER_RUN = int(env("POSTS_PER_RUN", "2"))  # até 2 por rodada quando o ritmo está atrasado
 MAX_POSTS_PER_DAY = int(env("MAX_POSTS_PER_DAY", "95"))  # em 24h; a API do Instagram aceita 100 (5 ficam de folga)
 HORAS_ATIVAS = 18  # 06h às 24h: o ritmo alvo é MAX_POSTS_PER_DAY / HORAS_ATIVAS posts por hora
+HORA_INICIO = int(env("HORA_INICIO", "6"))  # antes disso (madrugada) a rodada normal não posta
 MIN_SOURCES = int(env("MIN_SOURCES", "2"))       # veículos diferentes dando a mesma notícia
 # notícia vinda de 1 só veículo é aceita se ele estiver nesta lista (veículos grandes/oficiais)
 TRUSTED_SINGLE_SOURCE = env_bool("TRUSTED_SINGLE_SOURCE", True)
