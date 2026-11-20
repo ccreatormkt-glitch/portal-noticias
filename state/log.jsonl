@@ -212,3 +212,5 @@
 {"ts": "2026-11-20T18:50:17", "event": "pulado", "headline": "Ex-dono do Banco Master fez “agrados” a autoridades", "source": "", "ig_id": "", "note": "repetida: Edson Fachin nega pedido de soltura e mantém prisão de Daniel Vorcaro"}
 {"ts": "2026-11-20T18:52:24", "event": "gerado", "headline": "Campina Grande finaliza 11ª Conferência Municipal de Saúde com eleição de delegados", "source": "Prefeitura de Campina Grande", "ig_id": "", "note": ""}
 {"ts": "2026-11-20T18:53:07", "event": "published", "headline": "Campina Grande finaliza 11ª Conferência Municipal de Saúde com eleição de delegados", "source": "Prefeitura de Campina Grande", "ig_id": "18484787230117167", "note": ""}
+{"ts": "2026-11-20T19:02:40", "event": "gerado", "headline": "Trump veta instalação de data centers de companhias dos EUA no exterior", "source": "g1, CNN Brasil", "ig_id": "", "note": ""}
+{"ts": "2026-11-20T19:02:40", "event": "falha_publicacao", "headline": "Trump veta instalação de data centers de companhias dos EUA no exterior", "source": "g1, CNN Brasil", "ig_id": "", "note": "voz padrão indisponível agora (limite do Gemini); a notícia volta na próxima rodada"}
