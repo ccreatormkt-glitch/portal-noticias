@@ -454,7 +454,7 @@ def _sombra(img, box):
 def _save(img, out_path) -> Path:
     out_path = Path(out_path)
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    img.convert("RGB").save(out_path, "JPEG", quality=92, optimize=True)  # a API só aceita JPEG
+    img.convert("RGB").save(out_path, "JPEG", quality=95, subsampling=0, optimize=True)  # a API só aceita JPEG
     return out_path
 
 

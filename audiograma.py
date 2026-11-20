@@ -74,6 +74,10 @@ def logo(altura: int) -> Image.Image:
 def _cobrir(im: Image.Image, w: int, h: int) -> Image.Image:
     escala = max(w / im.width, h / im.height)
     im = im.resize((round(im.width * escala), round(im.height * escala)), Image.LANCZOS)
+    if escala > 1.25:  # foto menor que o vídeo (ex.: Pixabay sem acesso completo, máx. 1280 px):
+        # ampliar amolece a foto; um realce leve devolve a nitidez sem inventar detalhe (nada de IA)
+        from PIL import ImageFilter
+        im = im.filter(ImageFilter.UnsharpMask(radius=round(1.2 * escala, 1), percent=55, threshold=3))
     x, y = (im.width - w) // 2, (im.height - h) // 2
     return im.crop((x, y, x + w, y + h))
 
@@ -303,7 +307,7 @@ def capa(card: dict, out_path: Path, image_path=None, formato: str = "reels") ->
         _credito(d, credito, z(pos["credito"]), z(m), largura)
     img = _com_sombra(img, camada)
     img = _barra(img, formato)
-    img.save(out_path, quality=94)
+    img.save(out_path, "JPEG", quality=95, subsampling=0)  # 4:4:4: barra vermelha e letras sem serrilhado
     return Path(out_path)
 
 
@@ -345,7 +349,10 @@ def quadro(card: dict, out_path: Path, image_path=None) -> Path:
     _credito(d, _linha_credito(card, foto is not None), z(y_cred), z(M), z(REELS["direita_segura"] - M))
     img = _com_sombra(img, camada)
     img = _barra(img, b=b)
-    img.save(out_path, quality=95)
+    if Path(out_path).suffix.lower() == ".png":  # fundo do vídeo: sem perda (o ffmpeg comprime uma vez só)
+        img.save(out_path, "PNG", compress_level=1)
+    else:
+        img.save(out_path, "JPEG", quality=95, subsampling=0)
     return Path(out_path)
 
 
@@ -821,7 +828,7 @@ def visualizador(audio: Path, total: float):
 # ------------------------------------------------------------------ montagem
 def montar(card: dict, image_path, audio: Path, total: float, out_mp4: Path, pasta: Path) -> Path:
     """Quadro fixo + onda da voz + legenda sincronizada, com a narração."""
-    fundo = quadro(card, pasta / "quadro.jpg", image_path)
+    fundo = quadro(card, pasta / "quadro.png", image_path)
     meta_p = pasta / "narracao.json"
     meta = json.loads(meta_p.read_text(encoding="utf-8")) if meta_p.exists() else {}
     frases = meta.get("frases")
@@ -845,7 +852,7 @@ def montar(card: dict, image_path, audio: Path, total: float, out_mp4: Path, pas
            "-f", "rawvideo", "-pix_fmt", "rgba", "-s", f"{larg}x{alt}", "-framerate", str(FPS), "-i", "-",
            "-filter_complex", filtro, "-map", "[v]", "-map", "1:a", "-t", f"{total:.2f}",
            "-fps_mode", "cfr", "-r", str(FPS),
-           "-c:v", "libx264", "-preset", "veryfast", "-crf", "23", "-profile:v", "high",
+           "-c:v", "libx264", "-preset", "medium", "-crf", "18", "-profile:v", "high",  # qualidade alta: o Instagram ainda recomprime
            "-level", "5.1" if VIDEO_2K else "4.1", "-maxrate", "14M", "-bufsize", "28M",
            "-pix_fmt", "yuv420p", "-bf", "0", "-g", str(FPS * 2), "-keyint_min", str(FPS * 2),
            "-sc_threshold", "0", "-c:a", "aac", "-b:a", "128k", "-ar", "48000", "-ac", "2",

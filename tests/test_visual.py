@@ -323,7 +323,7 @@ def test_audiograma_completo(tmp_path):
     assert f'"width": {audiograma.VW}' in info and f'"height": {audiograma.VH}' in info and '"aac"' in info
     assert (audiograma.VW, audiograma.VH) == ((1440, 2560) if audiograma.VIDEO_2K else (1080, 1920))
     assert abs(float(json.loads(info)["format"]["duration"]) - 9.0) < 0.3
-    assert (tmp_path / "quadro.jpg").exists() and (tmp_path / "legenda.ass").exists()
+    assert (tmp_path / "quadro.png").exists() and (tmp_path / "legenda.ass").exists()
 
 
 def test_foto_com_letreiro_fica_de_fora():
