@@ -233,3 +233,5 @@
 {"ts": "2026-11-20T20:09:37", "event": "published", "headline": "Pedestre morre após atropelamento na Avenida Cruz das Armas em João Pessoa", "source": "g1 Paraíba, G1", "ig_id": "18354084520282302", "note": ""}
 {"ts": "2026-11-20T20:13:29", "event": "gerado", "headline": "Corpo de Bombeiros da Paraíba oferece 20 postos de oficial com remuneração de R$ 11 mil", "source": "Paraíba Total, Sou Enfermagem e +1", "ig_id": "", "note": ""}
 {"ts": "2026-11-20T20:14:31", "event": "published", "headline": "Corpo de Bombeiros da Paraíba oferece 20 postos de oficial com remuneração de R$ 11 mil", "source": "Paraíba Total, Sou Enfermagem e +1", "ig_id": "17991728304086601", "note": ""}
+{"ts": "2026-11-20T20:24:20", "event": "gerado", "headline": "EUA pretendem substituir itens agrícolas brasileiros nas Filipinas, declara Trump", "source": "G1", "ig_id": "", "note": ""}
+{"ts": "2026-11-20T20:24:20", "event": "falha_publicacao", "headline": "EUA pretendem substituir itens agrícolas brasileiros nas Filipinas, declara Trump", "source": "G1", "ig_id": "", "note": "voz padrão indisponível agora (limite do Gemini); a notícia volta na próxima rodada"}
