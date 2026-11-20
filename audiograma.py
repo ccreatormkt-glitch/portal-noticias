@@ -1,7 +1,7 @@
 """Capa e vídeo do Reels no padrão do g1 (layout.py), com a marca do PB Minuto.
 
 Capa: barra vermelha no topo com a logo no centro; foto cheia; degradê preto embaixo com o texto
-branco (chapéu, manchete, linha fina, data e cidade, crédito), em Open Sans, como o destaque do g1.
+branco (chapéu, manchete, linha fina, data e cidade, crédito), em Inter (estilo CNN, regras em layout.py).
 Vídeo: mesma barra; a foto da capa com efeito vermelho; chapéu e data abaixo da barra; embaixo,
 fundo preto com a onda da voz centralizada e a legenda sincronizada palavra por palavra.
 
@@ -43,15 +43,15 @@ VERMELHO_ESCURO = tuple(int(c * 0.78) for c in VERMELHO)
 BRANCO = (255, 255, 255)
 PRETO = (0, 0, 0)
 
-# uma fonte só, a do g1 e da capa: Open Sans Bold. Destaque = caixa branca, não outra fonte.
-# No ASS o tamanho é a altura da linha (1,36 em na Open Sans): 86 = corpo de ~63 px no desenho.
-FONTE_TEXTO = ("Open Sans", L.FONTE[700], 86)
+# uma fonte só: Inter Display Bold (regra "legenda" de layout.py). Destaque = caixa branca, não outra fonte.
+# No ASS o tamanho é a altura da linha (1,21 em na Inter): 76 = corpo de ~63 px no desenho, como antes.
+FONTE_TEXTO = (L.FAMILIA_DISPLAY, L.PAPEIS["legenda"]["fonte"], 76)
 FONTE_DESTAQUE = FONTE_TEXTO
-FONTE_NEGRITO = -1      # no ASS, -1 = negrito (pega o arquivo Bold da família "Open Sans")
+FONTE_NEGRITO = -1      # no ASS, -1 = negrito (pega o arquivo Bold da família "Inter Display")
 ALTURA_LINHA = 1.12     # entrelinha da legenda (em múltiplos do tamanho ASS)
 CAIXA = 12              # folga da caixa branca da palavra falada (px no desenho 1080)
 RESPIRO = 18            # espaço extra entre palavras, para a caixa não encostar na vizinha
-TRACK_LEG = -1.9        # espaço entre letras da legenda (px no desenho): -0,03 em, perto do g1
+TRACK_LEG = round(L.PAPEIS["legenda"]["track"] * 63, 1)  # espaço entre letras da legenda (px no desenho): -2%
 MESES = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"]
 
 _cache = {}
@@ -160,8 +160,9 @@ def _sem_foto(card, w, h):
 
 
 def _chapeu(card) -> str:
-    """Chapéu como no g1: palavra curta em caixa normal ("Polícia", "Saúde")."""
-    return (card.get("chapeu") or "Notícia").strip().capitalize()
+    """Chapéu como o rótulo de editoria da CNN: palavra curta em CAIXA ALTA ("POLÍCIA", "SAÚDE")."""
+    t = (card.get("chapeu") or "Notícia").strip()
+    return t.upper() if L.PAPEIS["chapeu"].get("caixa_alta") else t.capitalize()
 
 
 def _linha_credito(card, imagem) -> str:
@@ -211,7 +212,7 @@ def _palavras_com_fonte(texto: str, destaques: list, tamanho: int):
     """[(palavra, fonte, destaque?)] para desenhar a manchete com os destaques na serifada."""
     out = []
     for p, dest in _marcar_destaques(texto.split(), destaques):
-        arq = "InstrumentSerif-Italic.ttf" if dest else L.FONTE[700]
+        arq = "InstrumentSerif-Italic.ttf" if dest else L.PAPEIS["manchete"]["fonte"]
         out.append((p, fonte(arq, int(tamanho * (1.12 if dest else 1.0))), dest))
     return out
 
@@ -249,7 +250,7 @@ def _linhas_da_fina(texto: str, f, largura: int, maximo: int) -> list:
 def capa(card: dict, out_path: Path, image_path=None, formato: str = "reels") -> Path:
     """Capa no padrão do destaque do g1: barra vermelha no topo com a logo, foto cheia, degradê
     preto embaixo e o texto branco com sombra, alinhado à esquerda: chapéu, manchete, linha fina,
-    data e cidade, crédito. Fonte Open Sans; medidas e espaços de layout.py; tudo dentro do corte
+    data e cidade, crédito. Fonte Inter (estilo CNN); medidas e espaços de layout.py; tudo dentro do corte
     3:4 da grade do perfil."""
     fmt = L.FORMATOS[formato]
     cw, ch = z(fmt["w"]), z(fmt["h"])
@@ -302,7 +303,7 @@ def capa(card: dict, out_path: Path, image_path=None, formato: str = "reels") ->
             x += _texto(d, (x, y), p, f, L.COR["texto"], track=lf["track"]) + f.getlength(" ")
     meta = f"{_data_g1()}  —  {card.get('cidade') or 'Paraíba'}"
     _texto(d, (z(m), z(pos["meta"])), meta, fonte(L.PAPEIS["meta"]["fonte"], z(pos["tam_meta"])),
-           L.COR["texto_aux"])
+           L.COR["texto_aux"], track=L.PAPEIS["meta"]["track"])
     if credito:
         _credito(d, credito, z(pos["credito"]), z(m), largura)
     img = _com_sombra(img, camada)
@@ -343,7 +344,7 @@ def quadro(card: dict, out_path: Path, image_path=None) -> Path:
            L.COR["texto"], track=L.PAPEIS["chapeu"]["track"])
     y_meta = y_ch + round(t_ch * L.DESCENDENTE) + L.esp(1) + cap(t_meta)       # chapéu -> data: 16
     _texto(d, (z(M), z(y_meta)), f"{_data_g1()}  —  {card.get('cidade') or 'Paraíba'}",
-           fonte(L.PAPEIS["meta"]["fonte"], z(t_meta)), L.COR["texto_aux"])
+           fonte(L.PAPEIS["meta"]["fonte"], z(t_meta)), L.COR["texto_aux"], track=L.PAPEIS["meta"]["track"])
     t_cred = L.PAPEIS["credito_foto"]["tam"]
     y_cred = y_meta + round(t_meta * L.DESCENDENTE) + L.esp(1) + cap(t_cred)
     _credito(d, _linha_credito(card, foto is not None), z(y_cred), z(M), z(REELS["direita_segura"] - M))
@@ -673,7 +674,7 @@ def _linhas_da_pagina(pag: list) -> list:
 
 
 def legenda_ass(palavras_t: list, destaques: list, out_path: Path, atraso=0.3, fator=1.0, total=None) -> Path:
-    """Legenda dinâmica, uma fonte só (Open Sans Bold, branca sobre o preto):
+    """Legenda dinâmica, uma fonte só (Inter Display Bold, branca sobre o preto):
     - cada palavra entra no instante em que é falada;
     - a palavra que está sendo dita ganha uma caixa branca com letra vermelha e um "pop";
     - as palavras-chave (destaques: número, valor, prazo) mantêm a caixa até o fim do grupo.

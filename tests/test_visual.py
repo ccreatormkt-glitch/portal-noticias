@@ -265,7 +265,7 @@ def test_destaque_usa_outra_fonte(tmp_path):
                 ("sexta.", 3.7, 4.2, 1)]
     ass = audiograma.legenda_ass(palavras, ["339 vagas"], tmp_path / "l.ass", total=5)
     txt = ass.read_text()
-    assert "Instrument Serif" not in txt and "Open Sans" in txt  # uma fonte só (a do g1)
+    assert "Instrument Serif" not in txt and "Inter Display" in txt  # uma fonte só (estilo CNN)
     caixas = [l for l in txt.splitlines() if l.startswith("Dialogue: 1,") or l.startswith("Dialogue: 2,")]
     assert any("339" in l for l in caixas)  # destaque = caixa branca
     assert any("339 \\hvagas" in l for l in txt.splitlines() if l.startswith("Dialogue: 2,"))  # 1 caixa só
@@ -410,9 +410,9 @@ def test_layout_segue_a_hierarquia_do_g1_e_cabe_na_grade():
     assert pos["credito"] <= fmt["grade"][1] - L.esp(3)
     assert L.cabe(pos, fmt)
     assert L.esp(0) == 8 and L.esp(4) == 80 == fmt["margem"]          # escala do g1 x2
-    assert L.PAPEIS["manchete"]["fonte"] == "OpenSans-Bold.ttf"         # mesma fonte do g1
+    assert L.PAPEIS["manchete"]["fonte"] == "InterDisplay-Bold.ttf"     # estilo CNN: Display na manchete
     assert L.PAPEIS["manchete"]["tamanhos"][0] < 40 * L.K              # um pouco menor (pedido do Arthur)
-    assert abs(L.PAPEIS["manchete"]["track"] + 0.045) < 1e-9           # -1,8 px em 40
+    assert L.PAPEIS["manchete"]["track"] < 0 < L.PAPEIS["chapeu"]["track"]  # CNN: manchete justa, rótulo aberto
     b = L.barra(fmt)
     assert b["logo"] == round((fmt["barra"] - fmt["grade"][0]) * 48 / 74)  # logo 48 numa barra de 74
 
@@ -420,7 +420,7 @@ def test_layout_segue_a_hierarquia_do_g1_e_cabe_na_grade():
 def test_marca_em_open_sans_e_avatar():
     import logo
     assert logo.lockup(96).height == 96 and logo.avatar(540).size == (540, 540)
-    assert logo.L.FONTE[700] == "OpenSans-Bold.ttf"
+    assert logo.L.FONTE_LOGO[700] == "OpenSans-Bold.ttf"  # a logo não muda com a fonte do texto
 
 
 def test_capa_tira_a_linha_fina_quando_nao_cabe(monkeypatch, tmp_path):

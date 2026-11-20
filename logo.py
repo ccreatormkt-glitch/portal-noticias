@@ -27,7 +27,7 @@ TRACK_NOME = 0.02                              # caixa-alta pede um pouco de ar
 
 
 def _f(size, peso=800):
-    return ImageFont.truetype(str(FONT_DIR / L.FONTE[peso]), size)
+    return ImageFont.truetype(str(FONT_DIR / L.FONTE_LOGO[peso]), size)
 
 
 def _texto(d, xy, texto, f, fill, track, anchor):

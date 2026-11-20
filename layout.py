@@ -4,7 +4,7 @@ Medido no g1 (CSS computado da home e de uma matéria, 20/11/2026) e traduzido p
   - barra vermelha no topo com a logo no centro (cabeçalho do g1: 74 px de altura, logo de 48);
   - destaque do g1: foto cheia, degradê preto embaixo e texto BRANCO com sombra
     (chapéu > manchete > linha fina > metadado > crédito, alinhados à esquerda);
-  - a mesma família de letra (Open Sans), os mesmos pesos (300/400/600/700), o mesmo espaçamento
+  - letra: Inter no estilo da CNN (regras de cada uso em FONTE/PAPEIS, abaixo); antes, Open Sans do g1, com o mesmo espaçamento
     entre letras e as mesmas entrelinhas; escala de espaços 4/8/16/24/40/64/104 e cantos de 12.
 O nome, a logo e o vermelho continuam os do PB Minuto (não é a marca do g1).
 
@@ -76,29 +76,45 @@ COR = {
     "sombra": (0, 0, 0),
 }
 
-# Open Sans, a família do g1 (Apache 2.0). Peso -> arquivo.
-FONTE = {300: "OpenSans-Light.ttf", 400: "OpenSans-Regular.ttf", 600: "OpenSans-SemiBold.ttf",
-         700: "OpenSans-Bold.ttf", 800: "OpenSans-ExtraBold.ttf"}
+# Tipografia no estilo da CNN. A CNN Sans é exclusiva da CNN (sem licença para terceiros), então
+# usamos a Inter 4 (SIL OFL), a alternativa livre mais próxima: grotesca neutra, de redação, com duas
+# versões como a CNN Sans tem: "Display" (desenhada para tamanhos grandes) e "Text" (para tamanhos pequenos).
+# Regras de variação por uso, como na CNN:
+#   - manchete: Display Bold, letras apertadas (-2,5%), entrelinha curta (1,10), caixa normal;
+#   - chapéu (editoria): Text Bold, CAIXA ALTA, letras abertas (+6%), pequeno;
+#   - linha fina: Text Regular, entrelinha confortável (1,30), quase sem aperto;
+#   - data/cidade: Text Medium, cinza, letras levemente abertas (+1%);
+#   - crédito da foto: Text Regular, o menor de todos;
+#   - legenda do vídeo: Display Bold, apertada (-2%), como os letreiros da tela da CNN.
+FONTE = {400: "Inter-Regular.ttf", 500: "Inter-Medium.ttf", 600: "Inter-SemiBold.ttf",
+         700: "Inter-Bold.ttf"}
+FONTE_DISPLAY = {600: "InterDisplay-SemiBold.ttf", 700: "InterDisplay-Bold.ttf",
+                 800: "InterDisplay-ExtraBold.ttf"}
+FAMILIA_DISPLAY = "Inter Display"   # nome da família para a legenda (libass)
+# A logo do PB Minuto não muda com a fonte do texto: é a marca.
+FONTE_LOGO = {300: "OpenSans-Light.ttf", 400: "OpenSans-Regular.ttf", 600: "OpenSans-SemiBold.ttf",
+              700: "OpenSans-Bold.ttf", 800: "OpenSans-ExtraBold.ttf"}
 
-# Cada tipo de texto, direto das medidas do g1 (x K, com o piso de leitura).
+# Cada tipo de texto: arquivo, espaço entre letras (em), entrelinha e caixa. Tamanhos e espaços
+# continuam na escala de antes (proporção em relação à manchete, com piso de leitura).
 PAPEIS = {
-    # mesma fonte do g1, um pouco menor que 40 x 2 (pedido do Arthur: mais foto aparecendo)
-    "manchete": dict(fonte=FONTE[700], tamanhos=(68, 64, 60, 56, 52, 48),
-                     entrelinha=48 / 40, track=em("destaque"), max_linhas=5),
-    "linha_fina": dict(fonte=FONTE[400], entrelinha=20 / 16, track=em("resumo"), max_linhas=3),
-    "chapeu": dict(fonte=FONTE[600], track=em("chapeu")),
-    "meta": dict(fonte=FONTE[400], track=0.0),
+    "manchete": dict(fonte=FONTE_DISPLAY[700], tamanhos=(68, 64, 60, 56, 52, 48),
+                     entrelinha=1.10, track=-0.025, max_linhas=5),
+    "linha_fina": dict(fonte=FONTE[400], entrelinha=1.30, track=-0.005, max_linhas=3),
+    "chapeu": dict(fonte=FONTE[700], track=0.06, caixa_alta=True),
+    "meta": dict(fonte=FONTE[500], track=0.01),
     "credito_foto": dict(fonte=FONTE[400], tam=22, track=0.0),
+    "legenda": dict(fonte=FONTE_DISPLAY[700], track=-0.02),
 }
 
 # Sombra do texto (g1: 0 1px 3px preto 80%), x K.
 SOMBRA = dict(dy=G1["destaque"]["sombra"][1] * K, raio=G1["destaque"]["sombra"][2] * K,
               opacidade=G1["destaque"]["sombra"][3])
 
-# Proporção da altura das maiúsculas e das descendentes na Open Sans (para medir espaços pelo olho,
-# do pé de uma linha ao topo da letra da linha seguinte, e não pela caixa do texto).
-ALTURA_MAIUSCULA = 0.714
-DESCENDENTE = 0.24
+# Proporção da altura das maiúsculas e das descendentes na Inter (medidas do arquivo da fonte), para
+# medir espaços pelo olho, do pé de uma linha ao topo da letra da linha seguinte.
+ALTURA_MAIUSCULA = 0.7275
+DESCENDENTE = 0.2412
 
 # ------------------------------------------------------------------ 3) formatos do Instagram
 # Coordenadas no desenho de 1080 de largura (o arquivo final sai em 2K pela ESCALA do vídeo).
