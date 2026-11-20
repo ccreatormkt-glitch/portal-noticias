@@ -280,6 +280,8 @@ def build_caption(card: dict, source_line: str = "") -> str:
     if chamada:
         partes.append(chamada)
     partes.append(f"👉 Siga {PORTAL_HANDLE} para acompanhar Campina Grande, João Pessoa e toda a Paraíba.")
+    if card.get("_credito_legenda"):  # foto do Pexels: crédito e link pedidos pela API
+        partes.append(card["_credito_legenda"])
     tags = []
     for t in card.get("hashtags", []):  # limpeza defensiva: sem '#' duplo nem espaços
         t = re.sub(r"[^\wÀ-ÿ]", "", str(t))

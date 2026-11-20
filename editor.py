@@ -496,6 +496,64 @@ def ver_imagem(img: bytes, mime: str, contexto: str) -> dict:
     raise RuntimeError("; ".join(erros) or "nenhuma IA configurada")
 
 
+ESCOLHER_FOTO = """Você é editor de fotografia de um portal de notícias no Instagram. Recebe uma notícia
+e algumas fotos de banco de imagens (numeradas a partir de 0, na ordem). Escolha a que MELHOR
+ilustra a notícia. RECUSE fotos com: pessoa reconhecível (rosto visível), qualquer texto, letreiro,
+placa, logotipo ou marca, montagem/colagem, ou que possam enganar o leitor sobre o fato (ex.: lugar
+famoso de outro país numa notícia local). Prefira cenas e objetos ligados ao assunto, nítidas e
+com espaço livre na parte de baixo (onde vai o texto da capa).
+Responda só JSON: {"escolhida": índice da foto ou -1 se nenhuma serve, "motivo": "curto"}"""
+
+
+def escolher_foto(card: dict, imagens: list):
+    """A IA olha as miniaturas e devolve o índice da melhor (ou None se nenhuma serve)."""
+    if not imagens:
+        return None
+    noticia = f"Notícia: {card.get('titulo', '')}\n{card.get('linha_fina', '')}\nEditoria: {card.get('chapeu', '')}"
+    erros = []
+    if GEMINI_API_KEY:
+        partes = [{"text": noticia}]
+        for i, (dados, mime) in enumerate(imagens):
+            partes += [{"text": f"Foto {i}:"},
+                       {"inline_data": {"mime_type": mime, "data": base64.b64encode(dados).decode()}}]
+        for model in [m.strip() for m in GEMINI_MODEL.split(",") if m.strip()]:
+            try:
+                r = requests.post(
+                    f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
+                    headers={"x-goog-api-key": GEMINI_API_KEY},
+                    json={"systemInstruction": {"parts": [{"text": ESCOLHER_FOTO}]},
+                          "contents": [{"role": "user", "parts": partes}],
+                          "generationConfig": {"responseMimeType": "application/json"}},
+                    timeout=(10, 60))
+                if r.status_code == 404:
+                    continue
+                r.raise_for_status()
+                resp = _extract_json(r.json()["candidates"][0]["content"]["parts"][0]["text"])
+                i = int(resp.get("escolhida", -1))
+                print(f"[pexels] IA escolheu a foto {i}: {str(resp.get('motivo', ''))[:80]}")
+                return i if 0 <= i < len(imagens) else None
+            except Exception as ex:
+                erros.append(f"gemini {model}: {type(ex).__name__}")
+    if OPENAI_API_KEY:
+        conteudo = [{"type": "text", "text": noticia}]
+        for i, (dados, mime) in enumerate(imagens):
+            conteudo += [{"type": "text", "text": f"Foto {i}:"},
+                         {"type": "image_url", "image_url": {"url": f"data:{mime};base64,{base64.b64encode(dados).decode()}"}}]
+        try:
+            r = requests.post("https://api.openai.com/v1/chat/completions",
+                              headers={"Authorization": f"Bearer {OPENAI_API_KEY}"},
+                              json={"model": OPENAI_MODEL.split(",")[0].strip(), "reasoning_effort": "low",
+                                    "response_format": {"type": "json_object"},
+                                    "messages": [{"role": "system", "content": ESCOLHER_FOTO},
+                                                 {"role": "user", "content": conteudo}]}, timeout=(10, 60))
+            r.raise_for_status()
+            i = int(_extract_json(r.json()["choices"][0]["message"]["content"]).get("escolhida", -1))
+            return i if 0 <= i < len(imagens) else None
+        except Exception as ex:
+            erros.append(f"openai: {type(ex).__name__}")
+    raise RuntimeError("; ".join(erros) or "nenhuma IA configurada")
+
+
 MESMA_NOTICIA = """Você é o editor-chefe de um portal de notícias no Instagram e NÃO pode publicar a
 mesma notícia duas vezes. Compare a NOVA notícia com a lista do que já foi publicado.
 É REPETIDA se trata do mesmo fato, do mesmo acontecimento ou da mesma informação de serviço,

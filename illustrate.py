@@ -318,15 +318,134 @@ def foto_da_cidade(card: dict, base: Path):
     return None
 
 
+# ------------------------------------------------------------------ Pexels (banco de fotos grátis)
+# Pedido do Arthur: toda imagem vem de uma busca por palavras-chave no Pexels (API oficial, grátis:
+# 200 buscas/hora, 20 mil/mês). Licença: uso livre, sem pessoa identificável em contexto negativo,
+# político ou de doença. Por isso, numa notícia, foto com gente fica de fora: um rosto qualquer
+# pareceria ser de alguém envolvido no fato.
+PEXELS_URL = "https://api.pexels.com/v1/search"
+PEXELS_MAX_BUSCAS = 3          # buscas por notícia (cabe folgado no limite da API)
+PESSOAS = _re.compile(
+    r"\b(man|men|woman|women|person|people|persons|girl|girls|boy|boys|child|children|kid|kids|baby|"
+    r"toddler|teen|teenager|couple|family|portrait|selfie|crowd|face|faces|guy|lady|gentleman|"
+    r"businessman|businesswoman|student|students|doctor|nurse|officer|policeman|worker|workers|"
+    r"athlete|player|model|bride|groom|homem|mulher|pessoa|pessoas|menina|menino|crianca|retrato)\b")
+TEMA_PEXELS = {  # palavras-chave de reserva por editoria: cenas e objetos, sem gente
+    "CIDADE": "city street aerial", "POLÍCIA": "police car lights night", "POLÍTICA": "government building",
+    "SAÚDE": "hospital corridor", "EMPREGO": "office desk work", "CONCURSO": "exam paper pencil",
+    "TRÂNSITO": "traffic road cars", "CLIMA": "storm clouds sky", "ESPORTE": "football stadium",
+    "CULTURA": "stage lights concert", "ECONOMIA": "money coins calculator", "EDUCAÇÃO": "empty classroom",
+    "SERVIÇO": "public office counter", "BRASIL": "brazil city skyline", "PARAÍBA": "beach coast brazil",
+}
+
+
+def palavras_chave(card: dict) -> list:
+    """Uma ou mais buscas (palavras-chave em inglês, sem nomes de pessoas): a do editor, a da leitura
+    da foto da matéria, a mesma mais curta e, por último, a da editoria."""
+    buscas = [card.get("foto_busca", ""), _visao(card).get("busca_en", "")]
+    if card.get("foto_busca") and len(card["foto_busca"].split()) > 2:
+        buscas.append(" ".join(card["foto_busca"].split()[:2]))
+    buscas.append(TEMA_PEXELS.get(card.get("chapeu", ""), ""))
+    vistas, saida = set(), []
+    for q in buscas:
+        q = " ".join(str(q or "").split())[:60]
+        if q and q.lower() not in vistas:
+            vistas.add(q.lower())
+            saida.append(q)
+    return saida
+
+
+def _candidatas_pexels(busca: str) -> list:
+    """Fotos verticais e grandes da busca, já sem as usadas e sem gente, texto ou letreiro no 'alt'."""
+    from config import PEXELS_API_KEY
+    r = requests.get(PEXELS_URL, headers={"Authorization": PEXELS_API_KEY}, timeout=(5, 15), params={
+        "query": busca, "orientation": "portrait", "size": "large", "per_page": 15, "locale": "en-US"})
+    if r.status_code == 429:
+        raise RuntimeError("limite de buscas do Pexels atingido")
+    r.raise_for_status()
+    resto = r.headers.get("X-Ratelimit-Remaining")
+    if resto and int(resto) < 500:
+        print(f"[pexels] atenção: restam {resto} buscas no mês")
+    usadas = _usadas()
+    boas = []
+    for f in r.json().get("photos", []):
+        alt = _fold(f.get("alt") or "")
+        if f"pexels:{f.get('id')}" in usadas or min(f.get("width", 0), f.get("height", 0)) < 1500:
+            continue
+        if PESSOAS.search(alt) or NAO_E_FOTO.search(alt) or LETREIRO.search(alt):
+            continue
+        boas.append(f)
+    return boas
+
+
+def foto_pexels(card: dict, base: Path):
+    """Busca por palavras-chave no Pexels, a IA escolhe a foto que melhor combina com a notícia
+    (e recusa as que têm gente, texto ou logo), baixa em alta e devolve (arquivo, crédito)."""
+    from config import PEXELS_API_KEY
+    if not PEXELS_API_KEY:
+        print("[pexels] sem chave (segredo PEXELS_API_KEY): usando as outras fontes")
+        return None
+    import editor
+    for busca in palavras_chave(card)[:PEXELS_MAX_BUSCAS]:
+        try:
+            cands = _candidatas_pexels(busca)[:6]
+        except Exception as e:
+            print(f"[pexels] '{busca}': {str(e)[:80]}")
+            if "limite" in str(e):
+                return None
+            continue
+        if not cands:
+            print(f"[pexels] '{busca}': nada utilizável")
+            continue
+        miniaturas = []
+        for f in cands:
+            try:
+                m = requests.get(f["src"]["medium"], timeout=(5, 15))
+                miniaturas.append((m.content, m.headers.get("content-type", "image/jpeg").split(";")[0]))
+            except Exception:
+                miniaturas.append(None)
+        try:
+            idx = editor.escolher_foto(card, [m for m in miniaturas if m])
+            validas = [f for f, m in zip(cands, miniaturas) if m]
+            escolhida = validas[idx] if idx is not None and 0 <= idx < len(validas) else None
+        except Exception as e:  # sem IA para olhar: fica a 1ª da busca (já filtrada pelo texto)
+            print(f"[pexels] escolha pela IA falhou ({str(e)[:60]}): uso a 1ª da busca")
+            escolhida = cands[0]
+        if escolhida is None:
+            print(f"[pexels] '{busca}': a IA não aprovou nenhuma das {len(cands)} fotos")
+            continue
+        try:
+            img = requests.get(f"{escolhida['src']['original']}?auto=compress&cs=tinysrgb&h=2600",
+                               timeout=(5, 40))
+            img.raise_for_status()
+        except Exception as e:
+            print(f"[pexels] download falhou ({type(e).__name__})")
+            continue
+        destino = Path(f"{base}_pexels.jpg")
+        destino.write_bytes(img.content)
+        _marcar(f"pexels:{escolhida['id']}")
+        autor = " ".join(str(escolhida.get("photographer") or "Pexels").split())[:40]
+        print(f"[pexels] '{busca}': foto {escolhida['id']} de {autor}")
+        card["_credito_legenda"] = f"📷 Foto: {autor} / Pexels (pexels.com)"
+        return destino, f"Foto: {autor} / Pexels"
+    return None
+
+
 def imagem_de_fundo(card: dict, base: Path):
     """Toda arte tem imagem, sem textos. A foto da matéria original NUNCA vai para a arte (costuma
-    ter texto, logo ou marca do site): serve só de referência. Ordem:
+    ter texto, logo ou marca do site): serve só de referência. Ordem de reserva:
     1) foto livre do lugar ligado ao fato, na cidade citada (Wikimedia Commons, com crédito);
     2) a cena da notícia refeita por IA, a partir da foto original ou do texto ("Ilustração por IA");
     3) foto livre ligada ao assunto (tema da notícia), sem pessoas em destaque nem letreiros;
     4) vista geral da cidade citada (Wikimedia Commons, "Imagem ilustrativa");
-    5) só se tudo falhar: fundo da marca com ícone."""
-    card["_credito"], card["_ilustrativa"] = "", False
+    5) só se tudo falhar: fundo da marca com ícone.
+    Antes de tudo, o Pexels (pedido do Arthur): palavras-chave da notícia -> busca -> a IA escolhe.
+    As outras fontes só entram se o Pexels não tiver foto boa (ou se faltar a chave)."""
+    card["_credito"], card["_ilustrativa"], card["_credito_legenda"] = "", False, ""
+    achou = foto_pexels(card, base)
+    if achou:
+        card["_ilustrativa"], card["_credito"] = True, achou[1]
+        return achou[0]
     sensivel = card.get("chapeu") in SEM_FOTO or card.get("risco") == "cuidado"
     if not sensivel:
         achou = foto_parecida(card, base)

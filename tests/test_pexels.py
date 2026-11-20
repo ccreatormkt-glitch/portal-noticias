@@ -1,0 +1,88 @@
+"""Fotos do Pexels: palavras-chave -> busca -> filtro -> a IA escolhe -> crédito na capa e na legenda."""
+import config
+import editor
+import illustrate
+import publish
+
+
+class Resp:
+    def __init__(self, json=None, content=b"x" * 20000, status=200, headers=None):
+        self._json, self.content, self.status_code = json, content, status
+        self.headers = headers or {"content-type": "image/jpeg", "X-Ratelimit-Remaining": "19000"}
+
+    def json(self):
+        return self._json
+
+    def raise_for_status(self):
+        if self.status_code >= 400:
+            raise RuntimeError(f"HTTP {self.status_code}")
+
+
+def foto(i, alt="", w=3000, h=4500, autor="Ana Lima"):
+    return {"id": i, "alt": alt, "width": w, "height": h, "photographer": autor,
+            "src": {"medium": f"https://img/{i}/m", "original": f"https://img/{i}/o"}}
+
+
+def card(**kw):
+    c = {"titulo": "Chuva forte alaga ruas de João Pessoa", "linha_fina": "", "chapeu": "CLIMA",
+         "cidade": "João Pessoa", "foto_busca": "flooded street heavy rain", "links": []}
+    c.update(kw)
+    return c
+
+
+def preparar(monkeypatch, fotos, escolha=0, status=200):
+    monkeypatch.setattr(config, "PEXELS_API_KEY", "chave-de-teste")
+    monkeypatch.setattr(illustrate, "_visao", lambda c: {"busca_en": "rain street night"})
+    buscas = []
+
+    def get(url, headers=None, timeout=None, params=None):
+        if url == illustrate.PEXELS_URL:
+            buscas.append(params["query"])
+            assert headers["Authorization"] == "chave-de-teste" and params["orientation"] == "portrait"
+            return Resp({"photos": fotos}, status=status)
+        return Resp()
+    monkeypatch.setattr(illustrate.requests, "get", get)
+    monkeypatch.setattr(editor, "escolher_foto", lambda c, imgs: escolha)
+    return buscas
+
+
+def test_busca_por_palavras_chave_e_usa_a_escolhida(monkeypatch, tmp_path):
+    buscas = preparar(monkeypatch, [foto(1, "flooded street"), foto(2, "rain on asphalt")], escolha=1)
+    c = card()
+    arq = illustrate.imagem_de_fundo(c, tmp_path / "x")
+    assert arq.name == "x_pexels.jpg" and arq.exists()
+    assert buscas == ["flooded street heavy rain"]                      # 1ª palavra-chave já serviu
+    assert c["_credito"] == "Foto: Ana Lima / Pexels" and c["_ilustrativa"] is True
+    assert "pexels:2" in illustrate._usadas()                            # não repete a foto depois
+    assert "Foto: Ana Lima / Pexels" in publish.build_caption(dict(c, legenda="Texto", hashtags=[]))
+
+
+def test_fora_fotos_com_gente_texto_pequenas_e_repetidas(monkeypatch, tmp_path):
+    illustrate._marcar("pexels:5")
+    preparar(monkeypatch, [foto(1, "Woman walking in the rain"), foto(2, "Street sign in the rain"),
+                           foto(3, "rain", w=900, h=1200), foto(5, "rain drops"), foto(6, "wet road at night")])
+    assert [f["id"] for f in illustrate._candidatas_pexels("rain")] == [6]
+
+
+def test_ia_recusa_todas_tenta_outra_palavra_chave(monkeypatch, tmp_path):
+    buscas = preparar(monkeypatch, [foto(1, "rain")], escolha=None)
+    monkeypatch.setattr(illustrate, "foto_semelhante", lambda c, b: None)
+    monkeypatch.setattr(illustrate, "foto_parecida", lambda c, b: None)
+    monkeypatch.setattr(illustrate, "foto_da_cidade", lambda c, b: None)
+    monkeypatch.setattr(illustrate, "ilustracao_ia", lambda c, p: None)
+    assert illustrate.imagem_de_fundo(card(), tmp_path / "x") is None
+    assert len(buscas) == illustrate.PEXELS_MAX_BUSCAS                   # tentou outras palavras-chave
+    assert buscas[1] == "rain street night"
+
+
+def test_sem_chave_ou_limite_cai_nas_outras_fontes(monkeypatch, tmp_path):
+    monkeypatch.setattr(config, "PEXELS_API_KEY", "")
+    assert illustrate.foto_pexels(card(), tmp_path / "x") is None
+    preparar(monkeypatch, [], status=429)
+    assert illustrate.foto_pexels(card(), tmp_path / "x") is None
+
+
+def test_palavras_chave_sem_repetir_e_com_reserva_da_editoria(monkeypatch):
+    monkeypatch.setattr(illustrate, "_visao", lambda c: {"busca_en": "Flooded street heavy rain"})
+    assert illustrate.palavras_chave(card()) == ["flooded street heavy rain", "flooded street",
+                                                 illustrate.TEMA_PEXELS["CLIMA"]]
