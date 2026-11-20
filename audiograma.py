@@ -161,10 +161,12 @@ def _chapeu(card) -> str:
 
 
 def _linha_credito(card, imagem) -> str:
-    partes = [card.get("_credito", "").strip()] if imagem else []
-    if card.get("_ilustrativa"):
+    credito = card.get("_credito", "").strip()
+    partes = [credito] if imagem else []
+    ja_diz = "ilustra" in credito.lower() or "ia" in credito.lower().split()  # sem repetir o aviso
+    if card.get("_ilustrativa") and not ja_diz:
         partes.append("Imagem ilustrativa")
-    elif "IA" in card.get("_credito", ""):
+    elif "IA" in credito and not ja_diz:
         partes.append("Ilustração por IA")
     return "  ·  ".join(p for p in partes if p)
 

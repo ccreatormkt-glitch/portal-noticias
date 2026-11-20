@@ -452,3 +452,11 @@ def test_barra_do_video_no_topo_e_capa_mantida(tmp_path):
     c = Image.open(audiograma.capa(card(), tmp_path / "c.jpg", None)).convert("RGB")
     r, g, b = c.getpixel((10, audiograma.z(300)))                # capa: barra alta, como estava
     assert r > 150 and g < 90 and b < 80
+
+
+def test_credito_sem_aviso_repetido():
+    import audiograma
+    assert audiograma._linha_credito(card(_credito="Ilustração gerada por IA"), True) == "Ilustração gerada por IA"
+    assert audiograma._linha_credito(card(_credito="Foto: X / Wikimedia (CC0)", _ilustrativa=True), True) == \
+        "Foto: X / Wikimedia (CC0)  ·  Imagem ilustrativa"
+    assert audiograma._linha_credito(card(_credito="", _ilustrativa=True), False) == "Imagem ilustrativa"
