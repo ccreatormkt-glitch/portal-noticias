@@ -182,3 +182,7 @@
 {"ts": "2026-11-20T16:30:30", "event": "published", "headline": "Pesquisadores apontam racismo e exclusão no planejamento urbano de Brasília", "source": "Agência Brasil", "ig_id": "18134403634685003", "note": ""}
 {"ts": "2026-11-20T16:40:00", "event": "gerado", "headline": "Samba D’Kriouluz comanda edição especial na Praça Rio Branco em João Pessoa", "source": "ParaibaOnline, Metrópoles e +1", "ig_id": "", "note": ""}
 {"ts": "2026-11-20T16:41:01", "event": "published", "headline": "Samba D’Kriouluz comanda edição especial na Praça Rio Branco em João Pessoa", "source": "ParaibaOnline, Metrópoles e +1", "ig_id": "18081345863725479", "note": ""}
+{"ts": "2026-11-20T16:45:49", "event": "pulado", "headline": "STF marca para 4 de dezembro julgamento das ações que contestam Lei da Dosimetria", "source": "", "ig_id": "", "note": "mesmo fato já postado: Supremo decide analisar norma sobre cálculo de penas em 4 de"}
+{"ts": "2026-11-20T16:46:37", "event": "pulado", "headline": "Idoso de 67 anos é encontrado morto dentro de casa, na Paraíba", "source": "", "ig_id": "", "note": "mesmo link de uma notícia já postada (Polícia investiga homicídio de homem atingido por disparos e)"}
+{"ts": "2026-11-20T16:50:14", "event": "gerado", "headline": "Polícia prende dois suspeitos de matar idoso a tiro em Araçagi", "source": "Portal Correio", "ig_id": "", "note": ""}
+{"ts": "2026-11-20T16:51:31", "event": "published", "headline": "Polícia prende dois suspeitos de matar idoso a tiro em Araçagi", "source": "Portal Correio", "ig_id": "18226400935352514", "note": ""}
