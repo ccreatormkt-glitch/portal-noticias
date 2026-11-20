@@ -265,3 +265,5 @@
 {"ts": "2026-11-20T21:59:35", "event": "pulado", "headline": "Justiça condena homem a 28 anos de prisão por participar de morte de empresário em assalto, em João Pessoa", "source": "", "ig_id": "", "note": "mesmo link de uma notícia já postada (Justiça aplica pena de 28 anos a réu por homicídio de empres)"}
 {"ts": "2026-11-20T22:00:50", "event": "gerado", "headline": "Governo do Estado abre 825 vagas de emprego em 11 cidades da Paraíba", "source": "Repórter PB, WSCOM e +1", "ig_id": "", "note": ""}
 {"ts": "2026-11-20T22:01:30", "event": "published", "headline": "Governo do Estado abre 825 vagas de emprego em 11 cidades da Paraíba", "source": "Repórter PB, WSCOM e +1", "ig_id": "18099343298440481", "note": ""}
+{"ts": "2026-11-20T22:10:15", "event": "gerado", "headline": "Câmara de Campina Grande homenageia gestores da Empresa Cabral", "source": "ParaibaOnline, 83 Agora", "ig_id": "", "note": ""}
+{"ts": "2026-11-20T22:10:55", "event": "published", "headline": "Câmara de Campina Grande homenageia gestores da Empresa Cabral", "source": "ParaibaOnline, 83 Agora", "ig_id": "18117912257137630", "note": ""}
