@@ -1,15 +1,11 @@
-"""Vídeo no estilo audiograma (referência escolhida pelo Arthur): tudo vermelho e branco.
+"""Capa e vídeo do Reels no padrão do g1 (layout.py), com a marca do PB Minuto.
 
-Quadro 1080x1920, sempre igual:
-  - topo: logo PB MINUTO + data/hora;
-  - foto da notícia numa moldura arredondada, com a EDITORIA fixa no canto de cima
-    (lugar que aparece no player, na grade do perfil e fora dos botões do Instagram);
-  - a onda da voz, animada com a narração;
-  - a legenda sincronizada embaixo, em blocos curtos. Os trechos em destaque (números, nomes,
-    valores) ganham caixa branca com letra vermelha; tudo numa fonte só (Inter Black).
-A primeira legenda é a manchete inteira, então o primeiro quadro funciona como capa.
+Capa: barra vermelha no topo com a logo no centro; foto cheia; degradê preto embaixo com o texto
+branco (chapéu, manchete, linha fina, data e cidade, crédito), em Open Sans, como o destaque do g1.
+Vídeo: mesma barra; a foto da capa com efeito vermelho; chapéu e data abaixo da barra; embaixo,
+fundo preto com a onda da voz centralizada e a legenda sincronizada palavra por palavra.
 
-O tempo de cada frase vem das pausas reais da narração (ffmpeg silencedetect).
+O tempo de cada palavra vem da própria narração (Whisper, alinhado ao roteiro).
 """
 import datetime as dt
 import json
@@ -45,14 +41,17 @@ LEG_W = L.VIDEO["legenda_w"]             # largura máxima da legenda (x 130 a 9
 VERMELHO = tuple(int(BRAND_COLOR.lstrip("#")[i:i + 2], 16) for i in (0, 2, 4))
 VERMELHO_ESCURO = tuple(int(c * 0.78) for c in VERMELHO)
 BRANCO = (255, 255, 255)
+PRETO = (0, 0, 0)
 
-# uma fonte só (a da capa e da 1ª postagem): Inter Black. Destaque = caixa branca, não outra fonte
-FONTE_TEXTO = ("Inter Black", "Inter-Black.otf", 78)
+# uma fonte só, a do g1 e da capa: Open Sans Bold. Destaque = caixa branca, não outra fonte.
+# No ASS o tamanho é a altura da linha (1,36 em na Open Sans): 86 = corpo de ~63 px no desenho.
+FONTE_TEXTO = ("Open Sans", L.FONTE[700], 86)
 FONTE_DESTAQUE = FONTE_TEXTO
-ALTURA_LINHA = 1.24     # entrelinha da legenda (em múltiplos do tamanho da fonte)
+FONTE_NEGRITO = -1      # no ASS, -1 = negrito (pega o arquivo Bold da família "Open Sans")
+ALTURA_LINHA = 1.12     # entrelinha da legenda (em múltiplos do tamanho ASS)
 CAIXA = 12              # folga da caixa branca da palavra falada (px no desenho 1080)
 RESPIRO = 18            # espaço extra entre palavras, para a caixa não encostar na vizinha
-TRACK_LEG = -1.4        # espaçamento entre letras da legenda (px no desenho): grande = mais justo
+TRACK_LEG = -1.9        # espaço entre letras da legenda (px no desenho): -0,03 em, perto do g1
 MESES = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"]
 
 _cache = {}
@@ -90,6 +89,12 @@ def _carimbo():
     return f"{agora.day} {MESES[agora.month - 1]} · {agora.hour}H{agora.minute:02d}"
 
 
+def _data_g1():
+    """Data e hora no formato das matérias do g1: 20/11/2026 09h17."""
+    agora = dt.datetime.now(ZoneInfo(TIMEZONE))
+    return agora.strftime("%d/%m/%Y %Hh%M")
+
+
 def _foto_ou_vazio(image_path, w, h):
     if image_path and Path(image_path).exists():
         try:
@@ -114,11 +119,11 @@ def _degrade(img: Image.Image, y0: int, y1: int, a0: int, a1: int, cor=None):
     return base.convert("RGB")
 
 
-def _material(img: Image.Image, y0: int, y1: int, tinta=0.86, desfoque=34):
+def _material(img: Image.Image, y0: int, y1: int, tinta=0.86, desfoque=34, cor=None):
     """Material translúcido no estilo Apple: abaixo de y1 a própria foto aparece desfocada sob o
     vermelho da marca ("vidro" vermelho); entre y0 e y1 a passagem é suave (sem linha dura)."""
     vidro = img.filter(ImageFilter.GaussianBlur(z(desfoque)))
-    vidro = Image.blend(vidro, Image.new("RGB", img.size, VERMELHO), tinta)
+    vidro = Image.blend(vidro, Image.new("RGB", img.size, cor or VERMELHO), tinta)
     mascara = Image.new("L", img.size, 0)
     dm = ImageDraw.Draw(mascara)
     for y in range(max(y0, 0), min(y1, img.height)):
@@ -144,41 +149,63 @@ def _texto(d, xy, texto, f, fill, track=0.0, anchor="ls"):
 
 def _sem_foto(card, w, h):
     import render
-    fundo = Image.new("RGB", (w, h), VERMELHO_ESCURO)
+    fundo = Image.new("RGB", (w, h), (30, 30, 30))   # sem foto: cinza escuro, como o g1
     f_ic, ch = render.icone(render.ICONE.get(card.get("chapeu", ""), "newspaper"), z(420))
-    ImageDraw.Draw(fundo).text((w / 2, h * 0.36), ch, font=f_ic, fill=(255, 255, 255, 255), anchor="mm")
+    ImageDraw.Draw(fundo).text((w / 2, h * 0.40), ch, font=f_ic, fill=(78, 78, 78), anchor="mm")
     return fundo
 
 
-def _tag(d, x, y, texto):
-    """Chapéu (editoria) no formato da 1ª postagem: retângulo de canto curto, Inter Bold,
-    branco com texto vermelho, para não sumir sobre o vermelho da marca."""
-    t = L.PAPEIS["chapeu"]
-    f_tag = fonte(t["fonte"], z(t["tam"]))
-    tw = int(f_tag.getlength(texto) + t["track"] * f_tag.size * (len(texto) - 1))
-    d.rounded_rectangle((x, y, x + tw + z(2 * t["folga"]), y + z(t["altura"])), radius=z(t["raio"]),
-                        fill=L.COR["chapeu_fundo"])
-    _texto(d, (x + z(t["folga"]), y + z(t["altura"] / 2)), texto, f_tag, VERMELHO, track=t["track"],
-           anchor="lm")
-    return y + z(t["altura"])
+def _chapeu(card) -> str:
+    """Chapéu como no g1: palavra curta em caixa normal ("Polícia", "Saúde")."""
+    return (card.get("chapeu") or "Notícia").strip().capitalize()
 
 
-def _credito(d, card, y, imagem, x_esq, largura):
+def _linha_credito(card, imagem) -> str:
+    partes = [card.get("_credito", "").strip()] if imagem else []
+    if card.get("_ilustrativa"):
+        partes.append("Imagem ilustrativa")
+    elif "IA" in card.get("_credito", ""):
+        partes.append("Ilustração por IA")
+    return "  ·  ".join(p for p in partes if p)
+
+
+def _com_sombra(img: Image.Image, camada: Image.Image) -> Image.Image:
+    """Cola o texto com a sombra do g1 (0 1px 3px preto 80%, x K)."""
+    a = camada.split()[3]
+    sombra = Image.new("RGBA", img.size, PRETO + (0,))
+    sombra.putalpha(a.point(lambda v: int(v * L.SOMBRA["opacidade"])))
+    sombra = sombra.filter(ImageFilter.GaussianBlur(z(L.SOMBRA["raio"]) / 2))
+    base = img.convert("RGBA")
+    base.alpha_composite(sombra, (0, z(L.SOMBRA["dy"])))
+    base.alpha_composite(camada)
+    return base.convert("RGB")
+
+
+def _barra(img: Image.Image, formato="reels") -> Image.Image:
+    """Barra vermelha do topo com a logo no centro (cabeçalho no padrão do g1)."""
+    import logo as _logo
+    b = L.barra(L.FORMATOS[formato])
+    br = _logo.barra(img.width, z(b["fim"]), z(b["logo"]), z(b["centro"]), z(b["borda"]))
+    base = img.convert("RGBA")
+    base.alpha_composite(br, (0, 0))
+    return base.convert("RGB")
+
+
+def _credito(d, texto, y, x_esq, largura):
     """Crédito da foto, pequeno, no mesmo eixo esquerdo do resto do texto."""
-    credito = card.get("_credito", "")
-    if imagem and credito:
+    if texto:
         t = L.PAPEIS["credito_foto"]
         f_cr = fonte(t["fonte"], z(t["tam"]))
-        while f_cr.getlength(credito) > largura and len(credito) > 10:
-            credito = credito[:-2]
-        _texto(d, (x_esq, y), credito, f_cr, L.COR["credito"], track=t["track"])
+        while f_cr.getlength(texto) > largura and len(texto) > 10:
+            texto = texto[:-2]
+        _texto(d, (x_esq, y), texto, f_cr, L.COR["credito"], track=t["track"])
 
 
 def _palavras_com_fonte(texto: str, destaques: list, tamanho: int):
     """[(palavra, fonte, destaque?)] para desenhar a manchete com os destaques na serifada."""
     out = []
     for p, dest in _marcar_destaques(texto.split(), destaques):
-        arq = "InstrumentSerif-Italic.ttf" if dest else "Inter-Black.otf"
+        arq = "InstrumentSerif-Italic.ttf" if dest else L.FONTE[700]
         out.append((p, fonte(arq, int(tamanho * (1.12 if dest else 1.0))), dest))
     return out
 
@@ -214,10 +241,10 @@ def _linhas_da_fina(texto: str, f, largura: int, maximo: int) -> list:
 
 
 def capa(card: dict, out_path: Path, image_path=None, formato: str = "reels") -> Path:
-    """Capa (padrão da 1ª postagem, aprovado pelo Arthur) organizada como o topo de uma matéria do
-    g1: chapéu (editoria), manchete, linha fina, metadado (cidade e data) e crédito, um embaixo do
-    outro no mesmo eixo esquerdo. Foto em tela cheia com vermelho translúcido da marca no pé; uma
-    fonte só (Inter). Medidas e espaços vêm de layout.py; tudo fica dentro do corte da grade."""
+    """Capa no padrão do destaque do g1: barra vermelha no topo com a logo, foto cheia, degradê
+    preto embaixo e o texto branco com sombra, alinhado à esquerda: chapéu, manchete, linha fina,
+    data e cidade, crédito. Fonte Open Sans; medidas e espaços de layout.py; tudo dentro do corte
+    3:4 da grade do perfil."""
     fmt = L.FORMATOS[formato]
     cw, ch = z(fmt["w"]), z(fmt["h"])
     foto = _foto_ou_vazio(image_path, cw, ch)
@@ -225,14 +252,14 @@ def capa(card: dict, out_path: Path, image_path=None, formato: str = "reels") ->
     m, largura = fmt["margem"], z(fmt["largura_texto"])
     man, lf = L.PAPEIS["manchete"], L.PAPEIS["linha_fina"]
     fina = " ".join(str(card.get("linha_fina") or "").split())
-    tem_credito = foto is not None and bool(card.get("_credito"))
+    credito = _linha_credito(card, foto is not None)
 
     def compor(tam, com_fina):
         f_tit = fonte(man["fonte"], z(tam))
         linhas = _quebrar([(p, f_tit, False) for p in card["titulo"].split()], largura, track=man["track"])
-        f_fina = fonte(lf["fonte"], z(L.tam("linha_fina", tam)))
+        f_fina = fonte(lf["fonte"], z(L.tam("resumo", tam)))
         l_fina = _linhas_da_fina(fina if com_fina else "", f_fina, largura, lf["max_linhas"])
-        return f_tit, linhas, f_fina, l_fina, L.pilha_capa(len(linhas), tam, len(l_fina), tem_credito, fmt)
+        return f_tit, linhas, f_fina, l_fina, L.pilha_capa(len(linhas), tam, len(l_fina), bool(credito), fmt)
 
     # maior manchete que cabe; se nem a menor cabe com a linha fina, a linha fina sai da capa
     escolha = None
@@ -249,17 +276,15 @@ def capa(card: dict, out_path: Path, image_path=None, formato: str = "reels") ->
         escolha = (tam, *compor(tam, False))
     tam, f_tit, linhas, f_fina, l_fina, pos = escolha
 
-    topo_texto = pos["titulo"] - round(tam * L.ALTURA_MAIUSCULA)
-    img = _degrade(img, 0, z(fmt["topo"] + 170), 130, 0)              # topo: logo legível
-    if foto is not None:  # pé: "vidro" vermelho com a foto desfocada por baixo, borda suave
-        img = _material(img, z(pos["chapeu"] - 300), z(topo_texto - 20))
-    else:
-        img = _degrade(img, z(pos["chapeu"] - 330), z(topo_texto), 0, 228)
-    d = ImageDraw.Draw(img)
-    lg = logo(z(fmt["logo"]))
-    img.paste(lg, (z(m), z(fmt["topo"])), lg)
+    # degradê preto (destaque do g1): começa acima do chapéu e fica forte no meio da manchete
+    meio = pos["topo"] + (pos["meta"] - pos["topo"]) * 0.45
+    img = _degrade(img, z(pos["topo"] - 320), z(meio), 0, 215, cor=PRETO)
 
-    _tag(d, z(m), z(pos["chapeu"]), (card.get("chapeu") or "NOTÍCIA").upper())
+    camada = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    d = ImageDraw.Draw(camada)
+    t_ch = L.PAPEIS["chapeu"]
+    _texto(d, (z(m), z(pos["chapeu"])), _chapeu(card), fonte(t_ch["fonte"], z(pos["tam_chapeu"])),
+           L.COR["texto"], track=t_ch["track"])
     for i, linha in enumerate(linhas):                               # manchete
         x, y = z(m), z(pos["titulo"] + pos["passo_titulo"] * i)
         for p, f, _ in linha:
@@ -267,25 +292,22 @@ def capa(card: dict, out_path: Path, image_path=None, formato: str = "reels") ->
     for i, linha in enumerate(l_fina):                               # linha fina
         x, y = z(m), z(pos["fina"] + pos["passo_fina"] * i)
         for p, f, _ in linha:
-            x += _texto(d, (x, y), p, f, L.COR["texto_aux"], track=lf["track"]) + f.getlength(" ")
-    meta = [card.get("cidade") or "Paraíba", _carimbo().replace(" · ", ", ").lower()]
-    if card.get("_ilustrativa"):
-        meta.append("Imagem ilustrativa")
-    elif "IA" in card.get("_credito", ""):
-        meta.append("Ilustração por IA")
-    t_meta = L.PAPEIS["meta"]
-    _texto(d, (z(m), z(pos["meta"])), "  ·  ".join(meta), fonte(t_meta["fonte"], z(pos["tam_meta"])),
-           L.COR["texto_aux"], track=t_meta["track"])
-    if tem_credito:
-        _credito(d, card, z(pos["credito"]), True, z(m), largura)
+            x += _texto(d, (x, y), p, f, L.COR["texto"], track=lf["track"]) + f.getlength(" ")
+    meta = f"{_data_g1()}  —  {card.get('cidade') or 'Paraíba'}"
+    _texto(d, (z(m), z(pos["meta"])), meta, fonte(L.PAPEIS["meta"]["fonte"], z(pos["tam_meta"])),
+           L.COR["texto_aux"])
+    if credito:
+        _credito(d, credito, z(pos["credito"]), z(m), largura)
+    img = _com_sombra(img, camada)
+    img = _barra(img, formato)
     img.save(out_path, quality=94)
     return Path(out_path)
 
 
 def quadro(card: dict, out_path: Path, image_path=None) -> Path:
-    """Fundo fixo do vídeo: a MESMA imagem da capa com efeito vermelho (duotone da marca).
-    No topo, a identificação no formato do card de notícia do g1: chapéu, depois cidade e data,
-    depois o crédito. Embaixo, vermelho translúcido para a onda da voz e a legenda."""
+    """Fundo fixo do vídeo: a MESMA imagem da capa com efeito vermelho (duotone da marca), a barra
+    vermelha do topo, chapéu e data logo abaixo dela; embaixo, fundo preto (foto desfocada sob o
+    preto) para a onda da voz e a legenda branca."""
     from PIL import ImageOps
     foto = _foto_ou_vazio(image_path, VW, VH)
     if foto is not None:
@@ -295,26 +317,30 @@ def quadro(card: dict, out_path: Path, image_path=None) -> Path:
         img = Image.blend(duo, foto, 0.38)  # vermelho da marca, mas a foto continua reconhecível
     else:
         img = _sem_foto(card, VW, VH)
-    img = _degrade(img, 0, z(REELS["topo"] + 260), 130, 0)          # topo: identificação legível
-    y0, y1 = L.VIDEO["material"]
-    if foto is not None:  # embaixo: "vidro" vermelho (foto desfocada sob o vermelho), borda suave
-        img = _material(img, z(y0), z(y1), tinta=0.84)
+    b = L.barra(REELS)
+    img = _degrade(img, z(b["fim"]), z(b["fim"] + 300), 150, 0, cor=PRETO)   # sob a barra: leitura
+    y0, y1 = L.VIDEO["fundo_preto"]
+    if foto is not None:
+        img = _material(img, z(y0), z(y1), tinta=0.86, cor=PRETO)
     else:
-        img = _degrade(img, z(y0 + 20), z(y1 + 20), 0, 245)
-    d = ImageDraw.Draw(img)
-    lg = logo(z(REELS["logo"]))
-    img.paste(lg, (z(M), z(REELS["topo"])), lg)
-    y_tag = REELS["topo"] + REELS["logo"] + L.esp(2)                 # logo -> chapéu: 32
-    fim_tag = y_tag + L.PAPEIS["chapeu"]["altura"]
-    _tag(d, z(M), z(y_tag), (card.get("chapeu") or "NOTÍCIA").upper())
-    t_meta = L.tam("meta", L.PAPEIS["manchete"]["tamanhos"][0])
-    y_meta = fim_tag + L.esp(2) + round(t_meta * L.ALTURA_MAIUSCULA)  # chapéu -> metadado: 32
-    cidade = card.get("cidade") or "Paraíba"
-    _texto(d, (z(M), z(y_meta)), f"{cidade}  ·  {_carimbo().replace(' · ', ', ').lower()}",
-           fonte(L.PAPEIS["meta"]["fonte"], z(t_meta)), L.COR["texto_aux"], track=L.PAPEIS["meta"]["track"])
+        img = _degrade(img, z(y0), z(y1), 0, 245, cor=PRETO)
+
+    camada = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    d = ImageDraw.Draw(camada)
+    man0 = L.PAPEIS["manchete"]["tamanhos"][0]
+    t_ch, t_meta = L.tam("chapeu", man0), L.tam("meta", man0)
+    cap = lambda t: round(t * L.ALTURA_MAIUSCULA)  # noqa: E731
+    y_ch = b["fim"] + L.esp(3) + cap(t_ch)                                     # barra -> chapéu: 48
+    _texto(d, (z(M), z(y_ch)), _chapeu(card), fonte(L.PAPEIS["chapeu"]["fonte"], z(t_ch)),
+           L.COR["texto"], track=L.PAPEIS["chapeu"]["track"])
+    y_meta = y_ch + round(t_ch * L.DESCENDENTE) + L.esp(1) + cap(t_meta)       # chapéu -> data: 16
+    _texto(d, (z(M), z(y_meta)), f"{_data_g1()}  —  {card.get('cidade') or 'Paraíba'}",
+           fonte(L.PAPEIS["meta"]["fonte"], z(t_meta)), L.COR["texto_aux"])
     t_cred = L.PAPEIS["credito_foto"]["tam"]
-    y_cred = y_meta + round(t_meta * L.DESCENDENTE) + L.esp(1) + round(t_cred * L.ALTURA_MAIUSCULA)
-    _credito(d, card, z(y_cred), foto is not None, z(M), z(REELS["direita_segura"] - M))
+    y_cred = y_meta + round(t_meta * L.DESCENDENTE) + L.esp(1) + cap(t_cred)
+    _credito(d, _linha_credito(card, foto is not None), z(y_cred), z(M), z(REELS["direita_segura"] - M))
+    img = _com_sombra(img, camada)
+    img = _barra(img, "reels")
     img.save(out_path, quality=95)
     return Path(out_path)
 
@@ -636,7 +662,7 @@ def _linhas_da_pagina(pag: list) -> list:
 
 
 def legenda_ass(palavras_t: list, destaques: list, out_path: Path, atraso=0.3, fator=1.0, total=None) -> Path:
-    """Legenda dinâmica, uma fonte só (Inter Black, branca):
+    """Legenda dinâmica, uma fonte só (Open Sans Bold, branca sobre o preto):
     - cada palavra entra no instante em que é falada;
     - a palavra que está sendo dita ganha uma caixa branca com letra vermelha e um "pop";
     - as palavras-chave (destaques: número, valor, prazo) mantêm a caixa até o fim do grupo.
@@ -652,8 +678,8 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Base,{nome},{tam},&H00FFFFFF,&H00FFFFFF,&H00000000,&H8C000000,0,0,0,0,100,100,{TRACK_LEG},0,1,0,1.5,5,0,0,0,1
-Style: Caixa,{nome},{tam},{verm},{verm},&H00FFFFFF,&H00FFFFFF,0,0,0,0,100,100,{TRACK_LEG},0,3,{CAIXA},0,5,0,0,0,1
+Style: Base,{nome},{tam},&H00FFFFFF,&H00FFFFFF,&H00000000,&H8C000000,{FONTE_NEGRITO},0,0,0,100,100,{TRACK_LEG},0,1,0,1.5,5,0,0,0,1
+Style: Caixa,{nome},{tam},{verm},{verm},&H00FFFFFF,&H00FFFFFF,{FONTE_NEGRITO},0,0,0,100,100,{TRACK_LEG},0,3,{CAIXA},0,5,0,0,0,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text

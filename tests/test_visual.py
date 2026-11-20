@@ -265,7 +265,7 @@ def test_destaque_usa_outra_fonte(tmp_path):
                 ("sexta.", 3.7, 4.2, 1)]
     ass = audiograma.legenda_ass(palavras, ["339 vagas"], tmp_path / "l.ass", total=5)
     txt = ass.read_text()
-    assert "Instrument Serif" not in txt and "Inter Black" in txt  # uma fonte só
+    assert "Instrument Serif" not in txt and "Open Sans" in txt  # uma fonte só (a do g1)
     caixas = [l for l in txt.splitlines() if l.startswith("Dialogue: 1,") or l.startswith("Dialogue: 2,")]
     assert any("339" in l for l in caixas)  # destaque = caixa branca
     assert any("339 \\hvagas" in l for l in txt.splitlines() if l.startswith("Dialogue: 2,"))  # 1 caixa só
@@ -335,7 +335,7 @@ def test_foto_com_letreiro_fica_de_fora():
 
 
 def test_capa_padrao_aprovado(tmp_path):
-    """Capa: foto cheia com degradê vermelho da marca embaixo, texto branco à esquerda."""
+    """Capa no padrão do destaque do g1: barra vermelha no topo, foto, texto branco no preto."""
     import audiograma
     from PIL import Image
     foto = tmp_path / "f.jpg"
@@ -344,9 +344,11 @@ def test_capa_padrao_aprovado(tmp_path):
     out = audiograma.capa(c, tmp_path / "capa.jpg", foto)
     im = Image.open(out).convert("RGB")
     assert im.size == (audiograma.VW, audiograma.VH)
-    r, g, b = im.getpixel((im.width - 10, audiograma.z(1700)))  # pé da capa: vermelho da marca
+    r, g, b = im.getpixel((10, audiograma.z(300)))                   # topo: barra vermelha da marca
     assert r > 150 and g < 90 and b < 80
-    r, g, b = im.getpixel((im.width // 2, audiograma.z(600)))   # meio: a foto aparece
+    r, g, b = im.getpixel((im.width - 10, audiograma.z(1700)))       # pé: degradê preto
+    assert max(r, g, b) < 60
+    r, g, b = im.getpixel((im.width // 2, audiograma.z(600)))        # meio: a foto aparece
     assert b > 120
 
 
@@ -357,7 +359,7 @@ def test_video_usa_a_mesma_foto_com_efeito_vermelho(tmp_path):
     Image.new("RGB", (1600, 1200), (128, 128, 128)).save(foto)  # foto neutra (cinza)
     out = audiograma.quadro(card(), tmp_path / "q.jpg", foto)
     im = Image.open(out).convert("RGB")
-    r, g, b = im.getpixel((im.width // 2, audiograma.z(600)))
+    r, g, b = im.getpixel((im.width // 2, audiograma.z(760)))   # entre a barra e o fundo preto
     assert r > g + 30 and r > b + 30  # a foto ganhou o tom vermelho da marca
 
 
@@ -399,16 +401,25 @@ def test_montagem_de_fotos_fica_de_fora():
 
 
 def test_layout_segue_a_hierarquia_do_g1_e_cabe_na_grade():
-    """Pilha da capa (chapéu > manchete > linha fina > metadado > crédito) de cima para baixo,
-    abaixo da logo e acima do corte 3:4 da grade do perfil."""
+    """Pilha da capa (chapéu > manchete > linha fina > data > crédito) de cima para baixo,
+    abaixo da barra vermelha e acima do corte 3:4 da grade do perfil."""
     import layout as L
     fmt = L.FORMATOS["reels"]
-    pos = L.pilha_capa(5, 84, 2, True, fmt)
-    assert fmt["topo"] + fmt["logo"] < pos["chapeu"] < pos["titulo"] < pos["fina"] < pos["meta"] < pos["credito"]
+    pos = L.pilha_capa(5, 80, 2, True, fmt)
+    assert fmt["barra"] < pos["topo"] < pos["chapeu"] < pos["titulo"] < pos["fina"] < pos["meta"] < pos["credito"]
     assert pos["credito"] <= fmt["grade"][1] - L.esp(3)
     assert L.cabe(pos, fmt)
     assert L.esp(0) == 8 and L.esp(4) == 80 == fmt["margem"]          # escala do g1 x2
-    assert L.tam("linha_fina", 96) == 36 and L.tam("linha_fina", 54) == L.PISO_TEXTO
+    assert L.PAPEIS["manchete"]["tamanhos"][0] == 40 * L.K             # manchete do g1 x2
+    assert abs(L.PAPEIS["manchete"]["track"] + 0.045) < 1e-9           # -1,8 px em 40
+    b = L.barra(fmt)
+    assert b["logo"] == round((fmt["barra"] - fmt["grade"][0]) * 48 / 74)  # logo 48 numa barra de 74
+
+
+def test_marca_em_open_sans_e_avatar():
+    import logo
+    assert logo.lockup(96).height == 96 and logo.avatar(540).size == (540, 540)
+    assert logo.L.FONTE[700] == "OpenSans-Bold.ttf"
 
 
 def test_capa_tira_a_linha_fina_quando_nao_cabe(monkeypatch, tmp_path):
@@ -416,7 +427,7 @@ def test_capa_tira_a_linha_fina_quando_nao_cabe(monkeypatch, tmp_path):
     import layout as L
     chamadas = []
     original = L.pilha_capa
-    monkeypatch.setattr(L, "pilha_capa", lambda *a: chamadas.append(a[2]) or original(*a))
+    monkeypatch.setattr(L, "pilha_capa", lambda *a: chamadas.append(a[2]) or original(*a))  # noqa
     titulo = "Prefeitura de Campina Grande anuncia mudança no transporte público a partir de segunda e passageiros devem ficar atentos às novas linhas"
     audiograma.capa(card(titulo=titulo, linha_fina=" ".join(["palavra"] * 40)), tmp_path / "c.jpg", None)
     assert chamadas  # a pilha foi calculada

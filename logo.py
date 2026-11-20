@@ -1,54 +1,92 @@
-"""Logo do PB Minuto na identidade vermelho e branco (fonte Inter, a da 1ª postagem).
+"""Marca do PB Minuto refeita com os parâmetros de design do g1 (layout.py).
 
-  python logo.py   -> gera brand/avatar.png (foto do perfil), brand/logo_vermelho.png e brand/logo_branco.png
+Do g1 vêm: a família de letra (Open Sans), o contraste de pesos do cabeçalho (nome forte + texto
+leve), o espaço entre letras dos títulos, o canto de 12 sobre 48 e a proporção da logo na barra
+vermelha. O desenho é do PB Minuto: monograma PB num quadrado branco + MINUTO.
+
+  python logo.py   -> gera brand/avatar.png (foto do perfil), brand/logo_vermelho.png,
+                      brand/logo_branco.png e brand/barra.png (barra do topo)
 """
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 
-from config import BRAND_COLOR
+import layout as L
 
 ROOT = Path(__file__).parent
 FONT_DIR = ROOT / "fonts"
-VERMELHO = tuple(int(BRAND_COLOR.lstrip("#")[i:i + 2], 16) for i in (0, 2, 4))
-WHITE = (255, 255, 255)
+VERMELHO = L.MARCA["vermelho"]
+VERMELHO_2 = L.MARCA["vermelho_2"]
+WHITE = L.MARCA["branco"]
 SS = 4  # superamostragem para bordas suaves
 
+RAIO = L.G1["raio"] / L.G1["barra"]["logo"]   # canto 12 numa logo de 48 = 25% da altura
+TRACK_PB = L.em("destaque")                    # PB tão justo quanto a manchete do g1 (-0,045 em)
+PESO_PB, PESO_NOME = 800, 700                  # monograma extra-negrito, nome negrito
+TRACK_NOME = 0.02                              # caixa-alta pede um pouco de ar
 
-def _f(size, peso="Black"):
-    """Inter, a fonte da 1ª postagem (padrão de toda a marca)."""
-    return ImageFont.truetype(str(FONT_DIR / f"Inter-{peso}.otf"), size)
+
+def _f(size, peso=800):
+    return ImageFont.truetype(str(FONT_DIR / L.FONTE[peso]), size)
+
+
+def _texto(d, xy, texto, f, fill, track, anchor):
+    """Texto com espaço entre letras (em "em"), centrado/ancorado como o Pillow faria."""
+    larg = f.getlength(texto) + track * f.size * (len(texto) - 1)
+    x, y = xy
+    if anchor[0] == "m":
+        x -= larg / 2
+    for i, ch in enumerate(texto):
+        d.text((x + f.getlength(texto[:i]) + track * f.size * i, y), ch, font=f, fill=fill,
+               anchor="l" + anchor[1])
+    return larg
 
 
 def symbol(size: int, invertido=False) -> Image.Image:
-    """Monograma: quadrado de cantos suaves com PB (branco com PB vermelho, ou o inverso)."""
+    """Monograma: quadrado branco de canto 25% com PB vermelho (ou o inverso)."""
     s = size * SS
     fundo, letra = (VERMELHO, WHITE) if invertido else (WHITE, VERMELHO)
     img = Image.new("RGBA", (s, s), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
-    d.rounded_rectangle((0, 0, s - 1, s - 1), radius=int(s * 0.22), fill=fundo)
-    d.text((s / 2, s / 2 + s * 0.02), "PB", font=_f(int(s * 0.50)), fill=letra, anchor="mm")
+    d.rounded_rectangle((0, 0, s - 1, s - 1), radius=int(s * RAIO), fill=fundo)
+    _texto(d, (s / 2, s / 2 + s * 0.015), "PB", _f(int(s * 0.56), PESO_PB), letra, TRACK_PB, "mm")
     return img.resize((size, size), Image.LANCZOS)
 
 
 def lockup(height: int, fundo_vermelho=True) -> Image.Image:
-    """Monograma + MINUTO. No fundo vermelho: quadrado branco e MINUTO branco."""
+    """Monograma + MINUTO na altura das maiúsculas do PB. No vermelho: quadrado e nome brancos."""
     cor = WHITE if fundo_vermelho else VERMELHO
-    f = _f(int(height * 0.46), "Bold")
-    gap = int(height * 0.22)
-    w = height + gap + int(f.getlength("MINUTO")) + 6
-    img = Image.new("RGBA", (w, height), (0, 0, 0, 0))
-    img.alpha_composite(symbol(height, invertido=not fundo_vermelho), (0, 0))
-    ImageDraw.Draw(img).text((height + gap, height / 2 + height * 0.02), "MINUTO", font=f, fill=cor, anchor="lm")
+    f = _f(int(height * 0.50), PESO_NOME)
+    gap = int(height * 0.24)
+    larg_nome = f.getlength("MINUTO") + TRACK_NOME * f.size * 5
+    w = height + gap + int(larg_nome) + 4
+    img = Image.new("RGBA", (w * SS, height * SS), (0, 0, 0, 0))
+    img.alpha_composite(symbol(height * SS, invertido=not fundo_vermelho), (0, 0))
+    d = ImageDraw.Draw(img)
+    f_ss = _f(int(height * 0.50) * SS, PESO_NOME)
+    _texto(d, ((height + gap) * SS, height * SS / 2 + height * SS * 0.015), "MINUTO", f_ss, cor,
+           TRACK_NOME, "lm")
+    return img.resize((w, height), Image.LANCZOS)
+
+
+def barra(largura: int, altura: int, logo_h: int, centro_y: int, borda: int = 0) -> Image.Image:
+    """Barra vermelha do topo (cabeçalho no padrão do g1) com a logo centralizada."""
+    img = Image.new("RGBA", (largura, altura), VERMELHO + (255,))
+    if borda:
+        ImageDraw.Draw(img).rectangle((0, altura - borda, largura, altura), fill=VERMELHO_2)
+    lk = lockup(logo_h, fundo_vermelho=True)
+    img.alpha_composite(lk, ((largura - lk.width) // 2, centro_y - logo_h // 2))
     return img
 
 
 def avatar(size=1080) -> Image.Image:
-    """Foto do perfil: fundo vermelho, PB grande e MINUTO em branco (centralizado para o corte redondo)."""
+    """Foto do perfil: fundo vermelho, monograma PB grande e MINUTO (centrado para o corte redondo)."""
     img = Image.new("RGBA", (size, size), VERMELHO + (255,))
     d = ImageDraw.Draw(img)
-    d.text((size / 2, size * 0.45), "PB", font=_f(int(size * 0.42)), fill=WHITE, anchor="mm")
-    d.text((size / 2, size * 0.69), "MINUTO", font=_f(int(size * 0.11), "Bold"), fill=WHITE, anchor="mm")
+    s = int(size * 0.40)
+    img.alpha_composite(symbol(s), ((size - s) // 2, int(size * 0.20)))
+    f = _f(int(size * 0.105), PESO_NOME)
+    _texto(d, (size / 2, size * 0.735), "MINUTO", f, WHITE, TRACK_NOME, "mm")
     return img
 
 
@@ -61,4 +99,6 @@ if __name__ == "__main__":
         bg = Image.new("RGBA", (lk.width + 160, lk.height + 160), (VERMELHO if verm else WHITE) + (255,))
         bg.alpha_composite(lk, (80, 80))
         bg.save(out / nome)
+    b = L.barra(L.FORMATOS["reels"])
+    barra(1080, b["fim"], b["logo"], b["centro"], b["borda"]).save(out / "barra.png")
     print("logos em", out)
