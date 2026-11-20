@@ -165,3 +165,6 @@
 {"ts": "2026-11-20T15:24:28", "event": "published", "headline": "Polícia investiga homicídio de homem atingido por disparos em Jaguaribe", "source": "G1, Portal Correio e +2", "ig_id": "18170918977471234", "note": ""}
 {"ts": "2026-11-20T15:32:21", "event": "gerado", "headline": "Jovem é achado morto com marcas de tiros em terreno em Bayeux", "source": "Jornal da Paraíba, g1 Paraíba e +1", "ig_id": "", "note": ""}
 {"ts": "2026-11-20T15:33:20", "event": "published", "headline": "Jovem é achado morto com marcas de tiros em terreno em Bayeux", "source": "Jornal da Paraíba, g1 Paraíba e +1", "ig_id": "18081572777744095", "note": ""}
+{"ts": "2026-11-20T15:38:55", "event": "pulado", "headline": "Tempestade deixa um morto em Tupanciretã, no Rio Grande do Sul", "source": "", "ig_id": "", "note": "mesmo fato já postado: Forte temporal deixa um morto e danifica casas em Tupanciret"}
+{"ts": "2026-11-20T15:42:14", "event": "gerado", "headline": "Plataforma identifica alertas socioambientais em 89% dos parques eólicos brasileiros", "source": "Agência Brasil", "ig_id": "", "note": ""}
+{"ts": "2026-11-20T15:43:09", "event": "published", "headline": "Plataforma identifica alertas socioambientais em 89% dos parques eólicos brasileiros", "source": "Agência Brasil", "ig_id": "18122569687761265", "note": ""}
