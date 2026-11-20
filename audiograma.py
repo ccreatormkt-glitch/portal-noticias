@@ -49,6 +49,7 @@ FONTE_DESTAQUE = FONTE_TEXTO
 ALTURA_LINHA = 1.24     # entrelinha da legenda (em múltiplos do tamanho da fonte)
 CAIXA = 12              # folga da caixa branca da palavra falada (px no desenho 1080)
 RESPIRO = 18            # espaço extra entre palavras, para a caixa não encostar na vizinha
+TRACK_LEG = -1.4        # espaçamento entre letras da legenda (px no desenho): grande = mais justo
 MESES = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"]
 
 _cache = {}
@@ -110,6 +111,34 @@ def _degrade(img: Image.Image, y0: int, y1: int, a0: int, a1: int, cor=None):
     return base.convert("RGB")
 
 
+def _material(img: Image.Image, y0: int, y1: int, tinta=0.86, desfoque=34):
+    """Material translúcido no estilo Apple: abaixo de y1 a própria foto aparece desfocada sob o
+    vermelho da marca ("vidro" vermelho); entre y0 e y1 a passagem é suave (sem linha dura)."""
+    vidro = img.filter(ImageFilter.GaussianBlur(z(desfoque)))
+    vidro = Image.blend(vidro, Image.new("RGB", img.size, VERMELHO), tinta)
+    mascara = Image.new("L", img.size, 0)
+    dm = ImageDraw.Draw(mascara)
+    for y in range(max(y0, 0), min(y1, img.height)):
+        t = (y - y0) / max(y1 - y0, 1)
+        dm.line((0, y, img.width, y), fill=int(255 * t * t * (3 - 2 * t)))  # smoothstep
+    if y1 < img.height:
+        dm.rectangle((0, y1, img.width, img.height), fill=255)
+    return Image.composite(vidro, img, mascara)
+
+
+def _texto(d, xy, texto, f, fill, track=0.0, anchor="ls"):
+    """Texto com espaçamento entre letras por tamanho (Apple: títulos grandes mais justos,
+    textos pequenos um pouco mais abertos). `track` em em (ex.: -0.02)."""
+    if not track:
+        d.text(xy, texto, font=f, fill=fill, anchor=anchor)
+        return f.getlength(texto)
+    x, y = xy
+    passo = track * f.size
+    for i, ch in enumerate(texto):
+        d.text((x + f.getlength(texto[:i]) + passo * i, y), ch, font=f, fill=fill, anchor=anchor)
+    return f.getlength(texto) + passo * (len(texto) - 1)
+
+
 def _sem_foto(card, w, h):
     import render
     fundo = Image.new("RGB", (w, h), VERMELHO_ESCURO)
@@ -121,11 +150,12 @@ def _sem_foto(card, w, h):
 def _tag(d, x, y, texto):
     """Editoria fixa, no formato da 1ª postagem (retângulo de canto curto, Inter Bold):
     branca com texto vermelho, para não sumir sobre o vermelho da marca."""
-    f_tag = fonte("Inter-Bold.otf", z(28))
-    tw = int(f_tag.getlength(texto))
-    d.rounded_rectangle((x, y, x + tw + z(40), y + z(54)), radius=z(8), fill=BRANCO)
-    d.text((x + z(20), y + z(27)), texto, font=f_tag, fill=VERMELHO, anchor="lm")
-    return y + z(54)
+    f_tag = fonte("Inter-Bold.otf", z(26))
+    track = 0.06  # maiúsculas pequenas: um pouco mais de ar entre as letras
+    tw = int(f_tag.getlength(texto) + track * f_tag.size * (len(texto) - 1))
+    d.rounded_rectangle((x, y, x + tw + z(40), y + z(52)), radius=z(10), fill=BRANCO)
+    _texto(d, (x + z(20), y + z(26)), texto, f_tag, VERMELHO, track=track, anchor="lm")
+    return y + z(52)
 
 
 def _credito(d, card, y, imagem, x_dir=None, x_esq=None):
@@ -181,13 +211,16 @@ def capa(card: dict, out_path: Path, image_path=None) -> Path:
         linhas = _quebrar([(p, f_tit, False) for p in card["titulo"].split()], largura)
         if len(linhas) <= 5:
             break
-    passo = int(z(tam) * 1.13)
+    passo = int(z(tam) * 1.07)  # entrelinha curta em título grande (Apple)
     base_ultima = z(1530)                       # última linha da manchete
     topo_texto = base_ultima - passo * (len(linhas) - 1) - int(z(tam) * 0.8)
     y_tag = topo_texto - z(34) - z(54)
     # degradê: transparente bem acima da etiqueta, já forte quando a manchete começa
-    img = _degrade(img, 0, z(470), 150, 0)                        # topo: logo legível
-    img = _degrade(img, y_tag - z(330), topo_texto, 0, 228)       # pé: vermelho da marca
+    img = _degrade(img, 0, z(470), 130, 0)                        # topo: logo legível
+    if foto is not None:  # pé: "vidro" vermelho com a foto desfocada por baixo, borda suave
+        img = _material(img, y_tag - z(300), topo_texto - z(20))
+    else:
+        img = _degrade(img, y_tag - z(330), topo_texto, 0, 228)
     d = ImageDraw.Draw(img)
     lg = logo(z(66))
     img.paste(lg, (z(M), z(300)), lg)
@@ -197,16 +230,15 @@ def capa(card: dict, out_path: Path, image_path=None) -> Path:
     for linha in linhas:
         x = z(M)
         for p, f, dest in linha:
-            d.text((x, y), p, font=f, fill=BRANCO, anchor="ls")
-            x += f.getlength(p + " ")
+            x += _texto(d, (x, y), p, f, BRANCO, track=-0.022) + f.getlength(" ")  # título: mais justo
         y += passo
     meta = [card.get("cidade") or "Paraíba", _carimbo().replace(" · ", ", ").lower()]
     if card.get("_ilustrativa"):
         meta.append("Imagem ilustrativa")
     elif "IA" in card.get("_credito", ""):
         meta.append("Ilustração por IA")
-    d.text((z(M), z(1592)), "  ·  ".join(meta), font=fonte("Inter-Medium.otf", z(30)),
-           fill=(255, 232, 228), anchor="ls")
+    _texto(d, (z(M), z(1592)), "  ·  ".join(meta), fonte("Inter-Medium.otf", z(29)), (255, 236, 232),
+           track=0.012)
     _credito(d, card, z(1648), foto is not None)
     img.save(out_path, quality=94)
     return Path(out_path)
@@ -224,16 +256,19 @@ def quadro(card: dict, out_path: Path, image_path=None) -> Path:
         img = Image.blend(duo, foto, 0.38)  # vermelho da marca, mas a foto continua reconhecível
     else:
         img = _sem_foto(card, VW, VH)
-    img = _degrade(img, 0, z(560), 140, 0)          # topo: identificação legível
-    img = _degrade(img, z(860), z(1170), 0, 245)    # faixa vermelha mais baixa: mais foto à mostra
+    img = _degrade(img, 0, z(560), 130, 0)          # topo: identificação legível
+    if foto is not None:  # embaixo: "vidro" vermelho (foto desfocada sob o vermelho), borda suave
+        img = _material(img, z(840), z(1150), tinta=0.84)
+    else:
+        img = _degrade(img, z(860), z(1170), 0, 245)
     d = ImageDraw.Draw(img)
     lg = logo(z(66))
     img.paste(lg, (z(M), z(300)), lg)
     fim_tag = _tag(d, z(M), z(396), (card.get("chapeu") or "NOTÍCIA").upper())   # editoria fixa
     cidade = card.get("cidade") or "Paraíba"
     y_meta = fim_tag + z(52)
-    d.text((z(M), y_meta), f"{cidade}  ·  {_carimbo().replace(' · ', ', ').lower()}",
-           font=fonte("Inter-SemiBold.otf", z(28)), fill=(255, 236, 232), anchor="ls")
+    _texto(d, (z(M), y_meta), f"{cidade}  ·  {_carimbo().replace(' · ', ', ').lower()}",
+           fonte("Inter-SemiBold.otf", z(27)), (255, 238, 234), track=0.012)
     _credito(d, card, y_meta + z(36), foto is not None, x_esq=z(M))  # metadado junto da identificação
     img.save(out_path, quality=95)
     return Path(out_path)
@@ -430,6 +465,11 @@ def fonte_ass(arq: str, tam: float) -> ImageFont.FreeTypeFont:
     return fonte(arq, max(8, round(tam * 200 / (asc + desc))))
 
 
+def _larg_palavra(f, palavra: str) -> float:
+    """Largura da palavra como o ASS desenha, já com o espaçamento justo entre letras."""
+    return f.getlength(palavra) + TRACK_LEG * (len(palavra) - 1)
+
+
 def _largura(palavra: str, destaque: bool, escala=1.0) -> float:
     nome, arq, tam = FONTE_DESTAQUE if destaque else FONTE_TEXTO
     return fonte_ass(arq, tam * escala).getlength(palavra + " ") + RESPIRO
@@ -567,8 +607,8 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Base,{nome},{tam},&H00FFFFFF,&H00FFFFFF,&H00000000,&H78000000,0,0,0,0,100,100,0,0,1,0,2,5,0,0,0,1
-Style: Caixa,{nome},{tam},{verm},{verm},&H00FFFFFF,&H00FFFFFF,0,0,0,0,100,100,0,0,3,{CAIXA},0,5,0,0,0,1
+Style: Base,{nome},{tam},&H00FFFFFF,&H00FFFFFF,&H00000000,&H8C000000,0,0,0,0,100,100,{TRACK_LEG},0,1,0,1.5,5,0,0,0,1
+Style: Caixa,{nome},{tam},{verm},{verm},&H00FFFFFF,&H00FFFFFF,0,0,0,0,100,100,{TRACK_LEG},0,3,{CAIXA},0,5,0,0,0,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -586,13 +626,13 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         y0 = LEG_Y - (len(linhas) - 1) * lh / 2
         for i, linha in enumerate(linhas):
             y = round(y0 + i * lh)
-            larg = sum(f.getlength(p) for p, *_ in linha) + espaco * (len(linha) - 1)
+            larg = sum(_larg_palavra(f, p) for p, *_ in linha) + espaco * (len(linha) - 1)
             x = W / 2 - larg / 2
             pos = []  # (x esquerda, largura) de cada palavra da linha
             xx = x
             for p, *_ in linha:
-                pos.append((xx, f.getlength(p)))
-                xx += f.getlength(p) + espaco
+                pos.append((xx, _larg_palavra(f, p)))
+                xx += _larg_palavra(f, p) + espaco
             # sequência de palavras-chave (ex.: "jornada 5x2"): uma caixa só, do fim da fala até o fim do grupo
             j = 0
             while j < len(linha):
@@ -612,20 +652,21 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
             for j, (p, dest, a, b) in enumerate(linha):
                 # cada palavra é um evento com posição própria (texto e caixa no MESMO ponto)
                 txt = p.replace("{", "(").replace("}", ")")
-                w_p = f.getlength(p)
+                w_p = _larg_palavra(f, p)
                 xc = round(x + w_p / 2)
                 a_v = t(a)
+                # entra subindo 10 px e assenta (curva que desacelera, sem passar do ponto)
                 eventos.append(f"Dialogue: 0,{_ts(a_v)},{_ts(fim)},Base,,0,0,0,,"
-                               f"{{\\an5\\pos({xc},{y})\\fad(70,120)\\fscx86\\fscy86"
-                               f"\\t(0,140,\\fscx100\\fscy100)}}{txt}")
+                               f"{{\\an5\\move({xc},{y + 10},{xc},{y},0,180)\\fad(90,120)\\fscx94\\fscy94"
+                               f"\\t(0,200,0.5,\\fscx100\\fscy100)}}{txt}")
                 # caixa branca enquanto a palavra é falada (destaque: fica até o fim do grupo)
                 em_frase = dest and ((j + 1 < len(linha) and linha[j + 1][1]) or (j > 0 and linha[j - 1][1]))
                 b_v = fim if (dest and not em_frase) else max(t(b), a_v + 0.18)
                 if j + 1 < len(linha) and not (dest and not em_frase):
                     b_v = min(b_v, t(linha[j + 1][2]) + 0.02)
                 eventos.append(f"Dialogue: 1,{_ts(a_v)},{_ts(min(b_v, fim))},Caixa,,0,0,0,,"
-                               f"{{\\an5\\pos({xc},{y})\\fscx82\\fscy82\\t(0,70,\\fscx108\\fscy108)"
-                               f"\\t(70,170,\\fscx100\\fscy100)\\fad(0,{120 if dest else 60})}}{txt}")
+                               f"{{\\an5\\move({xc},{y + 10},{xc},{y},0,180)\\fscx88\\fscy88"
+                               f"\\t(0,200,0.5,\\fscx100\\fscy100)\\fad(40,{120 if dest else 80})}}{txt}")
                 x += w_p + espaco
     Path(out_path).write_text(cab + "\n".join(eventos) + "\n", encoding="utf-8")
     return Path(out_path)
@@ -664,8 +705,19 @@ def _energias(audio: Path, total: float) -> "list":
         col = e[:, k]
         ref = np.percentile(col[col > 0], 95) if (col > 0).any() else 1.0
         e[:, k] = np.clip(col / (ref or 1.0), 0, 1)
-    for i in range(1, n):
-        e[i] = np.maximum(e[i], e[i - 1] * 0.80)
+    # cada barra segue a voz como uma mola criticamente amortecida (Apple: amortecimento 1.0,
+    # resposta ~0,12 s): movimento contínuo, sem tremido nem "pulo" de um quadro para o outro
+    w = 2 * np.pi / 0.12
+    dt = 1 / FPS
+    dec = np.exp(-w * dt)
+    pos = np.zeros(meio, dtype=np.float64)
+    vel = np.zeros(meio, dtype=np.float64)
+    for i in range(n):  # solução exata da mola criticamente amortecida (estável em qualquer passo)
+        x0 = pos - e[i]
+        c = vel + w * x0
+        pos = e[i] + (x0 + c * dt) * dec
+        vel = (vel - w * c * dt) * dec
+        e[i] = np.clip(pos, 0, 1)
     return e
 
 
