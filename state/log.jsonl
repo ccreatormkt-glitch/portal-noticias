@@ -262,3 +262,6 @@
 {"ts": "2026-11-20T21:51:04", "event": "pulado", "headline": "Bolsonaro é internado com quadro de dor e distensão abdominal", "source": "", "ig_id": "", "note": "repetida: Dores abdominais levam Jair Bolsonaro a unidade de saúde em Brasília"}
 {"ts": "2026-11-20T21:53:01", "event": "gerado", "headline": "Rio de Janeiro celebra Consciência Negra com ato no monumento a Zumbi", "source": "Agência Brasil", "ig_id": "", "note": ""}
 {"ts": "2026-11-20T21:54:02", "event": "published", "headline": "Rio de Janeiro celebra Consciência Negra com ato no monumento a Zumbi", "source": "Agência Brasil", "ig_id": "18121029509089671", "note": ""}
+{"ts": "2026-11-20T21:59:35", "event": "pulado", "headline": "Justiça condena homem a 28 anos de prisão por participar de morte de empresário em assalto, em João Pessoa", "source": "", "ig_id": "", "note": "mesmo link de uma notícia já postada (Justiça aplica pena de 28 anos a réu por homicídio de empres)"}
+{"ts": "2026-11-20T22:00:50", "event": "gerado", "headline": "Governo do Estado abre 825 vagas de emprego em 11 cidades da Paraíba", "source": "Repórter PB, WSCOM e +1", "ig_id": "", "note": ""}
+{"ts": "2026-11-20T22:01:30", "event": "published", "headline": "Governo do Estado abre 825 vagas de emprego em 11 cidades da Paraíba", "source": "Repórter PB, WSCOM e +1", "ig_id": "18099343298440481", "note": ""}
