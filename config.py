@@ -51,6 +51,11 @@ TRUSTED_SINGLE_SOURCE = env_bool("TRUSTED_SINGLE_SOURCE", True)
 # como tratar polícia/tragédia: "careful" = publica com regras de cuidado, "skip" = não publica
 SENSITIVE_MODE = env("SENSITIVE_MODE", "careful")
 DEDUPE_HOURS = int(env("DEDUPE_HOURS", "168"))  # 7 dias de memória contra repetição
+# trava por SENTIDO (semantico.py): compara o significado da notícia com as já postadas (embeddings)
+SEMANTICO = env_bool("SEMANTICO", True)
+EMBED_MODEL = env("EMBED_MODEL", "gemini-embedding-001,gemini-embedding-2")  # em ordem
+# acima disto (0 a 1) é o mesmo fato contado com outras palavras; o registro mostra a nota de cada rodada
+SIMILARIDADE_MAX = float(env("SIMILARIDADE_MAX", "0.90"))
 MAX_STORY_AGE_HOURS = int(env("MAX_STORY_AGE_HOURS", "12"))
 # carrossel de 2 lâminas (capa + detalhes). Desligado: o post é só a capa + legenda completa
 # quantas notícias a IA avalia por rodada para escolher a de maior potencial

@@ -16,6 +16,7 @@ Google News (CG, JP, PB) + RSS dos portais e prefeituras
   -> desenha a capa 1080x1350 (foto do tema + manchete); os detalhes vão na legenda
   -> publica pela API oficial do Instagram
   -> grava no histórico para nunca repetir a notícia
+     (por palavras e também por SENTIDO: embeddings do Gemini barram o mesmo fato escrito de outro jeito)
   -> 24h depois lê alcance, salvamentos e compartilhamentos de cada post e passa a
      priorizar as editorias e gatilhos que mais engajam (aprende sozinho)
 ```
@@ -48,6 +49,8 @@ No repositório: **Settings > Secrets and variables > Actions**.
 | `IMAGE_MODE` | `none` | `gemini` gera ilustração de fundo por IA quando não há foto |
 | `CAROUSEL` | `false` | `true` adiciona a lâmina de detalhes (carrossel) |
 | `PORTAL_NAME` / `PORTAL_HANDLE` | PB Minuto / @pbminuto | marca nos cards |
+| `SEMANTICO` | `true` | trava anti-repetição por sentido (embeddings) |
+| `SIMILARIDADE_MAX` | `0.90` | de 0 a 1: acima disto é o mesmo fato; baixe se ainda escapar repetida, suba se barrar notícia nova |
 
 ## Primeiros passos
 

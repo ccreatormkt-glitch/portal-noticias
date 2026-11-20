@@ -171,6 +171,11 @@ def registrar_publicada(card: dict, ig_id: str):
              card.get("cidade", ""), card.get("chapeu", ""), " ".join(card.get("links", []) or []))
     with _conn() as c:
         c.execute("INSERT OR REPLACE INTO publicadas VALUES (?,?,?,?,?,?,?,?)", linha)
+        try:
+            import semantico
+            semantico.guardar(c, card, ig_id)  # vetor do sentido, para a trava semântica
+        except Exception as e:
+            print(f"[semântico] vetor não gravado ({type(e).__name__})")
     exportar_csv()
 
 
@@ -224,6 +229,14 @@ def ja_publicada(card: dict, recentes_ig=()) -> str:
         outro = set(stems_of(legenda[:400]))
         if meu_texto and outro and len(meu_texto & outro) / len(meu_texto | outro) >= 0.42:
             return f"já está no Instagram (texto parecido): {primeira[:60]}"
+    try:  # por último (é a única que chama a rede): o mesmo fato com outras palavras
+        import semantico
+        with _conn() as c:
+            motivo = semantico.repetida(c, card, desde)
+        if motivo:
+            return motivo
+    except Exception as e:
+        print(f"[semântico] trava pulada ({type(e).__name__})")
     return ""
 
 

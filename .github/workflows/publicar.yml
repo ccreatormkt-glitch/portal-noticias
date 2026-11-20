@@ -119,6 +119,9 @@ jobs:
           TTS_MODEL: ${{ vars.TTS_MODEL }}
           VOZ_MOTOR: ${{ vars.VOZ_MOTOR }}
           WHISPER_MODELO: ${{ vars.WHISPER_MODELO }}
+          SEMANTICO: ${{ vars.SEMANTICO }}
+          SIMILARIDADE_MAX: ${{ vars.SIMILARIDADE_MAX }}
+          EMBED_MODEL: ${{ vars.EMBED_MODEL }}
           VOZ_REFERENCIA_B64: ${{ secrets.VOZ_REFERENCIA_B64 }}
           MODO: ${{ github.event.inputs.modo }}
           PAUTA: ${{ github.event.inputs.pauta }}
