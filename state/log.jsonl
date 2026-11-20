@@ -214,3 +214,5 @@
 {"ts": "2026-11-20T18:53:07", "event": "published", "headline": "Campina Grande finaliza 11ª Conferência Municipal de Saúde com eleição de delegados", "source": "Prefeitura de Campina Grande", "ig_id": "18484787230117167", "note": ""}
 {"ts": "2026-11-20T19:02:40", "event": "gerado", "headline": "Trump veta instalação de data centers de companhias dos EUA no exterior", "source": "g1, CNN Brasil", "ig_id": "", "note": ""}
 {"ts": "2026-11-20T19:02:40", "event": "falha_publicacao", "headline": "Trump veta instalação de data centers de companhias dos EUA no exterior", "source": "g1, CNN Brasil", "ig_id": "", "note": "voz padrão indisponível agora (limite do Gemini); a notícia volta na próxima rodada"}
+{"ts": "2026-11-20T19:07:06", "event": "gerado", "headline": "Tempestades no Rio Grande do Sul deixam três mortos e atingem 28 municípios", "source": "Agência Brasil", "ig_id": "", "note": ""}
+{"ts": "2026-11-20T19:08:05", "event": "published", "headline": "Tempestades no Rio Grande do Sul deixam três mortos e atingem 28 municípios", "source": "Agência Brasil", "ig_id": "18379007470209898", "note": ""}
