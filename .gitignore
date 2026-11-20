@@ -4,3 +4,4 @@ out/
 *.pyc
 voices/
 brand/voz_referencia.*
+.cache/

@@ -16,7 +16,10 @@ def isolar(tmp_path, monkeypatch):
     import db
     import main
 
-    monkeypatch.setattr(config, "PEXELS_API_KEY", "")  # sem rede nos testes (o Pexels tem teste próprio)
+    monkeypatch.setattr(config, "PEXELS_API_KEY", "")  # sem rede nos testes (os bancos têm teste próprio)
+    monkeypatch.setattr(config, "PIXABAY_API_KEY", "")
+    import illustrate
+    monkeypatch.setattr(illustrate, "CACHE_BUSCAS", tmp_path / "cache_bancos.json")
     monkeypatch.setattr(config, "HORA_INICIO", 0)  # testes rodam a qualquer hora (a guarda tem teste próprio)
     state, pend, pub, out = (tmp_path / n for n in ("state", "pending", "published", "out"))
     for d in (state, pend, pub, out):

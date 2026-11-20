@@ -50,7 +50,7 @@ def test_busca_por_palavras_chave_e_usa_a_escolhida(monkeypatch, tmp_path):
     buscas = preparar(monkeypatch, [foto(1, "flooded street"), foto(2, "rain on asphalt")], escolha=1)
     c = card()
     arq = illustrate.imagem_de_fundo(c, tmp_path / "x")
-    assert arq.name == "x_pexels.jpg" and arq.exists()
+    assert arq.name == "x_banco.jpg" and arq.exists()
     assert buscas == ["flooded street heavy rain"]                      # 1ª palavra-chave já serviu
     assert c["_credito"] == "Foto: Ana Lima / Pexels" and c["_ilustrativa"] is True
     assert "pexels:2" in illustrate._usadas()                            # não repete a foto depois
@@ -61,7 +61,7 @@ def test_fora_fotos_com_gente_texto_pequenas_e_repetidas(monkeypatch, tmp_path):
     illustrate._marcar("pexels:5")
     preparar(monkeypatch, [foto(1, "Woman walking in the rain"), foto(2, "Street sign in the rain"),
                            foto(3, "rain", w=900, h=1200), foto(5, "rain drops"), foto(6, "wet road at night")])
-    assert [f["id"] for f in illustrate._candidatas_pexels("rain")] == [6]
+    assert [f["id"] for f in illustrate._candidatas_pexels("rain")] == ["pexels:6"]
 
 
 def test_ia_recusa_todas_tenta_outra_palavra_chave(monkeypatch, tmp_path):
@@ -77,12 +77,41 @@ def test_ia_recusa_todas_tenta_outra_palavra_chave(monkeypatch, tmp_path):
 
 def test_sem_chave_ou_limite_cai_nas_outras_fontes(monkeypatch, tmp_path):
     monkeypatch.setattr(config, "PEXELS_API_KEY", "")
-    assert illustrate.foto_pexels(card(), tmp_path / "x") is None
+    assert illustrate.foto_banco(card(), tmp_path / "x") is None
     preparar(monkeypatch, [], status=429)
-    assert illustrate.foto_pexels(card(), tmp_path / "x") is None
+    assert illustrate.foto_banco(card(), tmp_path / "x") is None
 
 
 def test_palavras_chave_sem_repetir_e_com_reserva_da_editoria(monkeypatch):
     monkeypatch.setattr(illustrate, "_visao", lambda c: {"busca_en": "Flooded street heavy rain"})
     assert illustrate.palavras_chave(card()) == ["flooded street heavy rain", "flooded street",
                                                  illustrate.TEMA_PEXELS["CLIMA"]]
+
+
+def test_pixabay_busca_filtra_escolhe_e_guarda_por_24h(monkeypatch, tmp_path):
+    monkeypatch.setattr(config, "PIXABAY_API_KEY", "chave-pixabay")
+    monkeypatch.setattr(illustrate, "_visao", lambda c: {})
+    buscas = []
+    hits = [{"id": 10, "tags": "woman, rain, umbrella", "imageWidth": 3000, "imageHeight": 4500, "user": "Joao",
+             "webformatURL": "https://px/10_640", "largeImageURL": "https://px/10_1280"},
+            {"id": 11, "tags": "rain, street, flood", "imageWidth": 3000, "imageHeight": 4500, "user": "Maria",
+             "webformatURL": "https://px/11_640", "largeImageURL": "https://px/11_1280"}]
+
+    def get(url, headers=None, timeout=None, params=None):
+        if url == illustrate.PIXABAY_URL:
+            buscas.append(params["q"])
+            assert params["key"] == "chave-pixabay" and params["image_type"] == "photo"
+            assert params["orientation"] == "vertical" and params["safesearch"] == "true"
+            return Resp({"hits": hits})
+        return Resp()
+    monkeypatch.setattr(illustrate.requests, "get", get)
+    vistas = []
+    monkeypatch.setattr(editor, "escolher_foto", lambda c, imgs: vistas.append(len(imgs)) or 0)
+    c = card()
+    arq, credito = illustrate.foto_banco(c, tmp_path / "x")
+    assert credito == "Foto: Maria / Pixabay" and vistas == [1]          # a foto com gente nem foi à IA
+    assert "pixabay:11" in illustrate._usadas()
+    assert "Pixabay (pixabay.com)" in c["_credito_legenda"]
+    # mesma busca nas próximas 24 h: vem do cache, sem chamar a API de novo
+    illustrate._cache("Pixabay", "flooded street heavy rain", lambda: (_ for _ in ()).throw(AssertionError("API")))
+    assert buscas == ["flooded street heavy rain"]

@@ -318,13 +318,18 @@ def foto_da_cidade(card: dict, base: Path):
     return None
 
 
-# ------------------------------------------------------------------ Pexels (banco de fotos grátis)
-# Pedido do Arthur: toda imagem vem de uma busca por palavras-chave no Pexels (API oficial, grátis:
-# 200 buscas/hora, 20 mil/mês). Licença: uso livre, sem pessoa identificável em contexto negativo,
+# ------------------------------------------------------------------ bancos de fotos grátis
+# Pedido do Arthur: toda imagem vem de uma busca por palavras-chave num banco de fotos, e a IA escolhe.
+# Pixabay (API grátis: 100 buscas/min; buscas guardadas por 24 h, como a API exige; fotos baixadas,
+# nunca linkadas) e Pexels (a emissão de chaves novas estava pausada em 20/11/2026; liga sozinho
+# se a chave existir). Licenças: uso livre, sem pessoa identificável em contexto negativo,
 # político ou de doença. Por isso, numa notícia, foto com gente fica de fora: um rosto qualquer
 # pareceria ser de alguém envolvido no fato.
 PEXELS_URL = "https://api.pexels.com/v1/search"
-PEXELS_MAX_BUSCAS = 3          # buscas por notícia (cabe folgado no limite da API)
+PIXABAY_URL = "https://pixabay.com/api/"
+BANCO_MAX_BUSCAS = 3           # buscas por notícia (cabe folgado nos limites das APIs)
+PEXELS_MAX_BUSCAS = BANCO_MAX_BUSCAS
+CACHE_BUSCAS = Path(__file__).parent / ".cache" / "bancos_de_fotos.json"
 PESSOAS = _re.compile(
     r"\b(man|men|woman|women|person|people|persons|girl|girls|boy|boys|child|children|kid|kids|baby|"
     r"toddler|teen|teenager|couple|family|portrait|selfie|crowd|face|faces|guy|lady|gentleman|"
@@ -355,80 +360,140 @@ def palavras_chave(card: dict) -> list:
     return saida
 
 
-def _candidatas_pexels(busca: str) -> list:
-    """Fotos verticais e grandes da busca, já sem as usadas e sem gente, texto ou letreiro no 'alt'."""
+def _cache(banco: str, busca: str, buscar):
+    """Guarda cada busca por 24 h (exigência do Pixabay; economiza o limite do Pexels)."""
+    import json
+    import time
+    chave = f"{banco}:{busca.lower()}"
+    try:
+        dados = json.loads(CACHE_BUSCAS.read_text()) if CACHE_BUSCAS.exists() else {}
+    except Exception:
+        dados = {}
+    agora = time.time()
+    dados = {k: v for k, v in dados.items() if agora - v.get("t", 0) < 86400}
+    if chave in dados:
+        return dados[chave]["fotos"]
+    fotos = buscar()
+    dados[chave] = {"t": agora, "fotos": fotos}
+    CACHE_BUSCAS.parent.mkdir(parents=True, exist_ok=True)
+    CACHE_BUSCAS.write_text(json.dumps(dados))
+    return fotos
+
+
+def _busca_pexels(busca: str) -> list:
     from config import PEXELS_API_KEY
     r = requests.get(PEXELS_URL, headers={"Authorization": PEXELS_API_KEY}, timeout=(5, 15), params={
         "query": busca, "orientation": "portrait", "size": "large", "per_page": 15, "locale": "en-US"})
     if r.status_code == 429:
         raise RuntimeError("limite de buscas do Pexels atingido")
     r.raise_for_status()
-    resto = r.headers.get("X-Ratelimit-Remaining")
-    if resto and int(resto) < 500:
-        print(f"[pexels] atenção: restam {resto} buscas no mês")
+    return [{"id": f"pexels:{f.get('id')}", "texto": f.get("alt") or "", "w": f.get("width", 0),
+             "h": f.get("height", 0), "autor": f.get("photographer") or "Pexels",
+             "miniatura": (f.get("src") or {}).get("medium"),
+             "grande": f"{(f.get('src') or {}).get('original')}?auto=compress&cs=tinysrgb&h=2600"}
+            for f in r.json().get("photos", [])]
+
+
+def _busca_pixabay(busca: str) -> list:
+    from config import PIXABAY_API_KEY
+    r = requests.get(PIXABAY_URL, timeout=(5, 15), params={
+        "key": PIXABAY_API_KEY, "q": busca[:100], "lang": "en", "image_type": "photo",
+        "orientation": "vertical", "min_height": 1600, "safesearch": "true", "per_page": 20})
+    if r.status_code == 429:
+        raise RuntimeError("limite de buscas do Pixabay atingido")
+    r.raise_for_status()
+    return [{"id": f"pixabay:{f.get('id')}", "texto": (f.get("tags") or "").replace(",", " "),
+             "w": f.get("imageWidth", 0), "h": f.get("imageHeight", 0), "autor": f.get("user") or "Pixabay",
+             "miniatura": f.get("webformatURL"),
+             "grande": f.get("fullHDURL") or f.get("largeImageURL")}   # 1920 se a conta tiver acesso total
+            for f in r.json().get("hits", [])]
+
+
+def bancos_ativos() -> list:
+    """(nome, site, função de busca) dos bancos com chave configurada, na ordem de preferência."""
+    from config import PEXELS_API_KEY, PIXABAY_API_KEY
+    bancos = []
+    if PEXELS_API_KEY:
+        bancos.append(("Pexels", "pexels.com", _busca_pexels))
+    if PIXABAY_API_KEY:
+        bancos.append(("Pixabay", "pixabay.com", _busca_pixabay))
+    return bancos
+
+
+def _filtrar(fotos: list) -> list:
+    """Sem as já usadas, as pequenas e as com gente, texto ou letreiro na descrição."""
     usadas = _usadas()
     boas = []
-    for f in r.json().get("photos", []):
-        alt = _fold(f.get("alt") or "")
-        if f"pexels:{f.get('id')}" in usadas or min(f.get("width", 0), f.get("height", 0)) < 1500:
+    for f in fotos:
+        texto = _fold(f.get("texto", ""))
+        if f["id"] in usadas or min(f.get("w", 0), f.get("h", 0)) < 1000 or max(f.get("w", 0), f.get("h", 0)) < 1500:
             continue
-        if PESSOAS.search(alt) or NAO_E_FOTO.search(alt) or LETREIRO.search(alt):
+        if PESSOAS.search(texto) or NAO_E_FOTO.search(texto) or LETREIRO.search(texto):
             continue
-        boas.append(f)
+        if f.get("miniatura") and f.get("grande"):
+            boas.append(f)
     return boas
 
 
-def foto_pexels(card: dict, base: Path):
-    """Busca por palavras-chave no Pexels, a IA escolhe a foto que melhor combina com a notícia
-    (e recusa as que têm gente, texto ou logo), baixa em alta e devolve (arquivo, crédito)."""
-    from config import PEXELS_API_KEY
-    if not PEXELS_API_KEY:
-        print("[pexels] sem chave (segredo PEXELS_API_KEY): usando as outras fontes")
+def _candidatas_pexels(busca: str) -> list:  # mantido para os testes e para uso direto
+    return _filtrar(_busca_pexels(busca))
+
+
+def foto_banco(card: dict, base: Path):
+    """Busca por palavras-chave no banco de fotos, a IA escolhe a que melhor combina com a notícia
+    (e recusa as que têm gente, texto ou logo), baixa e devolve (arquivo, crédito)."""
+    bancos = bancos_ativos()
+    if not bancos:
+        print("[banco] sem chave do Pixabay/Pexels (segredos PIXABAY_API_KEY / PEXELS_API_KEY): outras fontes")
         return None
     import editor
-    for busca in palavras_chave(card)[:PEXELS_MAX_BUSCAS]:
-        try:
-            cands = _candidatas_pexels(busca)[:6]
-        except Exception as e:
-            print(f"[pexels] '{busca}': {str(e)[:80]}")
-            if "limite" in str(e):
-                return None
-            continue
-        if not cands:
-            print(f"[pexels] '{busca}': nada utilizável")
-            continue
-        miniaturas = []
-        for f in cands:
+    for nome, site, buscar in bancos:
+        for busca in palavras_chave(card)[:BANCO_MAX_BUSCAS]:
             try:
-                m = requests.get(f["src"]["medium"], timeout=(5, 15))
-                miniaturas.append((m.content, m.headers.get("content-type", "image/jpeg").split(";")[0]))
-            except Exception:
-                miniaturas.append(None)
-        try:
-            idx = editor.escolher_foto(card, [m for m in miniaturas if m])
+                cands = _filtrar(_cache(nome, busca, lambda: buscar(busca)))[:6]
+            except Exception as e:
+                print(f"[banco] {nome} '{busca}': {str(e)[:80]}")
+                if "limite" in str(e):
+                    break
+                continue
+            if not cands:
+                print(f"[banco] {nome} '{busca}': nada utilizável")
+                continue
+            miniaturas = []
+            for f in cands:
+                try:
+                    m = requests.get(f["miniatura"], timeout=(5, 15))
+                    m.raise_for_status()
+                    miniaturas.append((m.content, m.headers.get("content-type", "image/jpeg").split(";")[0]))
+                except Exception:
+                    miniaturas.append(None)
             validas = [f for f, m in zip(cands, miniaturas) if m]
-            escolhida = validas[idx] if idx is not None and 0 <= idx < len(validas) else None
-        except Exception as e:  # sem IA para olhar: fica a 1ª da busca (já filtrada pelo texto)
-            print(f"[pexels] escolha pela IA falhou ({str(e)[:60]}): uso a 1ª da busca")
-            escolhida = cands[0]
-        if escolhida is None:
-            print(f"[pexels] '{busca}': a IA não aprovou nenhuma das {len(cands)} fotos")
-            continue
-        try:
-            img = requests.get(f"{escolhida['src']['original']}?auto=compress&cs=tinysrgb&h=2600",
-                               timeout=(5, 40))
-            img.raise_for_status()
-        except Exception as e:
-            print(f"[pexels] download falhou ({type(e).__name__})")
-            continue
-        destino = Path(f"{base}_pexels.jpg")
-        destino.write_bytes(img.content)
-        _marcar(f"pexels:{escolhida['id']}")
-        autor = " ".join(str(escolhida.get("photographer") or "Pexels").split())[:40]
-        print(f"[pexels] '{busca}': foto {escolhida['id']} de {autor}")
-        card["_credito_legenda"] = f"📷 Foto: {autor} / Pexels (pexels.com)"
-        return destino, f"Foto: {autor} / Pexels"
+            try:
+                idx = editor.escolher_foto(card, [m for m in miniaturas if m])
+                escolhida = validas[idx] if idx is not None and 0 <= idx < len(validas) else None
+            except Exception as e:  # sem IA para olhar: fica a 1ª da busca (já filtrada pelo texto)
+                print(f"[banco] escolha pela IA falhou ({str(e)[:60]}): uso a 1ª da busca")
+                escolhida = validas[0] if validas else None
+            if escolhida is None:
+                print(f"[banco] {nome} '{busca}': a IA não aprovou nenhuma das {len(cands)} fotos")
+                continue
+            try:
+                img = requests.get(escolhida["grande"], timeout=(5, 40))
+                img.raise_for_status()
+            except Exception as e:
+                print(f"[banco] download falhou ({type(e).__name__})")
+                continue
+            destino = Path(f"{base}_banco.jpg")
+            destino.write_bytes(img.content)
+            _marcar(escolhida["id"])
+            autor = " ".join(str(escolhida.get("autor") or nome).split())[:40]
+            print(f"[banco] {nome} '{busca}': foto {escolhida['id']} de {autor}")
+            card["_credito_legenda"] = f"📷 Foto: {autor} / {nome} ({site})"
+            return destino, f"Foto: {autor} / {nome}"
     return None
+
+
+foto_pexels = foto_banco  # nome antigo
 
 
 def imagem_de_fundo(card: dict, base: Path):
@@ -439,10 +504,10 @@ def imagem_de_fundo(card: dict, base: Path):
     3) foto livre ligada ao assunto (tema da notícia), sem pessoas em destaque nem letreiros;
     4) vista geral da cidade citada (Wikimedia Commons, "Imagem ilustrativa");
     5) só se tudo falhar: fundo da marca com ícone.
-    Antes de tudo, o Pexels (pedido do Arthur): palavras-chave da notícia -> busca -> a IA escolhe.
-    As outras fontes só entram se o Pexels não tiver foto boa (ou se faltar a chave)."""
+    Antes de tudo, o banco de fotos (pedido do Arthur): palavras-chave da notícia -> busca no Pixabay
+    (ou Pexels) -> a IA escolhe. As outras fontes só entram se o banco não tiver foto boa."""
     card["_credito"], card["_ilustrativa"], card["_credito_legenda"] = "", False, ""
-    achou = foto_pexels(card, base)
+    achou = foto_banco(card, base)
     if achou:
         card["_ilustrativa"], card["_credito"] = True, achou[1]
         return achou[0]

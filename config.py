@@ -72,6 +72,7 @@ LLM_PROVIDER = env("LLM_PROVIDER") or ("openai" if OPENAI_API_KEY else "gemini" 
 
 # ---- Foto de banco gratuito (Pexels: chave grátis em pexels.com/api) --------
 PEXELS_API_KEY = env("PEXELS_API_KEY")
+PIXABAY_API_KEY = env("PIXABAY_API_KEY")  # chave grátis em pixabay.com/api/docs (com login)
 
 # ---- Formato do post ----------------------------------------------------------
 # reels  = vídeo animado com narração (Piper + FFmpeg); se falhar, publica a imagem
