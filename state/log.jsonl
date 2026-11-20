@@ -146,3 +146,5 @@
 {"ts": "2026-11-20T14:19:43", "event": "published", "headline": "Forte temporal deixa um morto e danifica casas em Tupanciretã no RS", "source": "G1, CNN Brasil", "ig_id": "18123775457286750", "note": ""}
 {"ts": "2026-11-20T14:28:48", "event": "gerado", "headline": "Paraíba soma 21 casos de feminicídio em 2026 após dois crimes em outubro", "source": "Se Liga PB, g1 Paraíba e +4", "ig_id": "", "note": ""}
 {"ts": "2026-11-20T14:28:48", "event": "falha_publicacao", "headline": "Paraíba soma 21 casos de feminicídio em 2026 após dois crimes em outubro", "source": "Se Liga PB, g1 Paraíba e +4", "ig_id": "", "note": "voz padrão indisponível agora (limite do Gemini); a notícia volta na próxima rodada"}
+{"ts": "2026-11-20T14:37:20", "event": "gerado", "headline": "Casos de feminicídio na Paraíba sobem para 21 em 2026, aponta ministério", "source": "Se Liga PB, g1 Paraíba e +4", "ig_id": "", "note": ""}
+{"ts": "2026-11-20T14:38:24", "event": "published", "headline": "Paraíba soma 21 casos de feminicídio em 2026 após dois crimes em outubro", "source": "Se Liga PB, g1 Paraíba e +4", "ig_id": "17923558794453253", "note": ""}
