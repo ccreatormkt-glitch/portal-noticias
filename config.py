@@ -92,6 +92,9 @@ VIDEO_2K = env_bool("VIDEO_2K", True)  # vídeo em 2K (1440x2560); false = 1080x
 # anti-redundância na narração/legenda: uma frase sai se esta fração (ou mais) das palavras
 # importantes dela já foi dita antes (0.6 = 60%). Menor = mais rigoroso; 1.0 = desliga.
 REDUNDANCIA_MAX = float(env("REDUNDANCIA_MAX", "0.6"))
+# revisão "humanizadora" (skill STE80 Humanizer, em skills/ste80-humanizer): tira as marcas de texto de IA
+# e deixa frases curtas e diretas na manchete, linha fina, resumo, tópicos e legenda (e por isso no áudio)
+HUMANIZAR = env("HUMANIZAR", "1") not in ("0", "false", "nao", "não")
 WHISPER_MODELO = env("WHISPER_MODELO", "small")  # tempo de cada palavra da legenda (faster-whisper, CPU; "small" acerta mais em português)
 TTS_VOICE = env("TTS_VOICE", "Charon")  # voz de biblioteca, tom informativo; outras: Kore, Orus, Puck
 

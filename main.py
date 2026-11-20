@@ -257,6 +257,8 @@ def _candidatos(clusters, quantos, mode) -> list:
             db.record(c.fingerprint, c.stems, c.rep.title, "", "pulado", note=motivo[:120])
             print(f"[run] pulado ({motivo})")
             continue
+        if config.HUMANIZAR:  # skill STE80 Humanizer: tira cara de texto de IA (legenda e narração)
+            card = editor.humanizar(card, c)
         card.update(fp=c.fingerprint, stems=sorted(c.stems), source_line=source_line(c.sources),
                     titulo_fonte=c.rep.title, regiao="paraiba" if c.is_local else "brasil",
                     **({} if c.is_local else {"cidade": "Brasil"}),
