@@ -620,17 +620,17 @@ Responda só JSON:
             {"q": "Açude Velho Campina Grande", "lang": "pt"}]}"""
 
 ESCOLHER_FOTO = """Você é editor de fotografia de um portal de notícias no Instagram. LEIA a notícia e
-olhe as fotos de banco de imagens (numeradas a partir de 0, na ordem). A foto só serve se
-CORRESPONDER ao fato (mostra o próprio lugar, objeto ou situação) ou mostrar uma cena MUITO
-parecida. Foto que só lembra o tema de longe não serve.
-Dê uma nota de 0 a 10 para a melhor: 10 = mostra o próprio fato ou lugar; 8 = mesma situação em
-outro lugar (ex.: rua alagada para notícia de alagamento); 7 = cena claramente ligada ao fato;
-6 ou menos = genérica (ex.: céu nublado para notícia de alagamento).
-RECUSE (não escolha) fotos com: rosto reconhecível, qualquer texto, letreiro, placa, logotipo ou marca,
-montagem/colagem, ou que possam enganar o leitor (ex.: monumento famoso de outro país numa notícia
-local). Entre as boas, prefira a nítida com espaço livre embaixo (onde vai o texto da capa).
-Responda só JSON: {"escolhida": índice da melhor foto ou -1 se nenhuma serve, "nota": 0 a 10,
-"motivo": "curto"}"""
+avalie CADA foto de banco de imagens recebida (numeradas a partir de 0, na ordem).
+Nota de 0 a 10 para o quanto a foto CORRESPONDE ao fato: 10 = mostra o próprio fato ou lugar;
+8 = mesma situação em outro lugar (ex.: rua alagada para notícia de alagamento); 7 = cena claramente
+ligada ao fato; 6 ou menos = genérica ou só lembra o tema de longe.
+Marque também, olhando a foto com atenção (não confie no assunto):
+- "texto": true se aparece QUALQUER letra, palavra, sigla, número, placa, letreiro, marca ou
+  logotipo, inclusive escrito à mão, impresso em objetos, roupas, telas ou papéis, mesmo pequeno;
+- "rosto": true se aparece rosto de pessoa que dá para reconhecer;
+- "engana": true se pode enganar o leitor (ex.: monumento famoso de outro país numa notícia local).
+Responda só JSON: {"fotos": [{"foto": 0, "nota": 0 a 10, "texto": false, "rosto": false,
+"engana": false, "motivo": "curto"}, ...]}"""
 NOTA_MINIMA_FOTO = 7
 
 
@@ -705,13 +705,27 @@ def escolher_foto(card: dict, imagens: list, cena: str = ""):
 
 
 def _escolha(resp: dict, n: int):
-    try:
-        i, nota = int(resp.get("escolhida", -1)), float(resp.get("nota", 0) or 0)
-    except (TypeError, ValueError):
-        return None
-    print(f"[banco] IA: foto {i}, nota {nota:g} — {str(resp.get('motivo', ''))[:90]}")
-    return i if 0 <= i < n and nota >= NOTA_MINIMA_FOTO else None
-
+    """Fica a foto de maior nota (>= NOTA_MINIMA_FOTO) sem texto, sem rosto e que não engana."""
+    fotos = resp.get("fotos")
+    if not isinstance(fotos, list):  # formato antigo: {"escolhida": i, "nota": n}
+        try:
+            i, nota = int(resp.get("escolhida", -1)), float(resp.get("nota", 0) or 0)
+        except (TypeError, ValueError):
+            return None
+        print(f"[banco] IA: foto {i}, nota {nota:g} — {str(resp.get('motivo', ''))[:90]}")
+        return i if 0 <= i < n and nota >= NOTA_MINIMA_FOTO else None
+    boas = []
+    for f in fotos:
+        try:
+            i, nota = int(f.get("foto", -1)), float(f.get("nota", 0) or 0)
+        except (TypeError, ValueError, AttributeError):
+            continue
+        defeitos = [k for k in ("texto", "rosto", "engana") if f.get(k) in (True, "true", "sim")]
+        print(f"[banco] IA: foto {i}, nota {nota:g}{' — recusada: ' + ', '.join(defeitos) if defeitos else ''}"
+              f" — {str(f.get('motivo', ''))[:70]}")
+        if 0 <= i < n and nota >= NOTA_MINIMA_FOTO and not defeitos:
+            boas.append((nota, -i, i))
+    return max(boas)[2] if boas else None
 
 MESMA_NOTICIA = """Você é o editor-chefe de um portal de notícias no Instagram e NÃO pode publicar a
 mesma notícia duas vezes. Compare a NOVA notícia com a lista do que já foi publicado.

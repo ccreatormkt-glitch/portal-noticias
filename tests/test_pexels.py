@@ -146,3 +146,12 @@ def test_pixabay_busca_filtra_escolhe_e_guarda_por_24h(monkeypatch, tmp_path):
     # mesma busca nas próximas 24 h: vem do cache, sem chamar a API de novo
     illustrate._cache("Pixabay", "flooded street heavy rain", lambda: (_ for _ in ()).throw(AssertionError("API")), "en")
     assert buscas == ["flooded street heavy rain"]
+
+
+def test_recusa_foto_com_texto_ou_rosto_mesmo_com_nota_alta():
+    resp = {"fotos": [{"foto": 0, "nota": 9, "texto": True, "motivo": "CV escrito à mão"},
+                      {"foto": 1, "nota": 8, "rosto": True},
+                      {"foto": 2, "nota": 7, "texto": False, "rosto": False},
+                      {"foto": 3, "nota": 6}]}
+    assert editor._escolha(resp, 4) == 2
+    assert editor._escolha({"fotos": [{"foto": 0, "nota": 10, "texto": True}]}, 1) is None
