@@ -291,3 +291,5 @@
 {"ts": "2026-11-20T23:27:54", "event": "published", "headline": "Matemático da Anthropic diz ter resolvido a Hipótese de Riemann", "source": "g1", "ig_id": "17986437431898801", "note": ""}
 {"ts": "2026-11-20T23:34:23", "event": "gerado", "headline": "Tarciana Medeiros, líder do Banco do Brasil, expõe ataques racistas na internet", "source": "Polêmica Paraíba, PB Agora", "ig_id": "", "note": ""}
 {"ts": "2026-11-20T23:35:02", "event": "published", "headline": "Tarciana Medeiros, líder do Banco do Brasil, expõe ataques racistas na internet", "source": "Polêmica Paraíba, PB Agora", "ig_id": "18104875121437734", "note": ""}
+{"ts": "2026-11-20T23:44:43", "event": "gerado", "headline": "Sesuma coíbe atividade de guardadores de carros perto de parque em Campina Grande", "source": "ParaibaOnline, Blog do Márcio Rangel", "ig_id": "", "note": ""}
+{"ts": "2026-11-20T23:44:43", "event": "falha_publicacao", "headline": "Sesuma coíbe atividade de guardadores de carros perto de parque em Campina Grande", "source": "ParaibaOnline, Blog do Márcio Rangel", "ig_id": "", "note": "voz padrão indisponível agora (limite do Gemini); a notícia volta na próxima rodada"}
