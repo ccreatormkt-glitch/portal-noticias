@@ -82,7 +82,8 @@ FONTE = {300: "OpenSans-Light.ttf", 400: "OpenSans-Regular.ttf", 600: "OpenSans-
 
 # Cada tipo de texto, direto das medidas do g1 (x K, com o piso de leitura).
 PAPEIS = {
-    "manchete": dict(fonte=FONTE[700], tamanhos=(80, 76, 72, 66, 60, 54),       # g1: 40 x 2 = 80
+    # mesma fonte do g1, um pouco menor que 40 x 2 (pedido do Arthur: mais foto aparecendo)
+    "manchete": dict(fonte=FONTE[700], tamanhos=(68, 64, 60, 56, 52, 48),
                      entrelinha=48 / 40, track=em("destaque"), max_linhas=5),
     "linha_fina": dict(fonte=FONTE[400], entrelinha=20 / 16, track=em("resumo"), max_linhas=3),
     "chapeu": dict(fonte=FONTE[600], track=em("chapeu")),
@@ -128,12 +129,17 @@ def barra_video() -> dict:
     return dict(fim=alt, logo=G1["barra"]["logo"] * K, centro=alt // 2, borda=max(2, K))
 
 
+# Degradê preto da capa (destaque do g1), mais leve para a foto aparecer: começa logo acima do texto,
+# chega ao máximo na altura da data e não passa de ~70% de preto (a sombra do texto garante a leitura).
+CAPA_PRETO = dict(antes_do_texto=200, ate=0.80, opacidade=180)
+
 # Vídeo do Reels: posições ajustadas com o Arthur (onda centralizada, legenda abaixo dela).
 VIDEO = {
     "topo_seguro": 250,                 # chapéu e data abaixo da faixa que o Instagram cobre
-    "fundo_preto": (840, 1150),         # onde o preto começa e fica sólido (onda + legenda)
-    "onda": ((1080 - 800) // 2, 1190, 800, 104),   # x, y, largura, altura do visualizador
-    "legenda_y": 1420,                  # centro da legenda
+    "fundo_preto": (1010, 1270),        # onde o preto começa e fica sólido (onda + legenda), mais baixo
+    "preto": 0.80,                      # quanto de preto sobre a foto desfocada (antes 0,86)
+    "onda": ((1080 - 800) // 2, 1300, 800, 104),   # x, y, largura, altura do visualizador
+    "legenda_y": 1495,                  # centro da legenda (mais baixa, ainda acima do nome/legenda do IG)
     "legenda_w": 820,                   # largura máxima da legenda (longe dos botões)
 }
 

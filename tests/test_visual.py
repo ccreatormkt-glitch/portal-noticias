@@ -410,7 +410,8 @@ def test_layout_segue_a_hierarquia_do_g1_e_cabe_na_grade():
     assert pos["credito"] <= fmt["grade"][1] - L.esp(3)
     assert L.cabe(pos, fmt)
     assert L.esp(0) == 8 and L.esp(4) == 80 == fmt["margem"]          # escala do g1 x2
-    assert L.PAPEIS["manchete"]["tamanhos"][0] == 40 * L.K             # manchete do g1 x2
+    assert L.PAPEIS["manchete"]["fonte"] == "OpenSans-Bold.ttf"         # mesma fonte do g1
+    assert L.PAPEIS["manchete"]["tamanhos"][0] < 40 * L.K              # um pouco menor (pedido do Arthur)
     assert abs(L.PAPEIS["manchete"]["track"] + 0.045) < 1e-9           # -1,8 px em 40
     b = L.barra(fmt)
     assert b["logo"] == round((fmt["barra"] - fmt["grade"][0]) * 48 / 74)  # logo 48 numa barra de 74

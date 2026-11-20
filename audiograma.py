@@ -279,8 +279,9 @@ def capa(card: dict, out_path: Path, image_path=None, formato: str = "reels") ->
     tam, f_tit, linhas, f_fina, l_fina, pos = escolha
 
     # degradê preto (destaque do g1): começa acima do chapéu e fica forte no meio da manchete
-    meio = pos["topo"] + (pos["meta"] - pos["topo"]) * 0.45
-    img = _degrade(img, z(pos["topo"] - 320), z(meio), 0, 215, cor=PRETO)
+    cp = L.CAPA_PRETO
+    forte = pos["topo"] + (pos["meta"] - pos["topo"]) * cp["ate"]
+    img = _degrade(img, z(pos["topo"] - cp["antes_do_texto"]), z(forte), 0, cp["opacidade"], cor=PRETO)
 
     camada = Image.new("RGBA", img.size, (0, 0, 0, 0))
     d = ImageDraw.Draw(camada)
@@ -324,7 +325,7 @@ def quadro(card: dict, out_path: Path, image_path=None) -> Path:
     img = _degrade(img, z(b["fim"]), z(y_texto + 260), 150, 0, cor=PRETO)   # sob a barra: leitura
     y0, y1 = L.VIDEO["fundo_preto"]
     if foto is not None:
-        img = _material(img, z(y0), z(y1), tinta=0.86, cor=PRETO)
+        img = _material(img, z(y0), z(y1), tinta=L.VIDEO["preto"], cor=PRETO)
     else:
         img = _degrade(img, z(y0), z(y1), 0, 245, cor=PRETO)
 
