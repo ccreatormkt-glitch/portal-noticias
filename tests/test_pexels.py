@@ -42,8 +42,13 @@ def preparar(monkeypatch, fotos, escolha=0, status=200):
             return Resp({"photos": fotos}, status=status)
         return Resp()
     monkeypatch.setattr(illustrate.requests, "get", get)
-    monkeypatch.setattr(editor, "escolher_foto", lambda c, imgs: escolha)
+    monkeypatch.setattr(editor, "escolher_foto", lambda c, imgs, cena="": escolha)
+    monkeypatch.setattr(editor, "palavras_foto", sem_ia)
     return buscas
+
+
+def sem_ia(card):
+    raise RuntimeError("sem IA nos testes")
 
 
 def test_busca_por_palavras_chave_e_usa_a_escolhida(monkeypatch, tmp_path):
@@ -84,8 +89,33 @@ def test_sem_chave_ou_limite_cai_nas_outras_fontes(monkeypatch, tmp_path):
 
 def test_palavras_chave_sem_repetir_e_com_reserva_da_editoria(monkeypatch):
     monkeypatch.setattr(illustrate, "_visao", lambda c: {"busca_en": "Flooded street heavy rain"})
-    assert illustrate.palavras_chave(card()) == ["flooded street heavy rain", "flooded street",
-                                                 illustrate.TEMA_PEXELS["CLIMA"]]
+    monkeypatch.setattr(editor, "palavras_foto", sem_ia)
+    assert [b["q"] for b in illustrate.palavras_chave(card())] == [
+        "flooded street heavy rain", "flooded street", illustrate.TEMA_PEXELS["CLIMA"]]
+
+
+def test_ia_le_a_noticia_e_suas_buscas_vem_primeiro(monkeypatch):
+    monkeypatch.setattr(illustrate, "_visao", lambda c: {})
+    lidas = []
+
+    def gerar(texto, system=None):
+        lidas.append(texto)
+        return ('{"cena": "rua alagada após chuva forte", "buscas": [{"q": "flooded street rain", "lang": "en"},'
+                ' {"q": "Lagoa do Parque Solon de Lucena João Pessoa", "lang": "pt"}]}')
+    monkeypatch.setattr(editor, "generate", gerar)
+    c = card(resumo="Água invadiu casas no Centro.", pontos=["Defesa Civil em alerta"])
+    bs = illustrate.palavras_chave(c)
+    assert bs[0] == {"q": "flooded street rain", "lang": "en"}
+    assert bs[1] == {"q": "Lagoa do Parque Solon de Lucena João Pessoa", "lang": "pt"}
+    assert "Água invadiu casas" in lidas[0] and "Defesa Civil" in lidas[0]   # leu a notícia inteira
+    illustrate.palavras_chave(c)
+    assert len(lidas) == 1                                                  # uma vez por notícia
+
+
+def test_so_aprova_foto_que_corresponde():
+    assert editor._escolha({"escolhida": 2, "nota": 8}, 4) == 2
+    assert editor._escolha({"escolhida": 2, "nota": 6}, 4) is None          # só lembra o tema: recusa
+    assert editor._escolha({"escolhida": -1, "nota": 0}, 4) is None
 
 
 def test_pixabay_busca_filtra_escolhe_e_guarda_por_24h(monkeypatch, tmp_path):
@@ -106,12 +136,13 @@ def test_pixabay_busca_filtra_escolhe_e_guarda_por_24h(monkeypatch, tmp_path):
         return Resp()
     monkeypatch.setattr(illustrate.requests, "get", get)
     vistas = []
-    monkeypatch.setattr(editor, "escolher_foto", lambda c, imgs: vistas.append(len(imgs)) or 0)
+    monkeypatch.setattr(editor, "escolher_foto", lambda c, imgs, cena="": vistas.append(len(imgs)) or 0)
+    monkeypatch.setattr(editor, "palavras_foto", sem_ia)
     c = card()
     arq, credito = illustrate.foto_banco(c, tmp_path / "x")
     assert credito == "Foto: Maria / Pixabay" and vistas == [1]          # a foto com gente nem foi à IA
     assert "pixabay:11" in illustrate._usadas()
     assert "Pixabay (pixabay.com)" in c["_credito_legenda"]
     # mesma busca nas próximas 24 h: vem do cache, sem chamar a API de novo
-    illustrate._cache("Pixabay", "flooded street heavy rain", lambda: (_ for _ in ()).throw(AssertionError("API")))
+    illustrate._cache("Pixabay", "flooded street heavy rain", lambda: (_ for _ in ()).throw(AssertionError("API")), "en")
     assert buscas == ["flooded street heavy rain"]

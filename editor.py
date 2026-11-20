@@ -496,20 +496,66 @@ def ver_imagem(img: bytes, mime: str, contexto: str) -> dict:
     raise RuntimeError("; ".join(erros) or "nenhuma IA configurada")
 
 
-ESCOLHER_FOTO = """Você é editor de fotografia de um portal de notícias no Instagram. Recebe uma notícia
-e algumas fotos de banco de imagens (numeradas a partir de 0, na ordem). Escolha a que MELHOR
-ilustra a notícia. RECUSE fotos com: pessoa reconhecível (rosto visível), qualquer texto, letreiro,
-placa, logotipo ou marca, montagem/colagem, ou que possam enganar o leitor sobre o fato (ex.: lugar
-famoso de outro país numa notícia local). Prefira cenas e objetos ligados ao assunto, nítidas e
-com espaço livre na parte de baixo (onde vai o texto da capa).
-Responda só JSON: {"escolhida": índice da foto ou -1 se nenhuma serve, "motivo": "curto"}"""
+PALAVRAS_FOTO = """Você é editor de fotografia de um portal de notícias. LEIA a notícia inteira e
+diga como achar, num banco de fotos grátis (Pixabay/Pexels), uma imagem que CORRESPONDA ao fato ou
+mostre uma cena muito parecida com ele. Pense no que aparece na foto ideal: o objeto, o lugar, o
+fenômeno, a situação concreta da notícia. Exemplos: "câmeras registram bólido" -> meteoro riscando o
+céu à noite; "governo troca secretários" -> sede do governo ou mesa de reunião oficial; "reaplicação
+do Enem" -> folha de prova e lápis em sala de aula; "temporal destelha casas" -> telhado destruído
+após tempestade.
+Regras: nunca nomes de pessoas; nada de rosto reconhecível; nada de texto ou logotipo.
+Responda só JSON:
+{"cena": "1 frase em português descrevendo a foto ideal",
+ "buscas": [3 ou 4 buscas curtas (2 a 4 palavras cada), da mais fiel ao fato para a mais geral,
+            em inglês: {"q": "meteor night sky", "lang": "en"}. Se o fato for num lugar conhecido
+            da Paraíba que pode ter foto em banco (Açude Velho, Parque do Povo, orla de Tambaú,
+            Pedra do Ingá...), inclua também a busca em português com o lugar e a cidade:
+            {"q": "Açude Velho Campina Grande", "lang": "pt"}]}"""
+
+ESCOLHER_FOTO = """Você é editor de fotografia de um portal de notícias no Instagram. LEIA a notícia e
+olhe as fotos de banco de imagens (numeradas a partir de 0, na ordem). A foto só serve se
+CORRESPONDER ao fato (mostra o próprio lugar, objeto ou situação) ou mostrar uma cena MUITO
+parecida. Foto que só lembra o tema de longe não serve.
+Dê uma nota de 0 a 10 para a melhor: 10 = mostra o próprio fato ou lugar; 8 = mesma situação em
+outro lugar (ex.: rua alagada para notícia de alagamento); 7 = cena claramente ligada ao fato;
+6 ou menos = genérica (ex.: céu nublado para notícia de alagamento).
+RECUSE (não escolha) fotos com: rosto reconhecível, qualquer texto, letreiro, placa, logotipo ou marca,
+montagem/colagem, ou que possam enganar o leitor (ex.: monumento famoso de outro país numa notícia
+local). Entre as boas, prefira a nítida com espaço livre embaixo (onde vai o texto da capa).
+Responda só JSON: {"escolhida": índice da melhor foto ou -1 se nenhuma serve, "nota": 0 a 10,
+"motivo": "curto"}"""
+NOTA_MINIMA_FOTO = 7
 
 
-def escolher_foto(card: dict, imagens: list):
-    """A IA olha as miniaturas e devolve o índice da melhor (ou None se nenhuma serve)."""
+def _texto_da_noticia(card: dict) -> str:
+    partes = [f"Manchete: {card.get('titulo', '')}", card.get("linha_fina", ""), card.get("resumo", ""),
+              *[f"- {p}" for p in card.get("pontos", []) or []], card.get("legenda", ""),
+              f"Cidade: {card.get('cidade', '')} · Editoria: {card.get('chapeu', '')}"]
+    return "\n".join(p for p in partes if p and str(p).strip())[:3500]
+
+
+def palavras_foto(card: dict) -> dict:
+    """A IA lê a notícia e devolve a cena ideal e as buscas para o banco de fotos (uma vez por notícia)."""
+    if "_foto_ia" in card:
+        return card["_foto_ia"]
+    resp = _extract_json(generate(_texto_da_noticia(card), system=PALAVRAS_FOTO))
+    buscas = []
+    for b in resp.get("buscas") or []:
+        if isinstance(b, str):
+            b = {"q": b, "lang": "en"}
+        q = " ".join(str(b.get("q") or "").split())[:80]
+        if q:
+            buscas.append({"q": q, "lang": "pt" if str(b.get("lang", "")).lower().startswith("pt") else "en"})
+    card["_foto_ia"] = {"cena": str(resp.get("cena") or "")[:200], "buscas": buscas[:4]}
+    return card["_foto_ia"]
+
+
+def escolher_foto(card: dict, imagens: list, cena: str = ""):
+    """A IA lê a notícia, olha as miniaturas e devolve o índice da que corresponde ao fato (nota >= 7),
+    ou None se nenhuma corresponde."""
     if not imagens:
         return None
-    noticia = f"Notícia: {card.get('titulo', '')}\n{card.get('linha_fina', '')}\nEditoria: {card.get('chapeu', '')}"
+    noticia = "NOTÍCIA:\n" + _texto_da_noticia(card) + (f"\nFOTO IDEAL: {cena}" if cena else "")
     erros = []
     if GEMINI_API_KEY:
         partes = [{"text": noticia}]
@@ -529,9 +575,7 @@ def escolher_foto(card: dict, imagens: list):
                     continue
                 r.raise_for_status()
                 resp = _extract_json(r.json()["candidates"][0]["content"]["parts"][0]["text"])
-                i = int(resp.get("escolhida", -1))
-                print(f"[pexels] IA escolheu a foto {i}: {str(resp.get('motivo', ''))[:80]}")
-                return i if 0 <= i < len(imagens) else None
+                return _escolha(resp, len(imagens))
             except Exception as ex:
                 erros.append(f"gemini {model}: {type(ex).__name__}")
     if OPENAI_API_KEY:
@@ -547,11 +591,19 @@ def escolher_foto(card: dict, imagens: list):
                                     "messages": [{"role": "system", "content": ESCOLHER_FOTO},
                                                  {"role": "user", "content": conteudo}]}, timeout=(10, 60))
             r.raise_for_status()
-            i = int(_extract_json(r.json()["choices"][0]["message"]["content"]).get("escolhida", -1))
-            return i if 0 <= i < len(imagens) else None
+            return _escolha(_extract_json(r.json()["choices"][0]["message"]["content"]), len(imagens))
         except Exception as ex:
             erros.append(f"openai: {type(ex).__name__}")
     raise RuntimeError("; ".join(erros) or "nenhuma IA configurada")
+
+
+def _escolha(resp: dict, n: int):
+    try:
+        i, nota = int(resp.get("escolhida", -1)), float(resp.get("nota", 0) or 0)
+    except (TypeError, ValueError):
+        return None
+    print(f"[banco] IA: foto {i}, nota {nota:g} — {str(resp.get('motivo', ''))[:90]}")
+    return i if 0 <= i < n and nota >= NOTA_MINIMA_FOTO else None
 
 
 MESMA_NOTICIA = """Você é o editor-chefe de um portal de notícias no Instagram e NÃO pode publicar a

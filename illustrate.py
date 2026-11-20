@@ -327,7 +327,7 @@ def foto_da_cidade(card: dict, base: Path):
 # pareceria ser de alguém envolvido no fato.
 PEXELS_URL = "https://api.pexels.com/v1/search"
 PIXABAY_URL = "https://pixabay.com/api/"
-BANCO_MAX_BUSCAS = 3           # buscas por notícia (cabe folgado nos limites das APIs)
+BANCO_MAX_BUSCAS = 4           # buscas por notícia (cabe folgado nos limites das APIs)
 PEXELS_MAX_BUSCAS = BANCO_MAX_BUSCAS
 CACHE_BUSCAS = Path(__file__).parent / ".cache" / "bancos_de_fotos.json"
 PESSOAS = _re.compile(
@@ -345,26 +345,35 @@ TEMA_PEXELS = {  # palavras-chave de reserva por editoria: cenas e objetos, sem 
 
 
 def palavras_chave(card: dict) -> list:
-    """Uma ou mais buscas (palavras-chave em inglês, sem nomes de pessoas): a do editor, a da leitura
-    da foto da matéria, a mesma mais curta e, por último, a da editoria."""
-    buscas = [card.get("foto_busca", ""), _visao(card).get("busca_en", "")]
-    if card.get("foto_busca") and len(card["foto_busca"].split()) > 2:
-        buscas.append(" ".join(card["foto_busca"].split()[:2]))
-    buscas.append(TEMA_PEXELS.get(card.get("chapeu", ""), ""))
+    """Buscas para o banco de fotos, da mais fiel ao fato para a mais geral: primeiro as da IA que LEU
+    a notícia inteira; depois a do editor e a da leitura da foto da matéria original; por último, a
+    da editoria. Cada busca: {"q": texto, "lang": "en" ou "pt"}. A foto ainda passa pela IA, que só
+    aprova se corresponder à notícia."""
+    import editor
+    try:
+        da_ia = editor.palavras_foto(card).get("buscas", [])
+    except Exception as e:
+        print(f"[banco] IA não gerou as palavras-chave ({str(e)[:60]}): uso as do editor")
+        da_ia = []
+    buscas = [*da_ia, {"q": card.get("foto_busca", ""), "lang": "en"},
+              {"q": _visao(card).get("busca_en", ""), "lang": "en"}]
+    if not da_ia and card.get("foto_busca") and len(card["foto_busca"].split()) > 2:
+        buscas.append({"q": " ".join(card["foto_busca"].split()[:2]), "lang": "en"})
+    buscas.append({"q": TEMA_PEXELS.get(card.get("chapeu", ""), ""), "lang": "en"})
     vistas, saida = set(), []
-    for q in buscas:
-        q = " ".join(str(q or "").split())[:60]
+    for b in buscas:
+        q = " ".join(str(b.get("q") or "").split())[:80]
         if q and q.lower() not in vistas:
             vistas.add(q.lower())
-            saida.append(q)
+            saida.append({"q": q, "lang": b.get("lang", "en")})
     return saida
 
 
-def _cache(banco: str, busca: str, buscar):
+def _cache(banco: str, busca: str, buscar, lang: str = "en"):
     """Guarda cada busca por 24 h (exigência do Pixabay; economiza o limite do Pexels)."""
     import json
     import time
-    chave = f"{banco}:{busca.lower()}"
+    chave = f"{banco}:{lang}:{busca.lower()}"
     try:
         dados = json.loads(CACHE_BUSCAS.read_text()) if CACHE_BUSCAS.exists() else {}
     except Exception:
@@ -380,10 +389,11 @@ def _cache(banco: str, busca: str, buscar):
     return fotos
 
 
-def _busca_pexels(busca: str) -> list:
+def _busca_pexels(busca: str, lang: str = "en") -> list:
     from config import PEXELS_API_KEY
     r = requests.get(PEXELS_URL, headers={"Authorization": PEXELS_API_KEY}, timeout=(5, 15), params={
-        "query": busca, "orientation": "portrait", "size": "large", "per_page": 15, "locale": "en-US"})
+        "query": busca, "orientation": "portrait", "size": "large", "per_page": 15,
+        "locale": "pt-BR" if lang == "pt" else "en-US"})
     if r.status_code == 429:
         raise RuntimeError("limite de buscas do Pexels atingido")
     r.raise_for_status()
@@ -394,10 +404,10 @@ def _busca_pexels(busca: str) -> list:
             for f in r.json().get("photos", [])]
 
 
-def _busca_pixabay(busca: str) -> list:
+def _busca_pixabay(busca: str, lang: str = "en") -> list:
     from config import PIXABAY_API_KEY
     r = requests.get(PIXABAY_URL, timeout=(5, 15), params={
-        "key": PIXABAY_API_KEY, "q": busca[:100], "lang": "en", "image_type": "photo",
+        "key": PIXABAY_API_KEY, "q": busca[:100], "lang": lang, "image_type": "photo",
         "orientation": "vertical", "min_height": 1600, "safesearch": "true", "per_page": 20})
     if r.status_code == 429:
         raise RuntimeError("limite de buscas do Pixabay atingido")
@@ -447,10 +457,15 @@ def foto_banco(card: dict, base: Path):
         print("[banco] sem chave do Pixabay/Pexels (segredos PIXABAY_API_KEY / PEXELS_API_KEY): outras fontes")
         return None
     import editor
+    buscas = palavras_chave(card)[:BANCO_MAX_BUSCAS]
+    cena = (card.get("_foto_ia") or {}).get("cena", "")
+    if cena:
+        print(f"[banco] foto ideal: {cena}")
     for nome, site, buscar in bancos:
-        for busca in palavras_chave(card)[:BANCO_MAX_BUSCAS]:
+        for b in buscas:
+            busca, lang = b["q"], b["lang"]
             try:
-                cands = _filtrar(_cache(nome, busca, lambda: buscar(busca)))[:6]
+                cands = _filtrar(_cache(nome, busca, lambda: buscar(busca, lang), lang))[:8]
             except Exception as e:
                 print(f"[banco] {nome} '{busca}': {str(e)[:80]}")
                 if "limite" in str(e):
@@ -468,14 +483,14 @@ def foto_banco(card: dict, base: Path):
                 except Exception:
                     miniaturas.append(None)
             validas = [f for f, m in zip(cands, miniaturas) if m]
-            try:
-                idx = editor.escolher_foto(card, [m for m in miniaturas if m])
+            try:  # a IA lê a notícia e só aprova foto que corresponda ao fato (ou cena bem parecida)
+                idx = editor.escolher_foto(card, [m for m in miniaturas if m], cena=cena)
                 escolhida = validas[idx] if idx is not None and 0 <= idx < len(validas) else None
-            except Exception as e:  # sem IA para olhar: fica a 1ª da busca (já filtrada pelo texto)
-                print(f"[banco] escolha pela IA falhou ({str(e)[:60]}): uso a 1ª da busca")
-                escolhida = validas[0] if validas else None
+            except Exception as e:  # sem IA para conferir, não arrisca foto que não combine
+                print(f"[banco] a IA não conseguiu conferir as fotos ({str(e)[:60]})")
+                escolhida = None
             if escolhida is None:
-                print(f"[banco] {nome} '{busca}': a IA não aprovou nenhuma das {len(cands)} fotos")
+                print(f"[banco] {nome} '{busca}': nenhuma das {len(cands)} fotos corresponde à notícia")
                 continue
             try:
                 img = requests.get(escolhida["grande"], timeout=(5, 40))
