@@ -245,3 +245,5 @@
 {"ts": "2026-11-20T20:53:55", "event": "pulado", "headline": "Homem é encontrado morto com mãos amarradas e sacola na cabeça na Grande João Pessoa", "source": "", "ig_id": "", "note": "mesmo link de uma notícia já postada (Polícia investiga homicídio de homem atingido por disparos e)"}
 {"ts": "2026-11-20T20:55:01", "event": "gerado", "headline": "Guarabira recebe programação da Rota Cultural Raízes do Brejo nesta semana", "source": "G1, Prefeitura de Guarabira (PB)", "ig_id": "", "note": ""}
 {"ts": "2026-11-20T20:56:00", "event": "published", "headline": "Guarabira recebe programação da Rota Cultural Raízes do Brejo nesta semana", "source": "G1, Prefeitura de Guarabira (PB)", "ig_id": "18114608699243989", "note": ""}
+{"ts": "2026-11-20T21:03:31", "event": "gerado", "headline": "Trump afirma que convenceu Filipinas a trocar produtos agrícolas brasileiros pelos dos EUA", "source": "CNN Brasil, G1", "ig_id": "", "note": ""}
+{"ts": "2026-11-20T21:04:14", "event": "published", "headline": "Trump afirma que convenceu Filipinas a trocar produtos agrícolas brasileiros pelos dos EUA", "source": "CNN Brasil, G1", "ig_id": "18151369180560811", "note": ""}
