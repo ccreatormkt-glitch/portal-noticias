@@ -144,3 +144,5 @@
 {"ts": "2026-11-20T14:17:49", "event": "published", "headline": "Inep recebe até esta sexta pedidos para reaplicação do Enem", "source": "Agência Brasil, Portal Correio e +2", "ig_id": "17925879699224092", "note": ""}
 {"ts": "2026-11-20T14:19:04", "event": "gerado", "headline": "Forte temporal deixa um morto e danifica casas em Tupanciretã no RS", "source": "G1, CNN Brasil", "ig_id": "", "note": ""}
 {"ts": "2026-11-20T14:19:43", "event": "published", "headline": "Forte temporal deixa um morto e danifica casas em Tupanciretã no RS", "source": "G1, CNN Brasil", "ig_id": "18123775457286750", "note": ""}
+{"ts": "2026-11-20T14:28:48", "event": "gerado", "headline": "Paraíba soma 21 casos de feminicídio em 2026 após dois crimes em outubro", "source": "Se Liga PB, g1 Paraíba e +4", "ig_id": "", "note": ""}
+{"ts": "2026-11-20T14:28:48", "event": "falha_publicacao", "headline": "Paraíba soma 21 casos de feminicídio em 2026 após dois crimes em outubro", "source": "Se Liga PB, g1 Paraíba e +4", "ig_id": "", "note": "voz padrão indisponível agora (limite do Gemini); a notícia volta na próxima rodada"}
