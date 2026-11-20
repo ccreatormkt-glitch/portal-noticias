@@ -396,3 +396,35 @@ def test_montagem_de_fotos_fica_de_fora():
     assert illustrate.NAO_E_FOTO.search("joao pessoa (compilation) heitor carvalho jorge")
     assert illustrate.NAO_E_FOTO.search("montagem de joao pessoa")
     assert not illustrate.NAO_E_FOTO.search("praia de tambau ao entardecer")
+
+
+def test_layout_segue_a_hierarquia_do_g1_e_cabe_na_grade():
+    """Pilha da capa (chapéu > manchete > linha fina > metadado > crédito) de cima para baixo,
+    abaixo da logo e acima do corte 3:4 da grade do perfil."""
+    import layout as L
+    fmt = L.FORMATOS["reels"]
+    pos = L.pilha_capa(5, 84, 2, True, fmt)
+    assert fmt["topo"] + fmt["logo"] < pos["chapeu"] < pos["titulo"] < pos["fina"] < pos["meta"] < pos["credito"]
+    assert pos["credito"] <= fmt["grade"][1] - L.esp(3)
+    assert L.cabe(pos, fmt)
+    assert L.esp(0) == 8 and L.esp(4) == 80 == fmt["margem"]          # escala do g1 x2
+    assert L.tam("linha_fina", 96) == 36 and L.tam("linha_fina", 54) == L.PISO_TEXTO
+
+
+def test_capa_tira_a_linha_fina_quando_nao_cabe(monkeypatch, tmp_path):
+    import audiograma
+    import layout as L
+    chamadas = []
+    original = L.pilha_capa
+    monkeypatch.setattr(L, "pilha_capa", lambda *a: chamadas.append(a[2]) or original(*a))
+    titulo = "Prefeitura de Campina Grande anuncia mudança no transporte público a partir de segunda e passageiros devem ficar atentos às novas linhas"
+    audiograma.capa(card(titulo=titulo, linha_fina=" ".join(["palavra"] * 40)), tmp_path / "c.jpg", None)
+    assert chamadas  # a pilha foi calculada
+    audiograma.capa(card(titulo="Chuva alaga JP", linha_fina="Defesa Civil registra 80 mm."), tmp_path / "d.jpg", None)
+    assert chamadas[-1] == 1  # manchete curta: a linha fina entra (1 linha)
+
+
+def test_capa_no_formato_feed(tmp_path):
+    import audiograma
+    out = audiograma.capa(card(), tmp_path / "f.jpg", None, formato="feed")
+    assert Image.open(out).size == (audiograma.z(1080), audiograma.z(1350))

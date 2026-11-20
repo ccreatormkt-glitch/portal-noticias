@@ -21,6 +21,7 @@ from zoneinfo import ZoneInfo
 
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
+import layout as L
 from config import BRAND_COLOR, FONT_DIR, PORTAL_HANDLE, TIMEZONE
 
 W, H, FPS = 1080, 1920, 30              # coordenadas do desenho (o vídeo sai em 2K: ESCALA)
@@ -35,10 +36,12 @@ VW, VH = round(W * ESCALA), round(H * ESCALA)
 def z(v):
     """Coordenada do desenho (1080x1920) -> pixel do vídeo (2K)."""
     return round(v * ESCALA)
-M = 80                                   # margem esquerda (área segura do Instagram)
-ONDA = ((W - 800) // 2, 1190, 800, 104)  # x, y, largura, altura do visualizador da voz (centralizado)
-LEG_Y = 1420                             # centro da legenda: logo abaixo da onda (mesmo eixo central)
-LEG_W = 820                              # largura máxima da legenda (x 130 a 950, longe dos botões)
+# posições e medidas vêm do sistema de layout (layout.py, derivado da estrutura do g1)
+REELS = L.FORMATOS["reels"]
+M = REELS["margem"]                      # margem esquerda (área segura do Instagram)
+ONDA = L.VIDEO["onda"]                   # x, y, largura, altura do visualizador da voz (centralizado)
+LEG_Y = L.VIDEO["legenda_y"]             # centro da legenda: logo abaixo da onda (mesmo eixo central)
+LEG_W = L.VIDEO["legenda_w"]             # largura máxima da legenda (x 130 a 950, longe dos botões)
 VERMELHO = tuple(int(BRAND_COLOR.lstrip("#")[i:i + 2], 16) for i in (0, 2, 4))
 VERMELHO_ESCURO = tuple(int(c * 0.78) for c in VERMELHO)
 BRANCO = (255, 255, 255)
@@ -148,26 +151,27 @@ def _sem_foto(card, w, h):
 
 
 def _tag(d, x, y, texto):
-    """Editoria fixa, no formato da 1ª postagem (retângulo de canto curto, Inter Bold):
-    branca com texto vermelho, para não sumir sobre o vermelho da marca."""
-    f_tag = fonte("Inter-Bold.otf", z(26))
-    track = 0.06  # maiúsculas pequenas: um pouco mais de ar entre as letras
-    tw = int(f_tag.getlength(texto) + track * f_tag.size * (len(texto) - 1))
-    d.rounded_rectangle((x, y, x + tw + z(40), y + z(52)), radius=z(10), fill=BRANCO)
-    _texto(d, (x + z(20), y + z(26)), texto, f_tag, VERMELHO, track=track, anchor="lm")
-    return y + z(52)
+    """Chapéu (editoria) no formato da 1ª postagem: retângulo de canto curto, Inter Bold,
+    branco com texto vermelho, para não sumir sobre o vermelho da marca."""
+    t = L.PAPEIS["chapeu"]
+    f_tag = fonte(t["fonte"], z(t["tam"]))
+    tw = int(f_tag.getlength(texto) + t["track"] * f_tag.size * (len(texto) - 1))
+    d.rounded_rectangle((x, y, x + tw + z(2 * t["folga"]), y + z(t["altura"])), radius=z(t["raio"]),
+                        fill=L.COR["chapeu_fundo"])
+    _texto(d, (x + z(t["folga"]), y + z(t["altura"] / 2)), texto, f_tag, VERMELHO, track=t["track"],
+           anchor="lm")
+    return y + z(t["altura"])
 
 
-def _credito(d, card, y, imagem, x_dir=None, x_esq=None):
+def _credito(d, card, y, imagem, x_esq, largura):
+    """Crédito da foto, pequeno, no mesmo eixo esquerdo do resto do texto."""
     credito = card.get("_credito", "")
     if imagem and credito:
-        f_cr = fonte("Inter-Medium.otf", z(18))
-        while f_cr.getlength(credito) > z(W - 2 * M) and len(credito) > 10:
+        t = L.PAPEIS["credito_foto"]
+        f_cr = fonte(t["fonte"], z(t["tam"]))
+        while f_cr.getlength(credito) > largura and len(credito) > 10:
             credito = credito[:-2]
-        if x_esq is not None:
-            d.text((x_esq, y), credito, font=f_cr, fill=(255, 230, 225), anchor="ls")
-        else:
-            d.text((x_dir or z(W - M), y), credito, font=f_cr, fill=(255, 230, 225), anchor="rs")
+        _texto(d, (x_esq, y), credito, f_cr, L.COR["credito"], track=t["track"])
 
 
 def _palavras_com_fonte(texto: str, destaques: list, tamanho: int):
@@ -179,10 +183,10 @@ def _palavras_com_fonte(texto: str, destaques: list, tamanho: int):
     return out
 
 
-def _quebrar(itens, largura):
+def _quebrar(itens, largura, track=0.0):
     linhas, atual, w = [], [], 0.0
     for p, f, dest in itens:
-        lw = f.getlength(p + " ")
+        lw = f.getlength(p + " ") + track * f.size * max(len(p) - 1, 0)
         if atual and w + lw > largura:
             linhas.append(atual)
             atual, w = [], 0.0
@@ -198,55 +202,90 @@ def _quebrar(itens, largura):
     return linhas
 
 
-def capa(card: dict, out_path: Path, image_path=None) -> Path:
-    """Capa do Reels (padrão da 1ª postagem, aprovado pelo Arthur): foto em tela cheia, degradê
-    VERMELHO da marca embaixo (no lugar do preto), editoria, manchete toda em Inter Black (uma fonte
-    só) alinhada à esquerda, cidade/data e crédito. Tudo dentro do corte 3:4 da grade do perfil (y 240 a 1680)."""
-    foto = _foto_ou_vazio(image_path, VW, VH)
-    img = foto if foto is not None else _sem_foto(card, VW, VH)
+def _linhas_da_fina(texto: str, f, largura: int, maximo: int) -> list:
+    if not texto:
+        return []
+    linhas = _quebrar([(p, f, False) for p in texto.split()], largura, track=L.PAPEIS["linha_fina"]["track"])
+    if len(linhas) > maximo:  # raro (a linha fina tem até 15 palavras): corta com reticências
+        linhas = linhas[:maximo]
+        p, f_, dest = linhas[-1][-1]
+        linhas[-1][-1] = (p.rstrip(".,;:") + "…", f_, dest)
+    return linhas
 
-    largura = z(W - 2 * M - 30)
-    for tam in (84, 78, 72, 66, 60, 54):
-        f_tit = fonte("Inter-Black.otf", z(tam))  # capa: uma fonte só (sem a serifada dos destaques)
-        linhas = _quebrar([(p, f_tit, False) for p in card["titulo"].split()], largura)
-        if len(linhas) <= 5:
+
+def capa(card: dict, out_path: Path, image_path=None, formato: str = "reels") -> Path:
+    """Capa (padrão da 1ª postagem, aprovado pelo Arthur) organizada como o topo de uma matéria do
+    g1: chapéu (editoria), manchete, linha fina, metadado (cidade e data) e crédito, um embaixo do
+    outro no mesmo eixo esquerdo. Foto em tela cheia com vermelho translúcido da marca no pé; uma
+    fonte só (Inter). Medidas e espaços vêm de layout.py; tudo fica dentro do corte da grade."""
+    fmt = L.FORMATOS[formato]
+    cw, ch = z(fmt["w"]), z(fmt["h"])
+    foto = _foto_ou_vazio(image_path, cw, ch)
+    img = foto if foto is not None else _sem_foto(card, cw, ch)
+    m, largura = fmt["margem"], z(fmt["largura_texto"])
+    man, lf = L.PAPEIS["manchete"], L.PAPEIS["linha_fina"]
+    fina = " ".join(str(card.get("linha_fina") or "").split())
+    tem_credito = foto is not None and bool(card.get("_credito"))
+
+    def compor(tam, com_fina):
+        f_tit = fonte(man["fonte"], z(tam))
+        linhas = _quebrar([(p, f_tit, False) for p in card["titulo"].split()], largura, track=man["track"])
+        f_fina = fonte(lf["fonte"], z(L.tam("linha_fina", tam)))
+        l_fina = _linhas_da_fina(fina if com_fina else "", f_fina, largura, lf["max_linhas"])
+        return f_tit, linhas, f_fina, l_fina, L.pilha_capa(len(linhas), tam, len(l_fina), tem_credito, fmt)
+
+    # maior manchete que cabe; se nem a menor cabe com a linha fina, a linha fina sai da capa
+    escolha = None
+    for com_fina in (True, False):
+        for tam in man["tamanhos"]:
+            f_tit, linhas, f_fina, l_fina, pos = compor(tam, com_fina)
+            if len(linhas) <= man["max_linhas"] and L.cabe(pos, fmt):
+                escolha = (tam, f_tit, linhas, f_fina, l_fina, pos)
+                break
+        if escolha:
             break
-    passo = int(z(tam) * 1.07)  # entrelinha curta em título grande (Apple)
-    base_ultima = z(1530)                       # última linha da manchete
-    topo_texto = base_ultima - passo * (len(linhas) - 1) - int(z(tam) * 0.8)
-    y_tag = topo_texto - z(34) - z(54)
-    # degradê: transparente bem acima da etiqueta, já forte quando a manchete começa
-    img = _degrade(img, 0, z(470), 130, 0)                        # topo: logo legível
-    if foto is not None:  # pé: "vidro" vermelho com a foto desfocada por baixo, borda suave
-        img = _material(img, y_tag - z(300), topo_texto - z(20))
-    else:
-        img = _degrade(img, y_tag - z(330), topo_texto, 0, 228)
-    d = ImageDraw.Draw(img)
-    lg = logo(z(66))
-    img.paste(lg, (z(M), z(300)), lg)
+    if escolha is None:
+        tam = man["tamanhos"][-1]
+        escolha = (tam, *compor(tam, False))
+    tam, f_tit, linhas, f_fina, l_fina, pos = escolha
 
-    _tag(d, z(M), y_tag, (card.get("chapeu") or "NOTÍCIA").upper())
-    y = base_ultima - passo * (len(linhas) - 1)
-    for linha in linhas:
-        x = z(M)
-        for p, f, dest in linha:
-            x += _texto(d, (x, y), p, f, BRANCO, track=-0.022) + f.getlength(" ")  # título: mais justo
-        y += passo
+    topo_texto = pos["titulo"] - round(tam * L.ALTURA_MAIUSCULA)
+    img = _degrade(img, 0, z(fmt["topo"] + 170), 130, 0)              # topo: logo legível
+    if foto is not None:  # pé: "vidro" vermelho com a foto desfocada por baixo, borda suave
+        img = _material(img, z(pos["chapeu"] - 300), z(topo_texto - 20))
+    else:
+        img = _degrade(img, z(pos["chapeu"] - 330), z(topo_texto), 0, 228)
+    d = ImageDraw.Draw(img)
+    lg = logo(z(fmt["logo"]))
+    img.paste(lg, (z(m), z(fmt["topo"])), lg)
+
+    _tag(d, z(m), z(pos["chapeu"]), (card.get("chapeu") or "NOTÍCIA").upper())
+    for i, linha in enumerate(linhas):                               # manchete
+        x, y = z(m), z(pos["titulo"] + pos["passo_titulo"] * i)
+        for p, f, _ in linha:
+            x += _texto(d, (x, y), p, f, L.COR["texto"], track=man["track"]) + f.getlength(" ")
+    for i, linha in enumerate(l_fina):                               # linha fina
+        x, y = z(m), z(pos["fina"] + pos["passo_fina"] * i)
+        for p, f, _ in linha:
+            x += _texto(d, (x, y), p, f, L.COR["texto_aux"], track=lf["track"]) + f.getlength(" ")
     meta = [card.get("cidade") or "Paraíba", _carimbo().replace(" · ", ", ").lower()]
     if card.get("_ilustrativa"):
         meta.append("Imagem ilustrativa")
     elif "IA" in card.get("_credito", ""):
         meta.append("Ilustração por IA")
-    _texto(d, (z(M), z(1592)), "  ·  ".join(meta), fonte("Inter-Medium.otf", z(29)), (255, 236, 232),
-           track=0.012)
-    _credito(d, card, z(1648), foto is not None)
+    t_meta = L.PAPEIS["meta"]
+    _texto(d, (z(m), z(pos["meta"])), "  ·  ".join(meta), fonte(t_meta["fonte"], z(pos["tam_meta"])),
+           L.COR["texto_aux"], track=t_meta["track"])
+    if tem_credito:
+        _credito(d, card, z(pos["credito"]), True, z(m), largura)
     img.save(out_path, quality=94)
     return Path(out_path)
 
 
 def quadro(card: dict, out_path: Path, image_path=None) -> Path:
-    """Fundo fixo do vídeo: a MESMA imagem da capa com efeito vermelho (duotone da marca),
-    logo e editoria no topo; embaixo, vermelho sólido para a onda da voz e a legenda."""
+    """Fundo fixo do vídeo: a MESMA imagem da capa com efeito vermelho (duotone da marca).
+    No topo, a identificação no formato do card de notícia do g1: chapéu, depois cidade e data,
+    depois o crédito. Embaixo, vermelho translúcido para a onda da voz e a legenda."""
     from PIL import ImageOps
     foto = _foto_ou_vazio(image_path, VW, VH)
     if foto is not None:
@@ -256,20 +295,26 @@ def quadro(card: dict, out_path: Path, image_path=None) -> Path:
         img = Image.blend(duo, foto, 0.38)  # vermelho da marca, mas a foto continua reconhecível
     else:
         img = _sem_foto(card, VW, VH)
-    img = _degrade(img, 0, z(560), 130, 0)          # topo: identificação legível
+    img = _degrade(img, 0, z(REELS["topo"] + 260), 130, 0)          # topo: identificação legível
+    y0, y1 = L.VIDEO["material"]
     if foto is not None:  # embaixo: "vidro" vermelho (foto desfocada sob o vermelho), borda suave
-        img = _material(img, z(840), z(1150), tinta=0.84)
+        img = _material(img, z(y0), z(y1), tinta=0.84)
     else:
-        img = _degrade(img, z(860), z(1170), 0, 245)
+        img = _degrade(img, z(y0 + 20), z(y1 + 20), 0, 245)
     d = ImageDraw.Draw(img)
-    lg = logo(z(66))
-    img.paste(lg, (z(M), z(300)), lg)
-    fim_tag = _tag(d, z(M), z(396), (card.get("chapeu") or "NOTÍCIA").upper())   # editoria fixa
+    lg = logo(z(REELS["logo"]))
+    img.paste(lg, (z(M), z(REELS["topo"])), lg)
+    y_tag = REELS["topo"] + REELS["logo"] + L.esp(2)                 # logo -> chapéu: 32
+    fim_tag = y_tag + L.PAPEIS["chapeu"]["altura"]
+    _tag(d, z(M), z(y_tag), (card.get("chapeu") or "NOTÍCIA").upper())
+    t_meta = L.tam("meta", L.PAPEIS["manchete"]["tamanhos"][0])
+    y_meta = fim_tag + L.esp(2) + round(t_meta * L.ALTURA_MAIUSCULA)  # chapéu -> metadado: 32
     cidade = card.get("cidade") or "Paraíba"
-    y_meta = fim_tag + z(52)
-    _texto(d, (z(M), y_meta), f"{cidade}  ·  {_carimbo().replace(' · ', ', ').lower()}",
-           fonte("Inter-SemiBold.otf", z(27)), (255, 238, 234), track=0.012)
-    _credito(d, card, y_meta + z(36), foto is not None, x_esq=z(M))  # metadado junto da identificação
+    _texto(d, (z(M), z(y_meta)), f"{cidade}  ·  {_carimbo().replace(' · ', ', ').lower()}",
+           fonte(L.PAPEIS["meta"]["fonte"], z(t_meta)), L.COR["texto_aux"], track=L.PAPEIS["meta"]["track"])
+    t_cred = L.PAPEIS["credito_foto"]["tam"]
+    y_cred = y_meta + round(t_meta * L.DESCENDENTE) + L.esp(1) + round(t_cred * L.ALTURA_MAIUSCULA)
+    _credito(d, card, z(y_cred), foto is not None, z(M), z(REELS["direita_segura"] - M))
     img.save(out_path, quality=95)
     return Path(out_path)
 
