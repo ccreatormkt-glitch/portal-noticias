@@ -118,3 +118,5 @@
 {"ts": "2026-11-20T01:50:51", "event": "falha_publicacao", "headline": "Diocese de Campina Grande marca segunda Missa Inclusiva para dezembro", "source": "ParaibaOnline, Blog do Dércio", "ig_id": "", "note": "voz padrão indisponível agora (limite do Gemini); a notícia volta na próxima rodada"}
 {"ts": "2026-11-20T01:56:13", "event": "gerado", "headline": "Paróquia de Campina Grande agenda missa inclusiva e cria pastoral", "source": "ParaibaOnline, Blog do Dércio", "ig_id": "", "note": ""}
 {"ts": "2026-11-20T01:57:00", "event": "published", "headline": "Diocese de Campina Grande marca segunda Missa Inclusiva para dezembro", "source": "ParaibaOnline, Blog do Dércio", "ig_id": "18118869461612041", "note": ""}
+{"ts": "2026-11-20T02:07:08", "event": "gerado", "headline": "Novo jogo GTA 6 movimenta R$ 10 bilhões em pré-vendas no mundo", "source": "G1", "ig_id": "", "note": ""}
+{"ts": "2026-11-20T02:07:08", "event": "falha_publicacao", "headline": "Novo jogo GTA 6 movimenta R$ 10 bilhões em pré-vendas no mundo", "source": "G1", "ig_id": "", "note": "voz padrão indisponível agora (limite do Gemini); a notícia volta na próxima rodada"}
