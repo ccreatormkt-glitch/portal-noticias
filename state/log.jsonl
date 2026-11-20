@@ -286,3 +286,6 @@
 {"ts": "2026-11-20T23:09:09", "event": "published", "headline": "Marcas retiram patrocínio de novela da Globo após polêmica sobre imagem do Nordeste", "source": "Polêmica Paraíba, Fonte 83", "ig_id": "18008639849795303", "note": ""}
 {"ts": "2026-11-20T23:17:11", "event": "gerado", "headline": "Loja de perfumes é assaltada com prejuízo de R$ 50 mil em Campina Grande", "source": "Portal Correio, Paraíba dia a dia", "ig_id": "", "note": ""}
 {"ts": "2026-11-20T23:18:07", "event": "published", "headline": "Loja de perfumes é assaltada com prejuízo de R$ 50 mil em Campina Grande", "source": "Portal Correio, Paraíba dia a dia", "ig_id": "18099331211677910", "note": ""}
+{"ts": "2026-11-20T23:24:12", "event": "pulado", "headline": "PF diz que não há conversas de Mendonça com Vorcaro", "source": "", "ig_id": "", "note": "repetida: Edson Fachin nega pedido de soltura e mantém prisão de Daniel Vorcaro"}
+{"ts": "2026-11-20T23:27:04", "event": "gerado", "headline": "Matemático da Anthropic diz ter resolvido a Hipótese de Riemann", "source": "g1", "ig_id": "", "note": ""}
+{"ts": "2026-11-20T23:27:54", "event": "published", "headline": "Matemático da Anthropic diz ter resolvido a Hipótese de Riemann", "source": "g1", "ig_id": "17986437431898801", "note": ""}
