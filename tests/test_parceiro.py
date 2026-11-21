@@ -320,3 +320,17 @@ def test_video_de_parceiro_com_fato_ja_postado_e_pulado(monkeypatch):
     novo = {"chapeu": "CULTURA", "titulo": "Festival de inverno abre inscrições em Bananeiras",
             "legenda": "Artistas podem se inscrever até dezembro.", "cidade": "Bananeiras"}
     assert parceiro.ja_postado(novo) == ""
+
+
+def test_copia_do_parceiro_tolera_nomes_e_barra_frase_copiada():
+    import parceiro
+    legenda = "Jair Bolsonaro é internado com dores abdominais no Hospital DF Star em Brasília."
+    fala = ("De acordo com a equipe médica, o ex-presidente Jair Bolsonaro passou a noite em observação "
+            "e deve fazer novos exames nesta sexta-feira pela manhã no hospital.")
+    proprio = {"titulo": "Bolsonaro vai ao Hospital DF Star com dor na barriga",
+               "legenda": "De acordo com a equipe, Jair Bolsonaro ficou em observação e faz exames amanhã."}
+    assert parceiro.copiado(proprio, legenda, fala) == []          # nomes e frase feita não contam
+    copia = {"titulo": "Jair Bolsonaro é internado com dores abdominais",
+             "legenda": "O ex-presidente Jair Bolsonaro passou a noite em observação e deve fazer novos exames "
+                        "nesta sexta-feira pela manhã no hospital."}
+    assert parceiro.copiado(copia, legenda, fala)                   # manchete e frase copiadas

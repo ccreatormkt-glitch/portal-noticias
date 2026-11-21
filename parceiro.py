@@ -411,19 +411,38 @@ def repetidos(novo: str, original: str, n: int = 4) -> list:
     return sorted({" ".join(p[i:i + n]) for i in range(len(p) - n + 1)} & grams)
 
 
+def copiado(card: dict, legenda_original: str, transcricao: str, tolerancia: int = 2) -> list:
+    """O que ainda está copiado do parceiro, com a mesma régua das notícias (editor.trechos_repetidos):
+    - manchete: nenhuma sequência de 5 palavras igual à legenda do post original;
+    - legenda: no máximo `tolerancia` sequências de 6 palavras iguais à legenda ou à fala do vídeo.
+    Nomes próprios, números e ligações ("Jair Bolsonaro", "Polícia Militar da Paraíba") não contam:
+    não dá para reescrever. Antes qualquer 4 palavras iguais à fala barravam o vídeo."""
+    import editor
+    original = (legenda_original or "") + " " + (transcricao or "")
+    nomes = {w.lower() for w in re.findall(r"[A-Za-zÀ-ÿ0-9]+", original) if w[0].isupper() or w.isdigit()}
+    titulos = editor._ngramas(legenda_original or "", 5)
+    achados = [g for g in editor._ngramas(card.get("titulo", ""), 5)
+               if g in titulos and not editor._inevitavel(g, nomes)]
+    fontes = editor._ngramas(original, 6)
+    corpo = [g for g in editor._ngramas(card.get("legenda", ""), 6)
+             if g in fontes and not editor._inevitavel(g, nomes)]
+    if len(corpo) > tolerancia:
+        achados += corpo
+    return sorted(set(achados))
+
+
 def escrever(legenda_original: str, transcricao: str, tentativas: int = 3) -> dict:
     import editor
     sistema = SISTEMA.format(portal=config.PORTAL_NAME, editorias=", ".join(editor.EDITORIAS),
                              regra_escrita=_regra_escrita())
     material = f"LEGENDA DO POST:\n{legenda_original.strip()}\n\nFALA DO VÍDEO:\n{transcricao.strip()}"
-    original = legenda_original + " " + transcricao
     pedido, card = material, {}
     for _ in range(tentativas):
         card = editor._extract_json(editor.generate(pedido, sistema))
         if card.get("skip") or card.get("risco") == "skip":
             card["skip"] = True
             return card
-        rep = repetidos(" ".join([card.get("titulo", ""), card.get("legenda", "")]), original)
+        rep = copiado(card, legenda_original, transcricao)
         if not rep:
             break
         pedido = (material + "\n\nSUA VERSÃO ANTERIOR repetiu trechos do material; reescreva "
@@ -442,7 +461,7 @@ def escrever(legenda_original: str, transcricao: str, tentativas: int = 3) -> di
     # regra do PB Minuto: todo texto passa pela skill STE80 Humanizer (sem voltar a copiar o original)
     if config.HUMANIZAR:
         revisado = editor.humanizar(dict(card), None, validar=False)
-        if repetidos(" ".join([revisado.get("titulo", ""), revisado.get("legenda", "")]), original):
+        if copiado(revisado, legenda_original, transcricao):
             print("[parceiro] revisão descartada (ficou parecida com o original)")
         else:
             card = revisado
