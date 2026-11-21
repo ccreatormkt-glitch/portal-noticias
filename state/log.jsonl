@@ -314,3 +314,6 @@
 {"ts": "2026-11-21T00:56:35", "event": "pulado", "headline": "Tempestade atinge cidades do Vale do Paraíba e causa alagamentos em Lorena e Aparecida nesta sexta", "source": "", "ig_id": "", "note": "mesmo fato já postado: Forte temporal deixa um morto e danifica casas em Tupanciret"}
 {"ts": "2026-11-21T00:59:01", "event": "gerado", "headline": "Briga entre condutores termina com motociclista baleado em Campina Grande", "source": "Paraíba dia a dia, G1", "ig_id": "", "note": ""}
 {"ts": "2026-11-21T00:59:40", "event": "published", "headline": "Motociclista é baleado após briga no trânsito em Campina Grande", "source": "Paraíba dia a dia, G1", "ig_id": "17922561957460804", "note": ""}
+{"ts": "2026-11-21T01:05:10", "event": "pulado", "headline": "Caso Master: relatório da PF identifica mensagens trocadas com Vorcaro que citam ministro André Mendonça", "source": "", "ig_id": "", "note": "repetida: PGR recebe de Fachin relatórios da PF que mencionam quatro magistrados do STF"}
+{"ts": "2026-11-21T01:07:18", "event": "gerado", "headline": "Bayer paga R$ 40 bilhões em acordo judicial por casos de câncer nos EUA", "source": "g1", "ig_id": "", "note": ""}
+{"ts": "2026-11-21T01:09:04", "event": "published", "headline": "Bayer paga R$ 40 bilhões em acordo judicial por casos de câncer nos EUA", "source": "g1", "ig_id": "17907751998604316", "note": ""}
