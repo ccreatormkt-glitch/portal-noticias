@@ -111,7 +111,7 @@ PAPEIS = {
     "linha_fina": dict(fonte=FONTE[400], entrelinha=1.30, track=-0.005, max_linhas=3),
     "chapeu": dict(fonte=FONTE[700], track=0.06, caixa_alta=True),
     "meta": dict(fonte=FONTE[500], track=0.01),
-    "credito_foto": dict(fonte=FONTE[400], tam=22, track=0.0),
+    "credito_foto": dict(fonte=FONTE[400], tam=4, track=0.0),  # 4 px: pedido do Arthur (crédito quase invisível)
     "legenda": dict(fonte=FONTE_DISPLAY[700], track=-0.02),
 }
 
