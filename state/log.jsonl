@@ -369,3 +369,5 @@
 {"ts": "2026-11-21T03:56:02", "event": "pulado", "headline": "Temporal no RS: governo envia equipes da Defesa Civil para Tupanciretã", "source": "", "ig_id": "", "note": "mesmo fato já postado (IA): Tempestades no Rio Grande do Sul deixam três mortos e atinge"}
 {"ts": "2026-11-21T04:00:04", "event": "gerado", "headline": "Cerca de 100 milhões de brasileiros recebem 13º salário até o fim do ano", "source": "g1", "ig_id": "", "note": ""}
 {"ts": "2026-11-21T04:00:04", "event": "falha_publicacao", "headline": "Cerca de 100 milhões de brasileiros recebem 13º salário até o fim do ano", "source": "g1", "ig_id": "", "note": "voz padrão indisponível agora (limite do Gemini); a notícia volta na próxima rodada"}
+{"ts": "2026-11-21T04:07:43", "event": "gerado", "headline": "Filme Camisas Negras estreia nos cinemas sobre a história do Vasco em 1923", "source": "Agência Brasil", "ig_id": "", "note": ""}
+{"ts": "2026-11-21T04:09:42", "event": "published", "headline": "Filme Camisas Negras estreia nos cinemas sobre a história do Vasco em 1923", "source": "Agência Brasil", "ig_id": "18016228244764617", "note": ""}
