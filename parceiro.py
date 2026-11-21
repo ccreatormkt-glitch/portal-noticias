@@ -695,9 +695,11 @@ def montar(origem: Path, card: dict, out_mp4: Path, grade: bool = False) -> Path
     return _rodar_ffmpeg(origem, png, filtro, out_mp4)
 
 
-def _quadro_limpo(origem: Path, filtro: str, out_mp4: Path, segundo: float = 1.0) -> Path:
-    """Um quadro do vídeo já tratado (marca d'água desfocada, moldura recortada, manchete antiga sob o
-    degradê), sem a nossa barra nem texto: é a foto da capa do Reels. Falha aqui não para o vídeo."""
+def _quadro_limpo(origem: Path, filtro: str, out_mp4: Path) -> Path:
+    """Foto da capa do Reels: o melhor quadro do vídeo já tratado (marca d'água desfocada, moldura
+    recortada, manchete antiga sob o degradê), sem a nossa barra nem texto. Testa vários momentos e
+    fica com o que tem mais imagem de verdade na parte que aparece na grade (cor e detalhe), o que
+    descarta vinheta, cartela com título do parceiro e tela preta. Falha aqui não para o vídeo."""
     from PIL import Image as _Img
     import audiograma as A
     out_jpg = out_mp4.with_suffix(".limpo.jpg")
@@ -705,13 +707,45 @@ def _quadro_limpo(origem: Path, filtro: str, out_mp4: Path, segundo: float = 1.0
     camada = _Img.new("RGBA", (A.VW, A.VH), (0, 0, 0, 0))
     _degrade_parceiro(camada)
     camada.save(png)
-    try:
-        subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", str(segundo), "-i", str(origem), "-loop", "1",
-                        "-i", str(png), "-filter_complex", filtro, "-map", "[saida]", "-frames:v", "1",
-                        "-q:v", "2", str(out_jpg)], check=True, capture_output=True, timeout=120)
-    except Exception as e:
-        print(f"[parceiro] sem quadro limpo para a capa ({str(e)[:120]})")
+    melhor, nota_melhor = None, -1.0
+    for i, s in enumerate(_momentos_da_capa(_duracao(origem))):
+        jpg = out_mp4.with_suffix(f".quadro{i}.jpg")
+        try:
+            subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", f"{s:.2f}", "-i", str(origem), "-loop", "1",
+                            "-i", str(png), "-filter_complex", filtro, "-map", "[saida]", "-frames:v", "1",
+                            "-q:v", "2", str(jpg)], check=True, capture_output=True, timeout=120)
+            nota = nota_do_quadro(jpg)
+        except Exception as e:
+            print(f"[parceiro] quadro {s:.1f}s para a capa falhou ({str(e)[:100]})")
+            continue
+        if nota > nota_melhor:
+            melhor, nota_melhor = (jpg, s), nota
+    if melhor:
+        shutil.copy(melhor[0], out_jpg)
+        print(f"[parceiro] capa: quadro de {melhor[1]:.1f}s (nota {nota_melhor:.0f})")
     return out_jpg
+
+
+def _momentos_da_capa(duracao: float) -> list:
+    """Momentos testados para a capa: espalhados pelo vídeo, pulando o começo (vinheta/cartela)."""
+    if not duracao or duracao < 3:
+        return [min(1.0, (duracao or 2) / 2)]
+    return sorted({round(min(max(duracao * f, 1.5), duracao - 0.5), 2) for f in (0.2, 0.35, 0.5, 0.65, 0.8)})
+
+
+def nota_do_quadro(jpg: Path) -> float:
+    """Quanto de imagem de verdade o quadro tem na faixa da foto da capa (entre a barra e o texto):
+    cor (saturação) x detalhe (variação de brilho). Cartela de texto branco no preto, tela preta e
+    vinheta lisa tiram nota baixa."""
+    from PIL import Image as _Img, ImageStat
+    im = _Img.open(jpg).convert("RGB")
+    k = im.width / 1080
+    faixa = im.crop((0, int(400 * k), im.width, int(1000 * k))).resize((216, 120))
+    h, s, v = faixa.convert("HSV").split()
+    sat = ImageStat.Stat(s).mean[0]
+    brilho, detalhe = ImageStat.Stat(v).mean[0], ImageStat.Stat(v).stddev[0]
+    exposicao = 0.3 if brilho < 45 else 0.5 if brilho > 215 else 1.0   # preto ou estourado de luz
+    return (sat + 10) * (detalhe + 5) / 10 * exposicao
 
 
 def _rodar_ffmpeg(origem: Path, png: Path, filtro: str, out_mp4: Path) -> Path:

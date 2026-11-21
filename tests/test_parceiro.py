@@ -273,3 +273,20 @@ def test_reels_de_ontem_de_todos_os_parceiros_entram(monkeypatch):
     lista = parceiro.parceiros("".join(re.findall(r'"([^"]*)"', bloco)))
     assert {p["usuario"] for p in lista} >= {"jornaldapb", "portalresumopb", "blognewspb", "noticiacertapb"}
     assert all(p["desde"] <= "2026-11-20T03:00:00+0000" for p in lista)
+
+
+def test_capa_do_parceiro_prefere_imagem_a_cartela_de_texto(tmp_path):
+    from PIL import Image, ImageDraw
+    import parceiro
+    cartela = Image.new("RGB", (1080, 1920), (8, 8, 8))
+    d = ImageDraw.Draw(cartela)
+    for i in range(6):
+        d.rectangle((120, 480 + i * 80, 960, 520 + i * 80), fill=(250, 250, 250))   # "letras" brancas
+    cena = Image.new("RGB", (1080, 1920))
+    dc = ImageDraw.Draw(cena)
+    for y in range(0, 1920, 40):
+        dc.rectangle((0, y, 1080, y + 40), fill=((y * 7) % 255, (y * 3) % 200 + 40, 120))
+    cartela.save(tmp_path / "a.jpg")
+    cena.save(tmp_path / "b.jpg")
+    assert parceiro.nota_do_quadro(tmp_path / "b.jpg") > parceiro.nota_do_quadro(tmp_path / "a.jpg")
+    assert parceiro._momentos_da_capa(60)[0] >= 1.5 and parceiro._momentos_da_capa(2) == [1.0]
