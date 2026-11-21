@@ -58,6 +58,8 @@ jobs:
           MODO: ${{ github.event.inputs.modo }}
           ID: ${{ github.event.inputs.id }}
           PARCEIRO_USUARIO: ${{ vars.PARCEIRO_USUARIO }}
+          PARCEIRO_LISTA: ${{ vars.PARCEIRO_LISTA }}
+          PARCEIRO_AUTO_MARCA: ${{ vars.PARCEIRO_AUTO_MARCA }}
           PARCEIRO_MODO: ${{ vars.PARCEIRO_MODO }}
           PARCEIRO_COBRIR: ${{ vars.PARCEIRO_COBRIR }}
           PARCEIRO_CORTE: ${{ vars.PARCEIRO_CORTE }}

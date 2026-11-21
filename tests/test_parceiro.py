@@ -28,6 +28,8 @@ def pastas(tmp_path, monkeypatch):
     fila.mkdir()
     monkeypatch.setattr(parceiro, "FILA", fila)
     monkeypatch.setattr(parceiro, "USUARIO", "jornaldapb")
+    monkeypatch.setattr(parceiro, "LISTA_PADRAO", "jornaldapb")
+    monkeypatch.delenv("PARCEIRO_LISTA", raising=False)
     monkeypatch.setattr(config, "OUT_DIR", tmp_path / "out")
     monkeypatch.setattr(config, "HUMANIZAR", False)
 
@@ -112,7 +114,7 @@ def _video_teste(path):
 
 
 def test_rodada_review_monta_video_e_enfileira(monkeypatch):
-    monkeypatch.setattr(parceiro, "buscar", lambda limite=25: [post(), post(id="222", username="outra")])
+    monkeypatch.setattr(parceiro, "buscar", lambda limite=25, usuario=None: [post(), post(id="222", username="outra")])
     monkeypatch.setattr(parceiro, "baixar", lambda m, destino: _video_teste(destino))
     monkeypatch.setattr(parceiro, "escrever", lambda leg, fala: {
         "chapeu": "CIDADE", "titulo": "Avenida central de CG vai ganhar obra nova", "legenda": "🚧 Obra.",
@@ -143,7 +145,7 @@ def test_aprovar_publica_e_limpa_a_fila(monkeypatch):
 
 
 def test_falha_tenta_de_novo_e_desiste_na_terceira(monkeypatch):
-    monkeypatch.setattr(parceiro, "buscar", lambda limite=25: [post()])
+    monkeypatch.setattr(parceiro, "buscar", lambda limite=25, usuario=None: [post()])
 
     def quebra(m, destino):
         raise RuntimeError("rede caiu")
@@ -213,3 +215,34 @@ def test_acha_marca_dagua_parada_e_ignora_imagem_em_movimento(tmp_path):
     assert any(x >= 60 and y <= 10 for x, y, w, h in areas), areas
     assert parceiro.detectar_marcas(limpo) == [] or all(
         not (x >= 60 and y <= 10) for x, y, w, h in parceiro.detectar_marcas(limpo))
+
+
+def test_lista_de_parceiros_com_data_e_grade(monkeypatch):
+    monkeypatch.setattr(parceiro, "DESDE", "")
+    lista = parceiro.parceiros("@JornalDaPB|2026-11-21T02:20:00+0000; blognewspb|2026-11-21T10:40:00+0000|grade; ")
+    assert [p["usuario"] for p in lista] == ["jornaldapb", "blognewspb"]
+    assert lista[0]["grade"] is False and lista[1]["grade"] is True
+    assert lista[1]["desde"] == "2026-11-21T10:40:00+0000"
+    padrao = [p["usuario"] for p in parceiro.parceiros(parceiro.LISTA_PADRAO)]
+    assert padrao == ["jornaldapb"]  # no teste a lista padrão foi trocada pelo fixture
+
+
+def test_collab_e_conferido_contra_o_parceiro_da_vez():
+    m = post(username="blognewspb")
+    assert parceiro.motivo_para_pular(m, {}, AGORA, usuario="blognewspb") == ""
+    assert "collab" in parceiro.motivo_para_pular(m, {}, AGORA, usuario="jornaldapb")
+
+
+def test_grade_recorta_so_o_video_que_mexe(tmp_path):
+    """Vídeo 16:9 que mexe dentro de uma moldura 9:16 parada com marca: acha a parte de dentro."""
+    v = tmp_path / "grade.mp4"
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i", "color=c=navy:s=540x960:d=6:r=15",
+                    "-f", "lavfi", "-i", "color=c=gray:s=540x304:rate=15:d=6",
+                    "-filter_complex", "[1]noise=alls=90:allf=t[m];[0][m]overlay=0:300,drawbox=x=20:y=40:w=300:h=80:"
+                    "color=yellow:t=fill", "-t", "6", str(v)], check=True)
+    x, y, w, h = parceiro.detectar_video(v)
+    assert abs(y - 300) <= 20 and abs(h - 304) <= 30 and w >= 500, (x, y, w, h)
+    sem = tmp_path / "cheio.mp4"
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i", "color=c=gray:s=540x960:rate=15:d=6",
+                    "-vf", "noise=alls=90:allf=t", str(sem)], check=True)
+    assert parceiro.detectar_video(sem) is None

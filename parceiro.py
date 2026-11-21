@@ -6,7 +6,8 @@ com outras contas ficam de fora (a autorização não cobre o conteúdo das outr
 
 Fluxo de cada rodada:
   1. lê os posts recentes do perfil pela API oficial (Business Discovery, mesmo token do portal);
-  2. fica só com REELS NOVOS (publicados depois de PARCEIRO_DESDE), cujo dono é o próprio parceiro,
+  2. para cada parceiro da lista (PARCEIRO_LISTA), fica só com REELS NOVOS (publicados depois da data
+     em que o perfil entrou na lista), cujo dono é o próprio parceiro,
      sem sinal de collab e ainda não usados;
   3. baixa o vídeo, transcreve a fala (Whisper) e junta com a legenda do post;
   4. a IA escreve chapéu, manchete e legenda do PB Minuto com outras palavras (sem 4 palavras
@@ -34,12 +35,20 @@ from PIL import Image, ImageDraw, ImageFilter
 
 import config
 
-USUARIO = config.env("PARCEIRO_USUARIO", "jornaldapb").lstrip("@").lower()
+USUARIO = config.env("PARCEIRO_USUARIO", "jornaldapb").lstrip("@").lower()   # parceiro padrão (calibrar)
+# Parceiros autorizados (pedido do Arthur): "perfil|desde|opções; ...". "desde" = só Reels publicados
+# depois disso (data em que o perfil entrou na lista); opção "grade" = o perfil põe o vídeo dentro de
+# uma moldura com a marca dele: o sistema recorta só a parte do vídeo que mexe antes de montar.
+LISTA_PADRAO = ("jornaldapb|2026-11-21T02:20:00+0000; "
+                "paraibabussines_|2026-11-21T10:40:00+0000; "
+                "portalresumopb|2026-11-21T10:40:00+0000; "
+                "noticiacertapb|2026-11-21T10:40:00+0000; "
+                "blognewspb|2026-11-21T10:40:00+0000|grade")
 MODO = config.env("PARCEIRO_MODO", "auto")            # auto = publica direto (pedido do Arthur); review = fila
 JANELA_HORAS = int(config.env("PARCEIRO_JANELA_HORAS", "48"))   # vídeo mais velho que isso é ignorado
 # Só Reels NOVOS (pedido do Arthur): nada publicado antes deste momento entra, mesmo dentro da janela.
 # Padrão: quando o @jornaldapb ativou o download dos Reels (20/11/2026, 23h20 de Fortaleza).
-DESDE = config.env("PARCEIRO_DESDE", "2026-11-21T02:20:00+0000")
+DESDE = config.env("PARCEIRO_DESDE", "")   # se preenchida, vale para todos os parceiros
 MAX_SEGUNDOS = int(config.env("PARCEIRO_MAX_SEGUNDOS", "180"))
 # Áreas a desfocar, em % da tela final 9:16: "x,y,largura,altura; ..." (ex.: "70,3,28,8; 0,70,100,18")
 COBRIR = config.env("PARCEIRO_COBRIR", "")
@@ -55,6 +64,22 @@ AUTO_MARCA = config.env("PARCEIRO_AUTO_MARCA", "1") not in ("0", "false", "nao",
 SINAIS_COLLAB = [s.strip().lower() for s in config.env(
     "PARCEIRO_SINAIS_COLLAB", "collab,colab,em parceria com,parceria com,publi,publicidade,#ad").split(",")
     if s.strip()]
+
+
+
+def parceiros(texto: str = None) -> list:
+    """[{'usuario', 'desde', 'grade'}] da variável PARCEIRO_LISTA (ou da lista padrão)."""
+    texto = texto if texto is not None else config.env("PARCEIRO_LISTA", LISTA_PADRAO)
+    lista = []
+    for item in texto.split(";"):
+        partes = [x.strip() for x in item.split("|")]
+        if not partes[0]:
+            continue
+        lista.append({"usuario": partes[0].lstrip("@").lower(),
+                      "desde": DESDE or (partes[1] if len(partes) > 1 else ""),
+                      "grade": any(x.lower() == "grade" for x in partes[2:])})
+    return lista
+
 
 ESTADO = config.STATE_DIR / "parceiro.json"
 FILA = config.ROOT / "queue" / "parceiro"
@@ -94,20 +119,23 @@ def _marcar(est: dict, mid: str, status: str, nota: str = ""):
 
 
 # ------------------------------------------------------------------ 1-2) buscar e filtrar
-def buscar(limite: int = 25) -> list:
+def buscar(limite: int = 25, usuario: str = None) -> list:
     """Posts recentes do parceiro pela Business Discovery (a conta dele precisa ser Comercial/Criador)."""
     import publish
     publish._need_creds()
     url = f"https://{config.GRAPH_HOST}/{config.GRAPH_VERSION}/{config.IG_USER_ID}"
-    campos = f"business_discovery.username({USUARIO}){{media.limit({limite}){{{CAMPOS}}}}}"
+    campos = f"business_discovery.username({usuario or USUARIO}){{media.limit({limite}){{{CAMPOS}}}}}"
     r = publish._ig().get(url, params={"fields": campos}, timeout=40)
     dados = publish._check(r)
     return dados.get("business_discovery", {}).get("media", {}).get("data", [])
 
 
-def motivo_para_pular(m: dict, vistos: dict, agora: float = None) -> str:
+def motivo_para_pular(m: dict, vistos: dict, agora: float = None, usuario: str = None,
+                      desde: str = None) -> str:
     """'' se o post pode ser usado; senão o motivo. Na dúvida, pula (a autorização é só para não-collab)."""
     agora = agora or time.time()
+    usuario = usuario or USUARIO
+    desde = DESDE if desde is None else desde
     if m.get("id") in vistos:
         return "já usado"
     if m.get("media_type") != "VIDEO":
@@ -115,7 +143,7 @@ def motivo_para_pular(m: dict, vistos: dict, agora: float = None) -> str:
     if m.get("media_product_type") and m["media_product_type"] != "REELS":
         return "não é reels"
     dono = (m.get("username") or "").lower()
-    if dono and dono != USUARIO:
+    if dono and dono != usuario:
         return f"collab: o dono do post é @{dono}"
     legenda = (m.get("caption") or "").lower()
     for s in SINAIS_COLLAB:
@@ -128,7 +156,7 @@ def motivo_para_pular(m: dict, vistos: dict, agora: float = None) -> str:
         return "sem data de publicação"
     if agora - ts > JANELA_HORAS * 3600:
         return "antigo"
-    desde = _epoca(DESDE)
+    desde = _epoca(desde)
     if desde is not None and ts < desde:
         return "antigo"     # só Reels novos, publicados depois de PARCEIRO_DESDE
     return ""
@@ -197,40 +225,50 @@ def baixar_pela_pagina(url: str, destino: Path) -> Path:
 
 
 def testar_download(limite: int = 25) -> bool:
-    """Tenta baixar o Reel mais recente do parceiro (sem filtro de data) e conta o resultado.
-    Não escreve texto, não publica e não mexe no estado: só prova que o download funciona."""
-    posts = buscar(limite)
+    """Para cada parceiro: baixa o Reel mais recente (sem filtro de data) e monta com o layout, para
+    prévia. Não publica, não enfileira e não mexe no estado. True se todos funcionaram."""
+    tudo_ok = True
+    for k, p in enumerate(parceiros(), 1):
+        try:
+            ok = _testar_um(p, k, limite)
+        except Exception as e:
+            print(f"[parceiro] teste @{p['usuario']}: FALHOU ({str(e)[:300]})")
+            ok = False
+        tudo_ok = tudo_ok and ok
+    return tudo_ok
+
+
+def _testar_um(p: dict, k: int, limite: int) -> bool:
+    usuario = p["usuario"]
+    posts = buscar(limite, usuario=usuario)
     reels = [m for m in posts if m.get("media_type") == "VIDEO"]
     if not reels:
-        print(f"[parceiro] teste: nenhum vídeo entre os {len(posts)} posts de @{USUARIO}")
+        print(f"[parceiro] teste @{usuario}: nenhum vídeo entre os {len(posts)} posts")
         return False
     m = max(reels, key=lambda x: x.get("timestamp", ""))
     config.OUT_DIR.mkdir(parents=True, exist_ok=True)
-    destino = config.OUT_DIR / "parceiro_teste_original.mp4"
+    destino = config.OUT_DIR / f"parceiro_teste{k}_original.mp4"
     via = "API" if m.get("media_url") else "página do post (yt-dlp)"
     try:
         baixar(m, destino)
     except Exception as e:
-        print(f"[parceiro] teste: FALHOU o download de {m.get('permalink')} pela {via}: {str(e)[:400]}")
+        print(f"[parceiro] teste @{usuario}: FALHOU o download de {m.get('permalink')} pela {via}: {str(e)[:400]}")
         return False
-    dur = _duracao(destino)
-    print(f"[parceiro] teste: OK {m.get('permalink')} pela {via}: "
-          f"{destino.stat().st_size // 1024} KB, {dur:.0f}s, áudio={'sim' if _tem_audio(destino) else 'não'}")
-    # monta como numa rodada de verdade (texto novo + layout do PB Minuto), sem fila e sem publicar;
+    print(f"[parceiro] teste @{usuario}: OK {m.get('permalink')} pela {via}: "
+          f"{destino.stat().st_size // 1024} KB, {_duracao(destino):.0f}s, "
+          f"áudio={'sim' if _tem_audio(destino) else 'não'}, tamanho={_tamanho(destino)}")
     # o nome casa com o passo "Prévia" do workflow (quadros de 1s e 4s no ramo previa-parceiro)
-    final = config.OUT_DIR / "parceiro_teste_1.mp4"
+    final = config.OUT_DIR / f"parceiro_teste_{k}.mp4"
     try:
         card = escrever(m.get("caption") or "", transcrever(destino))
         if card.get("skip"):
-            print(f"[parceiro] teste: a IA pularia este vídeo ({card.get('motivo', '')}); "
+            print(f"[parceiro] teste @{usuario}: a IA pularia este vídeo ({card.get('motivo', '')}); "
                   "montando assim mesmo só para ver o layout")
-        print(f"[parceiro] teste: {card.get('chapeu')} | {card.get('titulo')} | {card.get('cidade')}")
-        print("[parceiro] teste: legenda: " + str(card.get("legenda", "")).replace("\n", " / ")[:600])
-        montar(destino, card, final)
-        print(f"[parceiro] teste: vídeo montado com o layout ({final.stat().st_size // 1024} KB)")
+        print(f"[parceiro] teste @{usuario}: {card.get('chapeu')} | {card.get('titulo')} | {card.get('cidade')}")
+        montar(destino, card, final, grade=p["grade"])
+        print(f"[parceiro] teste @{usuario}: vídeo montado -> {final.name}")
     except Exception as e:
-        print(f"[parceiro] teste: baixou, mas falhou a montagem: {str(e)[:400]}")
-        shutil.copy(destino, final)
+        print(f"[parceiro] teste @{usuario}: baixou, mas falhou a montagem: {str(e)[:400]}")
         return False
     return True
 
@@ -512,11 +550,94 @@ def detectar_marcas(video: Path, amostras: int = 16) -> list:
     return areas
 
 
-def montar(origem: Path, card: dict, out_mp4: Path) -> Path:
+def _tamanho(video: Path) -> tuple:
+    r = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries",
+                        "stream=width,height", "-of", "csv=p=0", str(video)], capture_output=True, text=True)
+    w, h = r.stdout.strip().split("\n")[0].split(",")[:2]
+    return int(w), int(h)
+
+
+def detectar_video(video: Path, amostras: int = 16):
+    """Na moldura ("grade") de alguns parceiros, só o vídeo de dentro mexe; a moldura com a marca fica
+    parada. Devolve (x, y, largura, altura) em pixels do vídeo original da parte que mexe, ou None se
+    o vídeo já ocupa quase a tela toda (não há moldura para tirar)."""
+    import numpy as np
+    W0, H0 = _tamanho(video)
+    W = 360
+    H = max(2, round(W * H0 / W0 / 2) * 2)
+    dur = _duracao(video) or 10.0
+    r = subprocess.run(["ffmpeg", "-v", "error", "-i", str(video), "-vf",
+                        f"fps={amostras / max(dur, 1):.4f},scale={W}:{H},format=gray", "-f", "rawvideo", "-"],
+                       capture_output=True, timeout=300)
+    n = len(r.stdout) // (W * H)
+    if n < 6:
+        return None
+    q = np.frombuffer(r.stdout[:n * W * H], dtype=np.uint8).reshape(n, H, W).astype(np.float32)
+    mexe = q.std(axis=0) > 12
+
+    def faixa(frac):
+        ativo = frac > 0.25
+        melhor, ini = (0, 0), None
+        for i, a in enumerate(list(ativo) + [False]):
+            if a and ini is None:
+                ini = i
+            elif not a and ini is not None:
+                if i - ini > melhor[1] - melhor[0]:
+                    melhor = (ini, i)
+                ini = None
+        return melhor
+
+    y0, y1 = faixa(mexe.mean(axis=1))
+    if y1 - y0 < H * 0.15:
+        return None
+    x0, x1 = faixa(mexe[y0:y1].mean(axis=0))
+    if x1 - x0 < W * 0.15:
+        return None
+    if (y1 - y0) > H * 0.92 and (x1 - x0) > W * 0.92:
+        return None
+    k = W0 / W
+    x, y = int(x0 * k) // 2 * 2, int(y0 * H0 / H) // 2 * 2
+    w, h = int((x1 - x0) * k) // 2 * 2, int((y1 - y0) * H0 / H) // 2 * 2
+    return x, y, min(w, W0 - x), min(h, H0 - y)
+
+
+def recortar_grade(origem: Path) -> Path:
+    """Tira a moldura do parceiro: grava só a parte do vídeo que mexe (com o áudio)."""
+    caixa = detectar_video(origem)
+    if not caixa:
+        print("[parceiro] grade: não achei moldura, uso o vídeo inteiro")
+        return origem
+    x, y, w, h = caixa
+    saida = origem.with_name(origem.stem + "_recorte.mp4")
+    cmd = ["ffmpeg", "-v", "error", "-y", "-i", str(origem), "-vf", f"crop={w}:{h}:{x}:{y}",
+           "-c:v", "libx264", "-preset", "medium", "-crf", "16"]
+    cmd += ["-c:a", "copy"] if _tem_audio(origem) else ["-an"]
+    subprocess.run(cmd + [str(saida)], check=True, capture_output=True, timeout=900)
+    print(f"[parceiro] grade: recortei só o vídeo ({w}x{h} em {x},{y})")
+    return saida
+
+
+def _filtro_encaixe(W: int, H: int, y_topo: int) -> str:
+    """Vídeo largo (ex.: 16:9 tirado da moldura): vai inteiro logo abaixo da barra, acima do degradê,
+    sobre o próprio vídeo ampliado e desfocado."""
+    return (f"[0:v]split[s1][s2];[s1]scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},"
+            f"boxblur=40:3,eq=brightness=-0.12[fundo];"
+            f"[s2]scale={W}:-2,setsar=1[miolo];[fundo][miolo]overlay=0:{y_topo}[v0];"
+            f"[v0][1:v]overlay=0:0,format=yuv420p,fps=30[saida]")
+
+
+def montar(origem: Path, card: dict, out_mp4: Path, grade: bool = False) -> Path:
     import audiograma as A
+    import layout as L
     png = etiqueta(card, out_mp4.with_suffix(".etiqueta.png"))
+    if grade:
+        origem = recortar_grade(origem)
     topo, base = corte(CORTE)
     cobrir = caixas(COBRIR)
+    w0, h0 = _tamanho(origem)
+    if w0 / h0 > 0.8:     # largo demais para encher a tela 9:16 sem cortar a cena
+        filtro = _filtro_encaixe(A.VW, A.VH, A.z(L.barra_video()["fim"]))
+        return _rodar_ffmpeg(origem, png, filtro, out_mp4)
     if AUTO_MARCA and not (topo or base):
         try:
             achadas = detectar_marcas(origem)
@@ -527,6 +648,10 @@ def montar(origem: Path, card: dict, out_mp4: Path) -> Path:
             print(f"[parceiro] marca d'água/texto parado desfocado em: {achadas}")
         cobrir += achadas
     filtro = _filtro(cobrir, topo, base, A.VW, A.VH)
+    return _rodar_ffmpeg(origem, png, filtro, out_mp4)
+
+
+def _rodar_ffmpeg(origem: Path, png: Path, filtro: str, out_mp4: Path) -> Path:
     cmd = ["ffmpeg", "-v", "error", "-y", "-i", str(origem), "-loop", "1", "-i", str(png),
            "-filter_complex", filtro, "-map", "[saida]"]
     if _tem_audio(origem):
@@ -550,20 +675,29 @@ def _publicar(card: dict, video: Path, capa_jpg: Path) -> str:
 
 
 def rodada(modo: str = None, limite: int = 1) -> int:
-    """Uma rodada: processa até `limite` vídeos novos. Devolve quantos foram feitos."""
-    modo = modo or MODO
+    """Uma rodada em todos os parceiros: até `limite` vídeos novos de cada um. Devolve quantos fez."""
     est = _estado()
+    total = 0
+    for p in parceiros():
+        total += _rodada_parceiro(p, est, modo or MODO, limite)
+    if (modo or MODO) != "dry":
+        _guardar_estado(est)
+    return total
+
+
+def _rodada_parceiro(p: dict, est: dict, modo: str, limite: int) -> int:
+    usuario = p["usuario"]
     feitos = 0
     try:
-        posts = buscar()
+        posts = buscar(usuario=usuario)
     except Exception as e:
-        print(f"[parceiro] não deu para ler @{USUARIO}: {str(e)[:300]}")
+        print(f"[parceiro] não deu para ler @{usuario}: {str(e)[:300]}")
         return 0
-    print(f"[parceiro] @{USUARIO}: {len(posts)} posts lidos")
+    print(f"[parceiro] @{usuario}: {len(posts)} posts lidos")
     for m in sorted(posts, key=lambda x: x.get("timestamp", "")):   # do mais antigo ao mais novo
         if feitos >= limite:
             break
-        motivo = motivo_para_pular(m, est["vistos"])
+        motivo = motivo_para_pular(m, est["vistos"], usuario=usuario, desde=p["desde"])
         if motivo:
             if motivo not in ("já usado", "antigo", "não é vídeo") and modo != "dry":
                 _marcar(est, m["id"], "pulado", motivo)
@@ -581,8 +715,9 @@ def rodada(modo: str = None, limite: int = 1) -> int:
                 if modo != "dry":
                     _marcar(est, m["id"], "pulado", "IA: " + str(card.get("motivo", "")))
                 continue
-            card["_origem"] = {"id": m["id"], "permalink": m.get("permalink"), "timestamp": m.get("timestamp")}
-            video = montar(origem, card, pasta / f"{stamp}.mp4")
+            card["_origem"] = {"id": m["id"], "permalink": m.get("permalink"), "timestamp": m.get("timestamp"),
+                               "parceiro": usuario}
+            video = montar(origem, card, pasta / f"{stamp}.mp4", grade=p["grade"])
             capa_jpg = capa(video, pasta / f"{stamp}_capa.jpg")
         except Exception as e:
             print(f"[parceiro] falhou {m.get('permalink')}: {str(e)[:300]}")
@@ -612,8 +747,6 @@ def rodada(modo: str = None, limite: int = 1) -> int:
             _marcar(est, m["id"], "na_fila")
             print(f"[parceiro] na fila para aprovar: {stamp}")
         feitos += 1
-    if modo != "dry":
-        _guardar_estado(est)
     return feitos
 
 
