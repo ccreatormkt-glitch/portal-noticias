@@ -83,7 +83,8 @@ COR = {
 # versões como a CNN Sans tem: "Display" (desenhada para tamanhos grandes) e "Text" (para tamanhos pequenos).
 # Regras de variação por uso, como na CNN:
 #   - manchete: Display Bold, letras apertadas (-2,5%), entrelinha curta (1,10), caixa normal;
-#   - chapéu (editoria): Text Bold, CAIXA ALTA, letras abertas (+6%), pequeno;
+#   - chapéu (editoria): Text Bold, CAIXA ALTA, letras abertas (+6%), pequeno, dentro de uma caixa
+#     com a cor fixa do tema (COR_EDITORIA);
 #   - linha fina: Text Regular, entrelinha confortável (1,30), quase sem aperto;
 #   - data/cidade: Text Medium, cinza, letras levemente abertas (+1%);
 #   - crédito da foto: Text Regular, o menor de todos;
@@ -113,6 +114,37 @@ PAPEIS = {
     "credito_foto": dict(fonte=FONTE[400], tam=22, track=0.0),
     "legenda": dict(fonte=FONTE_DISPLAY[700], track=-0.02),
 }
+
+# Editoria dentro de uma caixa com a cor do tema. Regra fixa: cada editoria tem SEMPRE a mesma cor.
+# Cores escolhidas pela associação mais comum de cada tema (sinalização, psicologia das cores e
+# convenção de redações), todas com contraste de leitura >= 4,5:1 com o texto da caixa (WCAG AA).
+# (fundo, texto)
+COR_EDITORIA = {
+    "POLÍCIA":  ("#B3261E", "#FFFFFF"),  # vermelho escuro: alerta, perigo (mais fechado que o vermelho da marca)
+    "POLÍTICA": ("#14213D", "#FFFFFF"),  # azul-marinho: seriedade, poder, instituições
+    "SAÚDE":    ("#00838F", "#FFFFFF"),  # verde-azulado hospitalar: cuidado, bem-estar
+    "EMPREGO":  ("#C2410C", "#FFFFFF"),  # laranja: energia, oportunidade ("temos vagas")
+    "CONCURSO": ("#6A1B9A", "#FFFFFF"),  # roxo: estudo, conquista
+    "TRÂNSITO": ("#F5B800", "#111111"),  # amarelo de sinalização de trânsito, texto preto
+    "CLIMA":    ("#0277BD", "#FFFFFF"),  # azul-céu: tempo, chuva
+    "ESPORTE":  ("#2E7D32", "#FFFFFF"),  # verde-gramado
+    "CULTURA":  ("#C2185B", "#FFFFFF"),  # magenta: arte, criatividade, festa
+    "ECONOMIA": ("#8A6A00", "#FFFFFF"),  # dourado: dinheiro, preço
+    "EDUCAÇÃO": ("#3949AB", "#FFFFFF"),  # azul-índigo: escola, conhecimento
+    "SERVIÇO":  ("#5D4037", "#FFFFFF"),  # marrom: utilidade pública, guia prático
+    "CIDADE":   ("#37474F", "#FFFFFF"),  # grafite: o urbano, assunto geral da cidade
+    "BRASIL":   ("#006B28", "#FFDF00"),  # verde e amarelo da bandeira
+}
+COR_EDITORIA_PADRAO = COR_EDITORIA["CIDADE"]
+# Caixa da editoria (em múltiplos do tamanho da letra): folga dos lados, acima/abaixo e canto.
+CAIXA_EDITORIA = dict(folga_x=0.55, folga_y=0.42, raio=0.18)
+
+
+def cor_editoria(chapeu: str) -> tuple:
+    """(fundo, texto) em RGB para a editoria; editoria desconhecida usa a cor de CIDADE."""
+    fundo, texto = COR_EDITORIA.get((chapeu or "").strip().upper(), COR_EDITORIA_PADRAO)
+    rgb = lambda h: tuple(int(h.lstrip("#")[i:i + 2], 16) for i in (0, 2, 4))  # noqa: E731
+    return rgb(fundo), rgb(texto)
 
 # Sombra do texto (g1: 0 1px 3px preto 80%), x K.
 SOMBRA = dict(dy=G1["destaque"]["sombra"][1] * K, raio=G1["destaque"]["sombra"][2] * K,
@@ -161,6 +193,7 @@ VIDEO = {
     "topo_seguro": 250,                 # chapéu e data abaixo da faixa que o Instagram cobre
     "fundo_preto": (1010, 1270),        # onde o preto começa e fica sólido (onda + legenda), mais baixo
     "preto": 0.80,                      # quanto de preto sobre a foto desfocada (antes 0,86)
+    "preto_video": 0.86,                # com vídeo de fundo: preto sólido (o movimento não atrapalha a legenda)
     "onda": ((1080 - 800) // 2, 1300, 800, 104),   # x, y, largura, altura do visualizador
     "legenda_y": 1495,                  # centro da legenda (mais baixa, ainda acima do nome/legenda do IG)
     "legenda_w": 820,                   # largura máxima da legenda (longe dos botões)
@@ -192,8 +225,9 @@ def pilha_capa(n_linhas_titulo: int, tam_titulo: int, n_linhas_fina: int, tem_cr
     else:
         y -= esp(2) + desc(tam_titulo)
     pos["titulo"] = y - passo_tit * (n_linhas_titulo - 1)          # baseline da 1ª linha
-    pos["chapeu"] = pos["titulo"] - cap(tam_titulo) - esp(1) - desc(t_chapeu)   # chapéu colado: 16
-    pos["topo"] = pos["chapeu"] - cap(t_chapeu)
+    folga = round(t_chapeu * CAIXA_EDITORIA["folga_y"])                       # caixa da editoria
+    pos["chapeu"] = pos["titulo"] - cap(tam_titulo) - esp(1) - folga           # caixa -> manchete: 16
+    pos["topo"] = pos["chapeu"] - cap(t_chapeu) - folga
     pos.update(passo_titulo=passo_tit, passo_fina=passo_fina, tam_fina=t_fina, tam_meta=t_meta,
                tam_chapeu=t_chapeu, tam_credito=t_cred)
     return pos

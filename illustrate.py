@@ -511,6 +511,123 @@ def foto_banco(card: dict, base: Path):
 foto_pexels = foto_banco  # nome antigo
 
 
+# ------------------------------------------------------------------ vídeo de banco (Pixabay)
+PIXABAY_VIDEO_URL = "https://pixabay.com/api/videos/"
+VIDEO_MIN_ALTURA = 1600     # altura mínima do trecho: abaixo disso o vídeo 2K sairia ampliado (borrado)
+VIDEO_MAX_BYTES = 150_000_000
+VIDEO_MIN_SEG = 6
+
+
+def _busca_pixabay_videos(busca: str, lang: str = "en") -> list:
+    """Trechos de vídeo do Pixabay; de cada um, a versão mais leve que ainda tem altura suficiente."""
+    from config import PIXABAY_API_KEY
+    r = requests.get(PIXABAY_VIDEO_URL, timeout=(5, 15), params={
+        "key": PIXABAY_API_KEY, "q": busca[:100], "lang": lang, "video_type": "film",
+        "safesearch": "true", "per_page": 30})
+    if r.status_code == 429:
+        raise RuntimeError("limite de buscas do Pixabay atingido")
+    r.raise_for_status()
+    saida = []
+    for v in r.json().get("hits", []):
+        versoes = [x for x in ((v.get("videos") or {}).get(k) or {} for k in ("medium", "large"))
+                   if x.get("url") and x.get("height", 0) >= VIDEO_MIN_ALTURA
+                   and 0 < (x.get("size") or 1) <= VIDEO_MAX_BYTES]
+        if not versoes:
+            continue
+        x = versoes[0]                      # a mais leve que já basta (medium vertical, senão large 4K)
+        mini = ((v.get("videos") or {}).get("medium") or {}).get("thumbnail") or x.get("thumbnail")
+        saida.append({"id": f"pixabay-video:{v.get('id')}", "texto": (v.get("tags") or "").replace(",", " "),
+                      "w": x.get("width", 0), "h": x.get("height", 0), "seg": v.get("duration", 0),
+                      "autor": v.get("user") or "Pixabay", "miniatura": mini, "grande": x["url"]})
+    saida.sort(key=lambda c: c["h"] < c["w"])   # verticais primeiro (sem corte), depois as 4K deitadas
+    return saida
+
+
+def _filtrar_videos(cands: list) -> list:
+    usadas = _usadas()
+    boas = []
+    for c in cands:
+        texto = _fold(c.get("texto", ""))
+        if c["id"] in usadas or c.get("seg", 0) < VIDEO_MIN_SEG or not c.get("miniatura"):
+            continue
+        if PESSOAS.search(texto) or NAO_E_FOTO.search(texto) or LETREIRO.search(texto):
+            continue
+        boas.append(c)
+    return boas
+
+
+def _quadro_do_video(mp4: Path, destino: Path, seg: float) -> bool:
+    """Um quadro nítido do próprio trecho, para a capa do Reels (capa e vídeo combinam)."""
+    import subprocess
+    r = subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-ss", f"{min(1.5, seg / 3):.2f}", "-i", str(mp4),
+                        "-frames:v", "1", "-q:v", "1", str(destino)], capture_output=True)
+    return r.returncode == 0 and destino.exists() and destino.stat().st_size > 0
+
+
+def video_banco(card: dict, base: Path):
+    """Fundo do Reels em movimento: busca trechos de vídeo no Pixabay com as mesmas palavras-chave da
+    foto, a IA olha a miniatura de cada um e só aprova o que corresponde à notícia (sem gente, texto ou
+    logo). Devolve (vídeo, quadro para a capa, crédito) ou None (aí entra a foto, como antes)."""
+    from config import PIXABAY_API_KEY, VIDEO_FUNDO
+    if not (VIDEO_FUNDO and PIXABAY_API_KEY):
+        return None
+    import editor
+    buscas = palavras_chave(card)[:BANCO_MAX_BUSCAS]
+    cena = (card.get("_foto_ia") or {}).get("cena", "")
+    for b in buscas:
+        busca, lang = b["q"], b["lang"]
+        try:
+            cands = _filtrar_videos(_cache("PixabayVideo", busca, lambda: _busca_pixabay_videos(busca, lang),
+                                           lang))[:8]
+        except Exception as e:
+            print(f"[vídeo] Pixabay '{busca}': {str(e)[:80]}")
+            if "limite" in str(e):
+                break
+            continue
+        if not cands:
+            print(f"[vídeo] Pixabay '{busca}': nenhum trecho utilizável (altura >= {VIDEO_MIN_ALTURA}px)")
+            continue
+        miniaturas = []
+        for c in cands:
+            try:
+                m = requests.get(c["miniatura"], timeout=(5, 15))
+                m.raise_for_status()
+                miniaturas.append((m.content, m.headers.get("content-type", "image/jpeg").split(";")[0]))
+            except Exception:
+                miniaturas.append(None)
+        validas = [c for c, m in zip(cands, miniaturas) if m]
+        try:
+            idx = editor.escolher_foto(card, [m for m in miniaturas if m], cena=cena)
+            escolhido = validas[idx] if idx is not None and 0 <= idx < len(validas) else None
+        except Exception as e:
+            print(f"[vídeo] a IA não conseguiu conferir os trechos ({str(e)[:60]})")
+            escolhido = None
+        if escolhido is None:
+            print(f"[vídeo] Pixabay '{busca}': nenhum dos {len(cands)} trechos corresponde à notícia")
+            continue
+        destino = Path(f"{base}_fundo.mp4")
+        try:
+            with requests.get(escolhido["grande"], timeout=(5, 120), stream=True) as r:
+                r.raise_for_status()
+                with open(destino, "wb") as f:
+                    for bloco in r.iter_content(1 << 20):
+                        f.write(bloco)
+        except Exception as e:
+            print(f"[vídeo] download falhou ({type(e).__name__})")
+            continue
+        capa = Path(f"{base}_fundo.jpg")
+        if not _quadro_do_video(destino, capa, escolhido.get("seg", 6)):
+            print("[vídeo] não consegui tirar o quadro da capa; vou de foto")
+            continue
+        _marcar(escolhido["id"])
+        autor = " ".join(str(escolhido.get("autor") or "Pixabay").split())[:40]
+        print(f"[vídeo] Pixabay '{busca}': trecho {escolhido['id']} de {autor} "
+              f"({escolhido['w']}x{escolhido['h']}, {escolhido.get('seg')}s)")
+        card["_credito_legenda"] = f"🎬 Vídeo: {autor} / Pixabay (pixabay.com)"
+        return destino, capa, f"Vídeo: {autor} / Pixabay"
+    return None
+
+
 def imagem_de_fundo(card: dict, base: Path):
     """Toda arte tem imagem, sem textos. A foto da matéria original NUNCA vai para a arte (costuma
     ter texto, logo ou marca do site): serve só de referência. Ordem de reserva:
@@ -519,9 +636,20 @@ def imagem_de_fundo(card: dict, base: Path):
     3) foto livre ligada ao assunto (tema da notícia), sem pessoas em destaque nem letreiros;
     4) vista geral da cidade citada (Wikimedia Commons, "Imagem ilustrativa");
     5) só se tudo falhar: fundo da marca com ícone.
-    Antes de tudo, o banco de fotos (pedido do Arthur): palavras-chave da notícia -> busca no Pixabay
-    (ou Pexels) -> a IA escolhe. As outras fontes só entram se o banco não tiver foto boa."""
+    Antes de tudo, o trecho de VÍDEO de banco (Pixabay, pedido do Arthur): o vídeo vira o fundo do Reels
+    e um quadro dele vira a capa. Sem vídeo bom, o banco de fotos: palavras-chave da notícia -> busca no
+    Pixabay (ou Pexels) -> a IA escolhe. As outras fontes só entram se o banco não tiver foto boa."""
     card["_credito"], card["_ilustrativa"], card["_credito_legenda"] = "", False, ""
+    card.pop("_video_fundo", None)
+    try:  # primeiro: trecho de vídeo de banco (fundo em movimento); o quadro dele vira a capa
+        achou = video_banco(card, base)
+    except Exception as e:
+        print(f"[vídeo] busca falhou ({type(e).__name__}); vou de foto")
+        achou = None
+    if achou:
+        card["_video_fundo"] = str(achou[0])
+        card["_ilustrativa"], card["_credito"] = True, achou[2]
+        return achou[1]
     achou = foto_banco(card, base)
     if achou:
         card["_ilustrativa"], card["_credito"] = True, achou[1]

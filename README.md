@@ -49,6 +49,7 @@ No repositório: **Settings > Secrets and variables > Actions**.
 | `IMAGE_MODE` | `none` | `gemini` gera ilustração de fundo por IA quando não há foto |
 | `CAROUSEL` | `false` | `true` adiciona a lâmina de detalhes (carrossel) |
 | `PORTAL_NAME` / `PORTAL_HANDLE` | PB Minuto / @pbminuto | marca nos cards |
+| `VIDEO_FUNDO` | `true` | fundo do Reels com trecho de vídeo do Pixabay (a foto fica de reserva); `false` = só foto |
 | `SEMANTICO` | `true` | trava anti-repetição por sentido (embeddings) |
 | `SIMILARIDADE_MAX` | `0.90` | de 0 a 1: acima disto é o mesmo fato; baixe se ainda escapar repetida, suba se barrar notícia nova |
 

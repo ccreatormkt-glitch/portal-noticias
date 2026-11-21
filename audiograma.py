@@ -120,7 +120,7 @@ def _degrade(img: Image.Image, y0: int, y1: int, a0: int, a1: int, cor=None):
         d.rectangle((0, y1, img.width, img.height), fill=cor + (a1,))
     base = img.convert("RGBA")
     base.alpha_composite(camada)
-    return base.convert("RGB")
+    return base if img.mode == "RGBA" else base.convert("RGB")
 
 
 def _material(img: Image.Image, y0: int, y1: int, tinta=0.86, desfoque=34, cor=None):
@@ -185,7 +185,7 @@ def _com_sombra(img: Image.Image, camada: Image.Image) -> Image.Image:
     base = img.convert("RGBA")
     base.alpha_composite(sombra, (0, z(L.SOMBRA["dy"])))
     base.alpha_composite(camada)
-    return base.convert("RGB")
+    return base if img.mode == "RGBA" else base.convert("RGB")
 
 
 def _barra(img: Image.Image, formato="reels", b=None) -> Image.Image:
@@ -195,7 +195,7 @@ def _barra(img: Image.Image, formato="reels", b=None) -> Image.Image:
     br = _logo.barra(img.width, z(b["fim"]), z(b["logo"]), z(b["centro"]), z(b["borda"]))
     base = img.convert("RGBA")
     base.alpha_composite(br, (0, 0))
-    return base.convert("RGB")
+    return base if img.mode == "RGBA" else base.convert("RGB")
 
 
 def _credito(d, texto, y, x_esq, largura):
@@ -212,6 +212,20 @@ def _palavras_com_fonte(texto: str, destaques: list, tamanho: int):
     """[(palavra, fonte, destaque?)] na fonte da manchete (regra: só Inter; destaque não muda a letra)."""
     f = fonte(L.PAPEIS["manchete"]["fonte"], tamanho)
     return [(p, f, dest) for p, dest in _marcar_destaques(texto.split(), destaques)]
+
+
+def _editoria(d, x, y_base, card, t):
+    """Editoria em CAIXA ALTA dentro da caixa com a cor fixa do tema (layout.COR_EDITORIA).
+    `x` é a borda esquerda da caixa e `y_base` a linha de base do texto (tudo já em pixels finais)."""
+    papel, cx = L.PAPEIS["chapeu"], L.CAIXA_EDITORIA
+    texto = _chapeu(card)
+    f = fonte(papel["fonte"], t)
+    larg = f.getlength(texto) + papel["track"] * t * (len(texto) - 1)
+    fx, fy = round(t * cx["folga_x"]), round(t * cx["folga_y"])
+    fundo, cor_txt = L.cor_editoria(card.get("chapeu"))
+    d.rounded_rectangle((x, y_base - round(t * L.ALTURA_MAIUSCULA) - fy, x + larg + 2 * fx, y_base + fy),
+                        radius=round(t * cx["raio"]), fill=fundo + (255,))
+    _texto(d, (x + fx, y_base), texto, f, cor_txt, track=papel["track"])
 
 
 def _quebrar(itens, largura, track=0.0):
@@ -287,9 +301,7 @@ def capa(card: dict, out_path: Path, image_path=None, formato: str = "reels") ->
 
     camada = Image.new("RGBA", img.size, (0, 0, 0, 0))
     d = ImageDraw.Draw(camada)
-    t_ch = L.PAPEIS["chapeu"]
-    _texto(d, (z(m), z(pos["chapeu"])), _chapeu(card), fonte(t_ch["fonte"], z(pos["tam_chapeu"])),
-           L.COR["texto"], track=t_ch["track"])
+    _editoria(d, z(m), z(pos["chapeu"]), card, z(pos["tam_chapeu"]))
     for i, linha in enumerate(linhas):                               # manchete
         x, y = z(m), z(pos["titulo"] + pos["passo_titulo"] * i)
         for p, f, _ in linha:
@@ -309,13 +321,17 @@ def capa(card: dict, out_path: Path, image_path=None, formato: str = "reels") ->
     return Path(out_path)
 
 
-def quadro(card: dict, out_path: Path, image_path=None) -> Path:
+def quadro(card: dict, out_path: Path, image_path=None, transparente=False) -> Path:
     """Fundo fixo do vídeo: a MESMA imagem da capa com efeito vermelho (duotone da marca), a barra
     vermelha colada no topo da tela (como o cabeçalho do g1), chapéu e data logo abaixo dela; embaixo, fundo preto (foto desfocada sob o
     preto) para a onda da voz e a legenda branca."""
     from PIL import ImageOps
-    foto = _foto_ou_vazio(image_path, VW, VH)
-    if foto is not None:
+    # transparente=True: só a camada de cima (barra, textos, sombras, preto de baixo) sobre fundo
+    # transparente, para colar sobre o trecho de vídeo em movimento (o ffmpeg aplica o mesmo vermelho).
+    foto = None if transparente else _foto_ou_vazio(image_path, VW, VH)
+    if transparente:
+        img = Image.new("RGBA", (VW, VH), (0, 0, 0, 0))
+    elif foto is not None:
         claro = tuple(min(255, int(c + (255 - c) * 0.80)) for c in VERMELHO)
         duo = ImageOps.colorize(ImageOps.autocontrast(ImageOps.grayscale(foto), cutoff=1),
                                 black=tuple(int(c * 0.45) for c in VERMELHO), white=claro)
@@ -326,7 +342,9 @@ def quadro(card: dict, out_path: Path, image_path=None) -> Path:
     y_texto = max(b["fim"] + L.esp(3), L.VIDEO["topo_seguro"])       # topo do chapéu
     img = _degrade(img, z(b["fim"]), z(y_texto + 260), 150, 0, cor=PRETO)   # sob a barra: leitura
     y0, y1 = L.VIDEO["fundo_preto"]
-    if foto is not None:
+    if transparente:
+        img = _degrade(img, z(y0), z(y1), 0, round(255 * L.VIDEO["preto_video"]), cor=PRETO)
+    elif foto is not None:
         img = _material(img, z(y0), z(y1), tinta=L.VIDEO["preto"], cor=PRETO)
     else:
         img = _degrade(img, z(y0), z(y1), 0, 245, cor=PRETO)
@@ -336,15 +354,16 @@ def quadro(card: dict, out_path: Path, image_path=None) -> Path:
     man0 = L.PAPEIS["manchete"]["tamanhos"][0]
     t_ch, t_meta = L.tam("chapeu", man0), L.tam("meta", man0)
     cap = lambda t: round(t * L.ALTURA_MAIUSCULA)  # noqa: E731
-    y_ch = y_texto + cap(t_ch)                                                 # barra -> chapéu
-    _texto(d, (z(M), z(y_ch)), _chapeu(card), fonte(L.PAPEIS["chapeu"]["fonte"], z(t_ch)),
-           L.COR["texto"], track=L.PAPEIS["chapeu"]["track"])
-    y_meta = y_ch + round(t_ch * L.DESCENDENTE) + L.esp(1) + cap(t_meta)       # chapéu -> data: 16
+    folga = round(t_ch * L.CAIXA_EDITORIA["folga_y"])
+    y_ch = y_texto + folga + cap(t_ch)                                         # barra -> caixa da editoria
+    _editoria(d, z(M), z(y_ch), card, z(t_ch))
+    y_meta = y_ch + folga + L.esp(1) + cap(t_meta)                             # caixa -> data: 16
     _texto(d, (z(M), z(y_meta)), f"{_data_g1()}  —  {card.get('cidade') or 'Paraíba'}",
            fonte(L.PAPEIS["meta"]["fonte"], z(t_meta)), L.COR["texto_aux"], track=L.PAPEIS["meta"]["track"])
     t_cred = L.PAPEIS["credito_foto"]["tam"]
     y_cred = y_meta + round(t_meta * L.DESCENDENTE) + L.esp(1) + cap(t_cred)
-    _credito(d, _linha_credito(card, foto is not None), z(y_cred), z(M), z(REELS["direita_segura"] - M))
+    _credito(d, _linha_credito(card, foto is not None or transparente), z(y_cred), z(M),
+             z(REELS["direita_segura"] - M))
     img = _com_sombra(img, camada)
     img = _barra(img, b=b)
     if Path(out_path).suffix.lower() == ".png":  # fundo do vídeo: sem perda (o ffmpeg comprime uma vez só)
@@ -824,9 +843,47 @@ def visualizador(audio: Path, total: float):
 
 
 # ------------------------------------------------------------------ montagem
+def _cor_fundo_video() -> str:
+    """O mesmo vermelho da marca da foto (duotone misturado 38% com a cor original), numa conta linear
+    só: saída = 0,62 x (escuro + cinza x (claro - escuro)) + 0,38 x cor original."""
+    claro = tuple(min(255, int(c + (255 - c) * 0.80)) for c in VERMELHO)
+    escuro = tuple(int(c * 0.45) for c in VERMELHO)
+    pesos = (0.299, 0.587, 0.114)
+    mix, off = [], []
+    for k, (e, c) in enumerate(zip(escuro, claro)):
+        fator = 0.62 * (c - e) / 255
+        mix.append([fator * p + (0.38 if k == n else 0) for n, p in enumerate(pesos)])
+        off.append(round(0.62 * e))
+    cm = ":".join(f"{a}{b}={mix[i][j]:.5f}" for i, a in enumerate("rgb") for j, b in enumerate("rgb"))
+    lut = ":".join(f"{a}='val+{o}'" for a, o in zip("rgb", off))
+    return f"format=rgb24,colorchannelmixer={cm},lutrgb={lut}"
+
+
+def preparar_fundo_video(origem: Path, destino: Path, maximo: float = 20.0) -> Path:
+    """Converte o trecho do banco UMA vez (antes da montagem): corta para 9:16 no tamanho do vídeo,
+    aplica o vermelho da marca e guarda com qualidade quase sem perda. A montagem só repete este arquivo,
+    o que deixa o vídeo final muito mais rápido do que tratar o 4K a cada quadro."""
+    filtro = (f"scale={VW}:{VH}:force_original_aspect_ratio=increase:flags=bicubic,crop={VW}:{VH},"
+              f"fps={FPS},setsar=1,{_cor_fundo_video()},format=yuv420p")
+    r = subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(origem), "-t", f"{maximo:.1f}", "-an",
+                        "-vf", filtro, "-c:v", "libx264", "-preset", "veryfast", "-crf", "12",
+                        str(destino)], capture_output=True, text=True)
+    if r.returncode != 0:
+        raise RuntimeError("ffmpeg (fundo de vídeo): " + r.stderr[-400:])
+    return Path(destino)
+
+
 def montar(card: dict, image_path, audio: Path, total: float, out_mp4: Path, pasta: Path) -> Path:
-    """Quadro fixo + onda da voz + legenda sincronizada, com a narração."""
-    fundo = quadro(card, pasta / "quadro.png", image_path)
+    """Fundo (trecho de vídeo do banco em movimento ou a foto fixa) + onda da voz + legenda
+    sincronizada, com a narração."""
+    video_fundo = card.get("_video_fundo")
+    if video_fundo and not Path(video_fundo).exists():
+        video_fundo = None
+    if video_fundo:
+        fundo = quadro(card, pasta / "camada.png", transparente=True)
+        video_fundo = preparar_fundo_video(Path(video_fundo), pasta / "fundo_9x16.mp4")
+    else:
+        fundo = quadro(card, pasta / "quadro.png", image_path)
     meta_p = pasta / "narracao.json"
     meta = json.loads(meta_p.read_text(encoding="utf-8")) if meta_p.exists() else {}
     frases = meta.get("frases")
@@ -843,14 +900,24 @@ def montar(card: dict, image_path, audio: Path, total: float, out_mp4: Path, pas
     alt = z(ONDA[3])
     x = (VW - larg) // 2                     # visualizador centralizado
     y = z(ONDA[1])
-    filtro = (f"[2:v]format=rgba[barras];[0:v][barras]overlay={x}:{y}:shortest=0:format=auto,"
-              f"subtitles=filename='{ass}':fontsdir='{FONT_DIR}',fps={FPS},format=yuv420p[v]")
-    cmd = ["ffmpeg", "-y", "-loglevel", "error", "-loop", "1", "-framerate", str(FPS), "-i", str(fundo),
+    resto = (f"[2:v]format=rgba[barras];[base][barras]overlay={x}:{y}:shortest=0:format=auto,"
+             f"subtitles=filename='{ass}':fontsdir='{FONT_DIR}',fps={FPS},format=yuv420p[v]")
+    if video_fundo:   # o trecho repete se a narração for mais longa que ele
+        entrada = ["-stream_loop", "-1", "-i", str(video_fundo)]
+        filtro = "[0:v][3:v]overlay=0:0:format=auto[base];" + resto
+        extra = ["-loop", "1", "-framerate", str(FPS), "-i", str(fundo)]   # entrada 3: a camada de cima
+    else:
+        entrada = ["-loop", "1", "-framerate", str(FPS), "-i", str(fundo)]
+        filtro = "[0:v]null[base];" + resto
+        extra = []
+    cmd = ["ffmpeg", "-y", "-loglevel", "error", *entrada,
            "-i", str(audio),
            "-f", "rawvideo", "-pix_fmt", "rgba", "-s", f"{larg}x{alt}", "-framerate", str(FPS), "-i", "-",
+           *extra,
            "-filter_complex", filtro, "-map", "[v]", "-map", "1:a", "-t", f"{total:.2f}",
            "-fps_mode", "cfr", "-r", str(FPS),
-           "-c:v", "libx264", "-preset", "medium", "-crf", "18", "-profile:v", "high",  # qualidade alta: o Instagram ainda recomprime
+           "-c:v", "libx264", "-preset", "faster" if video_fundo else "medium", "-crf", "18",  # qualidade alta: o Instagram ainda recomprime
+           "-profile:v", "high",
            "-level", "5.1" if VIDEO_2K else "4.1", "-maxrate", "14M", "-bufsize", "28M",
            "-pix_fmt", "yuv420p", "-bf", "0", "-g", str(FPS * 2), "-keyint_min", str(FPS * 2),
            "-sc_threshold", "0", "-c:a", "aac", "-b:a", "128k", "-ar", "48000", "-ac", "2",

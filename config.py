@@ -51,6 +51,8 @@ TRUSTED_SINGLE_SOURCE = env_bool("TRUSTED_SINGLE_SOURCE", True)
 # como tratar polícia/tragédia: "careful" = publica com regras de cuidado, "skip" = não publica
 SENSITIVE_MODE = env("SENSITIVE_MODE", "careful")
 DEDUPE_HOURS = int(env("DEDUPE_HOURS", "168"))  # 7 dias de memória contra repetição
+# fundo do Reels com trecho de VÍDEO do Pixabay (a foto fica de reserva); false = só foto, como antes
+VIDEO_FUNDO = env_bool("VIDEO_FUNDO", True)
 # trava por SENTIDO (semantico.py): compara o significado da notícia com as já postadas (embeddings)
 SEMANTICO = env_bool("SEMANTICO", True)
 EMBED_MODEL = env("EMBED_MODEL", "gemini-embedding-001,gemini-embedding-2")  # em ordem

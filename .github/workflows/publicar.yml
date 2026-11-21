@@ -120,6 +120,7 @@ jobs:
           VOZ_MOTOR: ${{ vars.VOZ_MOTOR }}
           WHISPER_MODELO: ${{ vars.WHISPER_MODELO }}
           SEMANTICO: ${{ vars.SEMANTICO }}
+          VIDEO_FUNDO: ${{ vars.VIDEO_FUNDO }}
           SIMILARIDADE_MAX: ${{ vars.SIMILARIDADE_MAX }}
           EMBED_MODEL: ${{ vars.EMBED_MODEL }}
           VOZ_REFERENCIA_B64: ${{ secrets.VOZ_REFERENCIA_B64 }}

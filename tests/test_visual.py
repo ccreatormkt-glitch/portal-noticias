@@ -461,3 +461,22 @@ def test_credito_sem_aviso_repetido():
     assert audiograma._linha_credito(card(_credito="Foto: X / Wikimedia (CC0)", _ilustrativa=True), True) == \
         "Foto: X / Wikimedia (CC0)  ·  Imagem ilustrativa"
     assert audiograma._linha_credito(card(_credito="", _ilustrativa=True), False) == "Imagem ilustrativa"
+
+
+def test_cada_editoria_tem_cor_fixa_e_legivel():
+    """Regra: toda editoria do editor tem a sua cor, e o texto da caixa passa no contraste AA (4,5:1)."""
+    import editor
+    import layout as L
+
+    def lum(rgb):
+        c = [x / 255 for x in rgb]
+        c = [x / 12.92 if x <= 0.03928 else ((x + 0.055) / 1.055) ** 2.4 for x in c]
+        return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]
+
+    assert set(editor.EDITORIAS) == set(L.COR_EDITORIA)
+    for ed in editor.EDITORIAS:
+        fundo, texto = L.cor_editoria(ed)
+        a, b = sorted((lum(fundo), lum(texto)), reverse=True)
+        assert (a + 0.05) / (b + 0.05) >= 4.5, ed
+    assert L.cor_editoria("polícia") == L.cor_editoria("POLÍCIA")       # não depende de maiúsculas
+    assert L.cor_editoria("INEXISTENTE") == L.cor_editoria("CIDADE")    # desconhecida: cor de CIDADE
