@@ -39,6 +39,11 @@
    "ts": 1795264188.757204,
    "status": "falha_publicacao",
    "nota": "Instagram API 400: {\"error\":{\"message\":\"User is performing too many actions\",\"code\":9,\"type\":\"OAuthException\",\"error_subcode\":2207042,\"is_transient\":false,\"error_user_msg\":\"Você atingiu o número máxim"
+  },
+  "18006122592050531": {
+   "ts": 1795264250.10035,
+   "status": "publicado",
+   "nota": "18012076085781454"
   }
  },
  "tentativas": {

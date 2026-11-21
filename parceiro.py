@@ -851,6 +851,8 @@ def _rodada_parceiro(p: dict, est: dict, modo: str, limite: int) -> int:
             except Exception as e:
                 _marcar(est, m["id"], "falha_publicacao", str(e))
                 print(f"[parceiro] falha ao publicar: {str(e)[:300]}")
+            # grava na hora: se o GitHub cortar a rodada no meio, o vídeo não é publicado de novo
+            _guardar_estado(est)
         else:
             for arq in (video, capa_jpg):
                 shutil.copy(arq, FILA / arq.name)

@@ -36,7 +36,7 @@ env:
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 45  # vídeos longos de vários parceiros na mesma rodada
     steps:
       - uses: actions/checkout@v4
       - run: git pull --ff-only origin main || true
