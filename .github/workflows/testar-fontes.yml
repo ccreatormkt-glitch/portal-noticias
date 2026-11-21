@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       sites:
-        description: "sites separados por espaço ou vírgula"
+        description: "sites separados por espaço ou vírgula, ou todas (testa a lista atual do robô)"
         required: true
 permissions:
   contents: read
@@ -20,7 +20,13 @@ jobs:
       - run: pip install -q -r requirements.txt
       - env:
           SITES: ${{ inputs.sites }}
-        run: python main.py testar-fontes $SITES
+        run: |
+          if [ "$SITES" = "todas" ]; then
+            mkdir -p out && echo '[]' > out/testar_fontes.json
+            python main.py check-feeds
+          else
+            python main.py testar-fontes $SITES
+          fi
       - uses: actions/upload-artifact@v4
         with:
           name: testar-fontes

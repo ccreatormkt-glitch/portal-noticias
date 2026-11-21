@@ -48,6 +48,13 @@ def test_fontes_conhecidas_e_sem_sites_que_proibem_robos():
     assert "wscom" not in urls and "portalt5" not in urls
 
 
+def test_todo_feed_direto_tem_nome_para_contar_como_fonte():
+    # sem nome, as notícias do site não contam na exigência de 2 fontes
+    diretos = [k for k in sources.FEEDS if not k.startswith("gn_")]
+    assert len(diretos) >= 50
+    assert all(sources.FEED_SOURCE_NAME.get(k) for k in diretos)
+
+
 def test_temas_proibidos_nunca_entram():
     import sources
     for t in ["PF investiga homem por divulgar pornografia infantil em Patos",

@@ -1,6 +1,6 @@
 """Coleta manchetes de Campina Grande, João Pessoa e Paraíba e agrupa por assunto.
 
-Fontes: buscas do Google News (edição Brasil) + RSS direto dos portais e órgãos
+Fontes: buscas do Google News (edição Brasil) + RSS direto de 55 portais, blogs e órgãos
 públicos. Para incluir ou tirar uma fonte, edite FEEDS. Rode
 `python main.py check-feeds` para ver quais estão respondendo.
 """
@@ -43,10 +43,13 @@ FEEDS = {
     "gn_esporte_pb": gnews("Botafogo-PB OR Treze OR Campinense OR \"Sousa Esporte\" OR \"Atlético Cajazeirense\""),
     # sites da lista sem RSS público (verificado em 19/11/2026): entram pela busca filtrada por site
     "gn_blogs_cg": gnews("site:blogdomarciorangel.com.br OR site:blogdorenatodiniz.com.br OR site:paraibao.com.br"),
-    "gn_sertao_sites": gnews("site:patosonline.com OR site:portalpatos.com OR site:pabhlonoticias.com "
-                             "OR site:portalczn.com.br OR site:sertaodaparaiba.com.br"),
+    # portais sem RSS que funcione (testados em 21/11/2026 com `python main.py testar-fontes`)
+    "gn_sites_sem_rss": gnews("site:pontopb.com.br OR site:thmais.com.br OR site:parlamentopb.com.br "
+                              "OR site:paraiba24horas.com.br OR site:paraibatododia.com.br "
+                              "OR site:paraibadiaadia.com.br"),
     "gn_oficiais": gnews("site:pm.pb.gov.br OR site:paraiba.pb.gov.br OR site:auniao.pb.gov.br "
                          "OR (PRF Paraíba)"),
+    "gn_orgaos": gnews("site:mppb.mp.br OR site:tjpb.jus.br OR site:al.pb.leg.br OR site:tre-pb.jus.br"),
     "gn_tv": gnews('"TV Tambaú" OR "TV Arapuan" OR "CBN João Pessoa" OR "CBN Campina Grande"'),
     # 1. portais estaduais e Grande João Pessoa
     "g1_pb": "https://g1.globo.com/rss/g1/pb/paraiba/",
@@ -68,14 +71,62 @@ FEEDS = {
     "fonte83": "https://fonte83.com.br/feed/",
     "correioparaibano": "https://correioparaibano.com/feed/",
     "rotapb": "https://rotapb.com.br/feed/",
+    # ampliação de 21/11/2026: portais que mais aparecem no Google Notícias e na busca do Google
+    # sobre a Paraíba, todos com RSS testado (notícia nova, local e robots.txt liberado)
+    "reporterpb": "https://reporterpb.com.br/rss",
+    "83agora": "https://83agora.com.br/feed/",
+    "paraibaja": "https://paraibaja.com.br/feed/",
+    "paraibamix": "https://www.paraibamix.com.br/feed/",
+    "bigpb": "https://bigpb.com.br/feed/",
+    "poderparaiba": "https://poderparaiba.com.br/feed/",
+    "cbnparaiba": "https://cbnparaiba.com.br/feed/",
+    "paraibabusiness": "https://paraibabusiness.com.br/feed/",
+    "portalnoticiaja": "https://portalnoticiaja.com/rss",
+    "osguedes": "https://www.osguedes.com.br/feed/",
+    "marcelojose": "https://marcelojose.com.br/feed/",
+    "mauriliojunior": "https://mauriliojunior.com/feed/",
+    "politicadaparaiba": "https://politicadaparaiba.com.br/feed/",
+    "bastidorespb": "https://www.bastidoresdapoliticapb.com.br/feed/",
+    "resenhapolitika": "https://www.resenhapolitika.com.br/feed/",
+    "andersonsoares": "https://www.blogdoandersonsoares.com.br/feed/",
+    "politicaetc": "https://www.politicaetc.com.br/feed/",
+    "camara_jp": "https://joaopessoa.pb.leg.br/feed/",
+    "uepb": "https://uepb.edu.br/feed/",
+    # litoral, Brejo e região metropolitana
+    "portaldolitoralpb": "https://www.portaldolitoralpb.com.br/feed/",
+    "pbvale": "https://pbvale.com.br/feed/",
+    "pref_conde": "https://conde.pb.gov.br/feed/",
+    "blogdodidi": "https://blogdodidi.com.br/feed/",
     # 2. Campina Grande e Agreste
     "paraibaonline": "https://paraibaonline.com.br/feed/",
     "seligapb": "https://seligapb.com.br/feed/",
     "pagina1pb": "https://pagina1pb.com.br/feed/",
-    # 3. Sertão
+    "seligalagoaseca": "https://seligalagoaseca.com.br/feed/",
+    # Cariri
+    "caririligado": "https://www.caririligado.com.br/feed/",
+    "serrabrancafm": "https://serrabrancafm.com.br/feed/",
+    "opipoco": "https://opipoco.com.br/feed/",
+    # 3. Sertão (Patos, Sousa, Cajazeiras, Pombal, Catolé)
     "diariodosertao": "https://www.diariodosertao.com.br/feed/",
+    "sertaodaparaiba": "https://www.sertaodaparaiba.com.br/rss.xml",
+    "folhapatoense": "https://folhapatoense.com/feed/",
+    "patosonline": "https://patosonline.com/rss.xml",
+    "portalpatos": "https://portalpatos.com/rss.php",
+    "pabhlo": "https://pabhlonoticias.com/rss.xml",
+    "portalczn": "https://portalczn.com.br/rss.xml",
+    "radarsertanejo": "https://www.radarsertanejo.com/feed/",
+    "patosverdade": "https://patosverdade.com.br/rss.xml",
+    "jornalpatoense": "https://jornalpatoense.com.br/rss.xml",
+    "catolenews": "https://catolenews.com.br/rss.xml",
+    "pref_pombal": "https://www.pombal.pb.gov.br/feed/",
+    "pref_cajazeiras": "https://cajazeiras.pb.gov.br/rss",
+    # esporte paraibano
+    "pbesportes": "https://pbesportes.net/feed/",
+    "caririesporte": "https://caririesporte.com.br/feed/",
     # 4. canais oficiais e segurança pública
     "gn_prefeituras": gnews("site:campinagrande.pb.gov.br OR site:joaopessoa.pb.gov.br"),
+    "gn_prefeituras_interior": gnews("site:guarabira.pb.gov.br OR site:bayeux.pb.gov.br OR site:cabedelo.pb.gov.br "
+                                     "OR site:patos.pb.gov.br OR site:sousa.pb.gov.br OR site:mamanguape.pb.gov.br"),
     # 6. agregador
 }
 
@@ -88,6 +139,19 @@ FEED_SOURCE_NAME = {
     "seligapb": "Se Liga PB", "pagina1pb": "Página 1 PB", "renatodiniz": "Blog do Renato Diniz", "portalpatos": "Portal Patos", "pabhlo": "Pabhlo Rhuan Notícias",
     "diariodosertao": "Diário do Sertão", "portalczn": "Portal CZN", "sertaodaparaiba": "Portal Sertão da Paraíba", "prf_pb": "PRF Paraíba", "governo_pb": "Governo da Paraíba", "pref_cg": "Prefeitura de Campina Grande",
     "pref_jp": "Prefeitura de João Pessoa", "paraibao": "Paraibão",
+    "reporterpb": "Repórter PB", "83agora": "83 Agora", "paraibaja": "ParaíbaJá", "paraibamix": "Paraíba Mix",
+    "bigpb": "Big PB", "poderparaiba": "Poder Paraíba", "cbnparaiba": "CBN Paraíba",
+    "paraibabusiness": "Paraíba Business", "portalnoticiaja": "Portal Notícia Já", "osguedes": "Os Guedes",
+    "marcelojose": "Blog do Marcelo José", "mauriliojunior": "Blog do Maurílio Júnior",
+    "politicadaparaiba": "Política da Paraíba", "bastidorespb": "Bastidores da Política PB",
+    "resenhapolitika": "Resenha Politika", "andersonsoares": "Blog do Anderson Soares",
+    "politicaetc": "Política Etc", "camara_jp": "Câmara Municipal de João Pessoa", "uepb": "UEPB",
+    "portaldolitoralpb": "Portal do Litoral PB", "pbvale": "PB Vale", "pref_conde": "Prefeitura do Conde",
+    "blogdodidi": "Blog do Didi", "seligalagoaseca": "Se Liga Lagoa Seca", "caririligado": "Cariri Ligado",
+    "serrabrancafm": "Serra Branca FM", "opipoco": "O Pipoco", "folhapatoense": "Folha Patoense",
+    "patosonline": "Patos Online", "radarsertanejo": "Radar Sertanejo", "patosverdade": "Patos Verdade",
+    "jornalpatoense": "Jornal Patoense", "catolenews": "Catolé News", "pref_pombal": "Prefeitura de Pombal",
+    "pref_cajazeiras": "Prefeitura de Cajazeiras", "pbesportes": "PB Esportes", "caririesporte": "Cariri Esporte",
 }
 
 # veículos grandes ou oficiais: uma notícia só deles já é aceita
@@ -95,7 +159,7 @@ TRUSTED = ["g1", "jornal da paraiba", "portal correio", "clickpb", "paraibaonlin
            "paraiba online", "maispb", "pb agora", "tv cabo branco", "tv paraiba",
            "prefeitura", "governo da paraiba", "agencia brasil", "cbn", "camara municipal",
            "policia civil", "policia militar", "tribunal", "ministerio publico", "detran",
-           "prf", "a uniao", "diario do sertao"]
+           "prf", "a uniao", "diario do sertao", "uepb", "cbn paraiba"]
 
 # palavras que indicam notícia local (dão prioridade)
 LOCAL_TERMS = [
@@ -320,7 +384,7 @@ def fetch_items(verbose=False, extra=None) -> list:
     feeds = {**FEEDS, **(extra or {})}
     items = []
     diretos = [(k, v) for k, v in feeds.items() if not k.startswith("gn_")]
-    with ThreadPoolExecutor(max_workers=8) as ex:
+    with ThreadPoolExecutor(max_workers=12) as ex:
         resultados = list(ex.map(lambda kv: _ler(*kv), diretos))
     # Google Notícias: uma busca por vez, com pausa (muitas juntas dão "429 Too Many Requests")
     for k, v in feeds.items():
