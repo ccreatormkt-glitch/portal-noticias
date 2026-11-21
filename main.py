@@ -584,6 +584,43 @@ def cmd_boletim(args):
     boletim.rodar(dry=args.dry_run)
 
 
+def cmd_parceiro(args):
+    import parceiro
+    if args.modo != "dry" and not (config.IG_USER_ID and config.IG_ACCESS_TOKEN):
+        print("[parceiro] aguardando configuração do Instagram (veja SETUP.md)")
+        return
+    parceiro.rodada(args.modo, args.limite)
+
+
+def cmd_parceiro_fila(_):
+    import json as _json
+
+    import parceiro
+    itens = sorted(parceiro.FILA.glob("*.json"))
+    for p in itens:
+        card = _json.loads(p.read_text(encoding="utf-8"))
+        print(p.stem, "|", card["chapeu"], "|", card["titulo"], "|", card["_origem"].get("permalink", ""))
+    if not itens:
+        print("fila do parceiro vazia")
+
+
+def cmd_parceiro_aprovar(args):
+    import parceiro
+    if not (args.all or args.id):
+        raise SystemExit("use --all ou um ID do `parceiro-fila`")
+    print(f"[parceiro] {parceiro.aprovar(args.all, args.id or '')} publicado(s)")
+
+
+def cmd_parceiro_descartar(args):
+    import parceiro
+    print("descartado" if parceiro.descartar(args.id) else "ID não está na fila")
+
+
+def cmd_parceiro_calibrar(_):
+    import parceiro
+    parceiro.calibrar()
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -618,6 +655,19 @@ def main():
     b = sub.add_parser("boletim")
     b.add_argument("--dry-run", action="store_true")
     b.set_defaults(fn=cmd_boletim)
+    pc = sub.add_parser("parceiro", help="vídeos do perfil parceiro com a marca do PB Minuto")
+    pc.add_argument("--modo", choices=["review", "auto", "dry"], default=None)
+    pc.add_argument("--limite", type=int, default=1, help="vídeos por rodada")
+    pc.set_defaults(fn=cmd_parceiro)
+    sub.add_parser("parceiro-fila").set_defaults(fn=cmd_parceiro_fila)
+    pa = sub.add_parser("parceiro-aprovar")
+    pa.add_argument("id", nargs="?")
+    pa.add_argument("--all", action="store_true")
+    pa.set_defaults(fn=cmd_parceiro_aprovar)
+    pd = sub.add_parser("parceiro-descartar")
+    pd.add_argument("id")
+    pd.set_defaults(fn=cmd_parceiro_descartar)
+    sub.add_parser("parceiro-calibrar").set_defaults(fn=cmd_parceiro_calibrar)
     args = ap.parse_args()
     args.fn(args)
 

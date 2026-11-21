@@ -63,6 +63,31 @@ No repositório: **Settings > Secrets and variables > Actions**.
 Se uma publicação falhar (ex.: token vencido), a execução fica vermelha e o GitHub
 manda e-mail.
 
+## Vídeos do parceiro (@jornaldapb)
+
+Com a autorização do @jornaldapb, os vídeos dele que **não são collab** entram no PB Minuto com a
+nossa marca (`parceiro.py`, workflow **parceiro-jornaldapb**, a cada 30 min das 06h às 23h30):
+
+- lê os posts pela API oficial (Business Discovery, mesmo token do portal);
+- pula imagem, carrossel, post cujo dono é outra conta (collab) e legenda com sinal de collab/publi
+  (`PARCEIRO_SINAIS_COLLAB`); na dúvida, pula;
+- transcreve a fala; a IA escreve editoria, manchete e legenda com outras palavras, seguindo a
+  regra de escrita (skill STE80 Humanizer, ver `REGRAS.md`);
+- desfoca a marca d'água dele (`PARCEIRO_COBRIR`), cobre a manchete antiga com o degradê preto
+  e põe a barra vermelha com a logo + a etiqueta nova (medidas em `layout.PARCEIRO`, só Inter,
+  editoria na caixa com a cor do tema); o áudio original fica;
+- vai para `queue/parceiro` e só publica com **Run workflow → aprovar** (ou `PARCEIRO_MODO=auto`).
+
+| Variável | Padrão | Para que serve |
+|---|---|---|
+| `PARCEIRO_MODO` | `review` | `auto` publica sem esperar aprovação |
+| `PARCEIRO_COBRIR` | vazio | áreas a desfocar, em % da tela: `x,y,largura,altura; ...` (meça com **calibrar**) |
+| `PARCEIRO_DEGRADE` | `760,1100` | onde o preto começa e onde fica 100% (em px de 1920) |
+| `PARCEIRO_CORTE` | `0,0` | % de cima e de baixo do vídeo original a cortar fora |
+| `PARCEIRO_JANELA_HORAS` | `48` | ignora vídeos mais velhos que isso |
+
+Prévias (quadros e vídeos) ficam no ramo `previa-parceiro`.
+
 ## Comandos locais
 
 ```bash

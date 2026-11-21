@@ -202,6 +202,20 @@ VIDEO = {
 }
 
 
+# Vídeo do parceiro (@jornaldapb, parceiro.py): o vídeo dele com a nossa etiqueta por cima.
+# Coordenadas no desenho 1080x1920 (saem em 2K pela ESCALA). Letras, cores e a caixa da editoria
+# vêm de PAPEIS/COR/COR_EDITORIA (regra: só Inter; editoria na caixa com a cor fixa do tema).
+PARCEIRO = {
+    # degradê preto: começa em [0] e fica 100% preto de [1] até o pé da tela, cobrindo a manchete
+    # antiga do parceiro (terço de baixo do vídeo)
+    "degrade": (760, 1100),
+    "pe": FORMATOS["reels"]["base_segura"] - esp(3),   # pé da data (última linha), acima da legenda do IG
+    "largura": FORMATOS["reels"]["direita_segura"] - FORMATOS["reels"]["margem"],  # longe dos botões
+    "max_linhas": 4,                                   # da manchete; se não couber, a letra diminui
+    "editoria_manchete": esp(1),                       # do pé da caixa da editoria ao topo da manchete
+    "manchete_meta": esp(2),                           # do pé da manchete à data e cidade
+}
+
 def pilha_capa(n_linhas_titulo: int, tam_titulo: int, n_linhas_fina: int, tem_credito: bool,
                fmt: dict) -> dict:
     """Posições (baselines) da pilha da capa, de baixo para cima, como o destaque do g1:

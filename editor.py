@@ -510,7 +510,7 @@ def _junto(card: dict) -> str:
                     + [str(p) for p in card.get("pontos", []) or []])
 
 
-def humanizar(card: dict, cluster=None) -> dict:
+def humanizar(card: dict, cluster=None, validar: bool = True) -> dict:
     """Revisão automática com a skill STE80 Humanizer. Só aceita a versão nova se ela mantiver os
     números, não trouxer número novo, passar na validação e não copiar trechos da fonte. Se algo
     falhar, fica o texto original (a notícia sai do mesmo jeito)."""
@@ -543,7 +543,7 @@ def humanizar(card: dict, cluster=None) -> dict:
         motivo = f"inventou números {sorted(depois - antes)[:4]}"
     elif len(candidato.get("titulo", "")) > 110:
         motivo = "manchete longa"
-    if not motivo:
+    if not motivo and validar:
         try:
             candidato = validate(candidato)
         except ValueError as e:

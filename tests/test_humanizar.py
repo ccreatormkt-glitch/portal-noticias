@@ -51,3 +51,5 @@ def test_regra_humanizer_em_toda_escrita():
     assert config.HUMANIZAR is True
     main_py = (Path(__file__).resolve().parent.parent / "main.py").read_text(encoding="utf-8")
     assert "editor.humanizar(card, c)" in main_py   # toda notícia (inclusive pauta) passa pela revisão
+    parceiro_py = (Path(__file__).resolve().parent.parent / "parceiro.py").read_text(encoding="utf-8")
+    assert "editor.humanizar(" in parceiro_py and "_regra_escrita()" in parceiro_py   # vídeos do parceiro também

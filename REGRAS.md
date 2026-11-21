@@ -15,7 +15,8 @@ Valem para tudo o que o sistema produz. Cada regra tem um teste que falha se ela
   (`editor.REESCRITOR`) trazem a REGRA DE ESCRITA da skill: uma ideia por frase, frases curtas, voz
   ativa, palavras simples, sem marcas de texto de IA (travessão, "não é só X, é Y", palavras infladas,
   gerúndio pendurado...).
-- Depois da escrita: toda notícia, inclusive pauta pedida e "refazer", passa por `editor.humanizar`,
+- Depois da escrita: toda notícia, inclusive pauta pedida, "refazer" e os vídeos do parceiro
+  (`parceiro.escrever`), passa por `editor.humanizar`,
   que revisa manchete, linha fina, resumo, tópicos e legenda. A narração é montada desses campos, então
   o áudio sai revisado junto.
 - Fidelidade: se a revisão perder ou inventar número, estourar a manchete ou ficar parecida com a

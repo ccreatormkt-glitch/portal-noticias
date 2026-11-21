@@ -1,0 +1,115 @@
+name: parceiro-jornaldapb
+# Vídeos do @jornaldapb (só os que NÃO são collab, como prevê a autorização) refeitos com a marca
+# do PB Minuto: a cada 30 min, das 06h às 23h30 (Fortaleza). Por padrão vão para a fila
+# queue/parceiro e só saem com "aprovar" (variável PARCEIRO_MODO = auto publica direto).
+on:
+  schedule:
+    - cron: "15,45 9-23,0-2 * * *"
+  workflow_dispatch:
+    inputs:
+      acao:
+        description: "rodada (busca vídeos novos), aprovar (publica a fila), descartar (tira um da fila) ou calibrar (quadros com grade)"
+        type: choice
+        options: [rodada, aprovar, descartar, calibrar]
+        default: rodada
+      modo:
+        description: "na rodada: review (fila), auto (publica) ou dry (só prévia)"
+        type: choice
+        options: [padrao, review, auto, dry]
+        default: padrao
+      id:
+        description: "aprovar/descartar: ID da fila (vazio em aprovar = todos)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: parceiro
+  cancel-in-progress: false
+
+env:
+  PYTHONUNBUFFERED: "1"
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - run: git pull --ff-only origin main || true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Instalar FFmpeg
+        run: which ffmpeg || (sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends ffmpeg)
+      - name: Guardar o modelo do Whisper
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: whisper-${{ vars.WHISPER_MODELO || 'small' }}
+      - name: Parceiro
+        env:
+          ACAO: ${{ github.event.inputs.acao || 'rodada' }}
+          MODO: ${{ github.event.inputs.modo }}
+          ID: ${{ github.event.inputs.id }}
+          PARCEIRO_USUARIO: ${{ vars.PARCEIRO_USUARIO }}
+          PARCEIRO_MODO: ${{ vars.PARCEIRO_MODO }}
+          PARCEIRO_COBRIR: ${{ vars.PARCEIRO_COBRIR }}
+          PARCEIRO_CORTE: ${{ vars.PARCEIRO_CORTE }}
+          PARCEIRO_DEGRADE: ${{ vars.PARCEIRO_DEGRADE }}
+          PARCEIRO_JANELA_HORAS: ${{ vars.PARCEIRO_JANELA_HORAS }}
+          PARCEIRO_SINAIS_COLLAB: ${{ vars.PARCEIRO_SINAIS_COLLAB }}
+          PORTAL_NAME: ${{ vars.PORTAL_NAME }}
+          PORTAL_HANDLE: ${{ vars.PORTAL_HANDLE }}
+          LLM_PROVIDER: ${{ vars.LLM_PROVIDER }}
+          GEMINI_MODEL: ${{ vars.GEMINI_MODEL }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          IMGBB_API_KEY: ${{ secrets.IMGBB_API_KEY }}
+          WHISPER_MODELO: ${{ vars.WHISPER_MODELO }}
+          HUMANIZAR: ${{ vars.HUMANIZAR }}
+        run: |
+          h=$(TZ=America/Fortaleza date +%-H)
+          if [ "$GITHUB_EVENT_NAME" = "schedule" ] && [ "$h" -lt 6 ]; then echo "madrugada: sem rodada"; exit 0; fi
+          case "$ACAO" in
+            aprovar)   if [ -n "$ID" ]; then python main.py parceiro-aprovar "$ID"; else python main.py parceiro-aprovar --all; fi ;;
+            descartar) python main.py parceiro-descartar "$ID" ;;
+            calibrar)  python main.py parceiro-calibrar ;;
+            *)         if [ -n "$MODO" ] && [ "$MODO" != "padrao" ]; then python main.py parceiro --modo "$MODO"; else python main.py parceiro; fi
+                       python main.py parceiro-fila ;;
+          esac
+      - name: Prévia (quadros e vídeos no ramo "previa-parceiro")
+        if: always()
+        run: |
+          shopt -s nullglob
+          arquivos=(out/calibrar_*.jpg out/parceiro_*[0-9].mp4)
+          [ ${#arquivos[@]} -eq 0 ] && exit 0
+          git worktree add --orphan -b previa-parceiro /tmp/previa
+          for v in out/parceiro_*[0-9].mp4; do
+            b=$(basename "$v" .mp4)
+            for s in 1 4; do ffmpeg -loglevel error -y -ss $s -i "$v" -frames:v 1 -vf scale=540:-1 "/tmp/previa/${b}_${s}s.jpg" || true; done
+            cp "$v" /tmp/previa/
+          done
+          cp out/calibrar_*.jpg /tmp/previa/ 2>/dev/null || true
+          cd /tmp/previa
+          git add -A
+          git -c user.name="pbminuto-bot" -c user.email="pbminuto-bot@users.noreply.github.com" commit -qm "prévia parceiro $(date -u +%F_%H%M)" || exit 0
+          git push -f origin previa-parceiro
+      - name: Salvar estado e fila
+        if: always()
+        run: |
+          git config user.name "pbminuto-bot"
+          git config user.email "pbminuto-bot@users.noreply.github.com"
+          git add -A state/parceiro.json queue/parceiro 2>/dev/null || true
+          git diff --cached --quiet && exit 0
+          git commit -qm "parceiro $(date -u +%F_%H%M)"
+          for i in 1 2 3; do git pull --rebase -q && git push -q && exit 0; sleep 5; done
+          exit 1
