@@ -193,18 +193,27 @@ def test_brasil_so_editorias_nacionais_do_g1():
     assert sources.g1_nacional(nac) and not sources.g1_nacional(reg) and not sources.g1_nacional(pb)
 
 
-def test_ritmo_recupera_com_dois_posts_quando_atrasado(ambiente, monkeypatch):
-    """Última hora abaixo da meta (~5/h): a rodada publica até 2; no ritmo, publica 1."""
+def test_ritmo_um_post_a_cada_15_min_contando_parceiros(ambiente, monkeypatch):
+    """Ritmo único do perfil: 1 post por rodada e só se o último post (notícia ou parceiro) tiver
+    mais de ~14 min; sem rajadas que enchem o limite de 24h do Instagram."""
+    import json
     monkeypatch.setattr(config, "CANDIDATOS", 1)
-    monkeypatch.setattr(config, "POSTS_PER_RUN", 2)
     monkeypatch.setattr(config, "BRASIL_A_CADA", 0)
     sem_count = argparse.Namespace(dry_run=False, count=None)  # como roda no GitHub
     main.cmd_run(sem_count)
-    assert len(ambiente) == 2  # nenhuma na última hora -> recupera com 2
-    for i in range(3):
-        db.record(f"x{i}", set(), f"manchete {i}", "", "published")
+    assert len(ambiente) == 1            # nenhum post recente -> sai 1 (não 2)
     main.cmd_run(sem_count)
-    assert len(ambiente) == 3  # 5 na última hora (meta ~5) -> só 1
+    assert len(ambiente) == 1            # acabou de postar -> espera
+    con = db._conn()
+    con.execute("UPDATE posts SET ts = ts - 3600")
+    con.commit()
+    (config.STATE_DIR / "parceiro.json").write_text(json.dumps(
+        {"vistos": {"p1": {"ts": time.time() - 120, "status": "publicado"}}}))
+    main.cmd_run(sem_count)
+    assert len(ambiente) == 1            # vídeo de parceiro há 2 min também conta
+    (config.STATE_DIR / "parceiro.json").write_text(json.dumps({"vistos": {}}))
+    main.cmd_run(sem_count)
+    assert len(ambiente) == 2
 
 
 def test_mesclar_historico_de_duas_rodadas(tmp_path):

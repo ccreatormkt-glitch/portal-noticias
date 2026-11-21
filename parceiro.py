@@ -132,6 +132,22 @@ def publicados_24h(caminho: Path = None) -> int:
     return sum(1 for v in vistos.values() if v.get("status") == "publicado" and v.get("ts", 0) > desde)
 
 
+def ultimo_publicado(caminho: Path = None) -> float:
+    """Hora (epoch) do último vídeo de parceiro publicado; 0 se nenhum."""
+    try:
+        arq = caminho or (config.STATE_DIR / "parceiro.json")
+        vistos = json.loads(arq.read_text(encoding="utf-8")).get("vistos", {})
+    except Exception:
+        return 0.0
+    return max([v.get("ts", 0) for v in vistos.values() if v.get("status") == "publicado"] or [0.0])
+
+
+def _cedo_demais() -> bool:
+    """Ritmo único do perfil (notícias + parceiros): um post a cada ~15 min, o dia todo."""
+    import db
+    return time.time() - max(db.ultimo_publicado(), ultimo_publicado()) < config.INTERVALO_POSTS
+
+
 def _sem_vaga_no_instagram() -> bool:
     """True quando o limite de 24h da API está cheio: o vídeo espera em vez de ser perdido."""
     import publish
@@ -833,6 +849,9 @@ def _rodada_parceiro(p: dict, est: dict, modo: str, limite: int, so_ids: set = N
             if motivo != "já usado":
                 print(f"[parceiro] pulei {m.get('permalink', m.get('id'))}: {motivo}")
             continue
+        if modo == "auto" and so_ids is None and _cedo_demais():
+            print("[parceiro] post há menos de ~15 min no perfil: o vídeo fica para a próxima rodada")
+            break
         if modo == "auto" and _sem_vaga_no_instagram():
             print("[parceiro] limite de 24h do Instagram cheio: o vídeo fica para a próxima rodada")
             break

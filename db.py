@@ -113,6 +113,12 @@ def update_status(fp, status, ig_id="", note=""):
          "ig_id": ig_id, "note": note})
 
 
+def ultimo_publicado() -> float:
+    """Hora (epoch) do último post de notícia publicado; 0 se nenhum."""
+    with _conn() as c:
+        return c.execute("SELECT MAX(ts) FROM posts WHERE status='published'").fetchone()[0] or 0.0
+
+
 def published_since(segundos: float) -> int:
     with _conn() as c:
         return c.execute("SELECT COUNT(*) FROM posts WHERE status='published' AND ts > ?",

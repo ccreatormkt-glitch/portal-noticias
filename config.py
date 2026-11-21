@@ -42,8 +42,12 @@ TIMEZONE = env("TIMEZONE", "America/Fortaleza")
 # review = deixa os cards na fila queue/pending esperando aprovação
 POST_MODE = env("POST_MODE", "auto")
 POSTS_PER_RUN = int(env("POSTS_PER_RUN", "2"))  # até 2 por rodada quando o ritmo está atrasado
+# Ritmo único do perfil (notícias + vídeos de parceiro): um post a cada ~15 min, o dia todo, para o
+# limite de 24h do Instagram nunca encher de uma vez e deixar horas sem post (21/11/2026).
+# Fica um pouco abaixo de 24h / MAX_POSTS_PER_DAY porque a sequência roda a cada ~8 min.
 MAX_POSTS_PER_DAY = int(env("MAX_POSTS_PER_DAY", "95"))  # em 24h; a API do Instagram aceita 100 (5 ficam de folga)
 HORAS_ATIVAS = 24  # 24 horas por dia, 7 dias por semana: o ritmo alvo é MAX_POSTS_PER_DAY / 24 posts por hora
+INTERVALO_POSTS = float(env("INTERVALO_POSTS_MIN", str(round(24 * 60 / MAX_POSTS_PER_DAY * 0.92, 1)))) * 60
 HORA_INICIO = int(env("HORA_INICIO", "0"))  # 0 = posta a qualquer hora (24/7); ex.: 6 para pausar de madrugada
 MIN_SOURCES = int(env("MIN_SOURCES", "2"))       # veículos diferentes dando a mesma notícia
 # notícia vinda de 1 só veículo é aceita se ele estiver nesta lista (veículos grandes/oficiais)

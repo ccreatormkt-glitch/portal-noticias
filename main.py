@@ -330,14 +330,17 @@ def cmd_run(args):
         if publish.quota_left() == 0:
             print("[run] limite de publicações da API do Instagram atingido. Tentando na próxima.")
             return
-        # ritmo: ~5 posts por hora o dia todo; se a última hora ficou abaixo (rodadas sem notícia
-        # nova ou recusa da Meta), esta rodada recupera com até POSTS_PER_RUN posts
-        if not args.count:
-            meta_hora = config.MAX_POSTS_PER_DAY / config.HORAS_ATIVAS
-            ultima_hora = db.published_since(3600)
-            atraso = int(meta_hora - ultima_hora + 0.5)
-            limit = max(1, min(config.POSTS_PER_RUN, atraso))
-            print(f"[run] ritmo: {ultima_hora} post(s) na última hora (meta ~{meta_hora:.0f}/h) -> até {limit} nesta rodada")
+        # ritmo único do perfil: 1 post a cada ~15 min (notícias + parceiros), o dia todo, sem rajadas
+        # que enchem o limite de 24h do Instagram e deixam horas sem post
+        pauta_pedida = (getattr(args, "pauta", None) or os.environ.get("PAUTA") or "").strip()
+        if not args.count and not pauta_pedida:
+            ultimo = max(db.ultimo_publicado(), parceiro.ultimo_publicado())
+            espera = config.INTERVALO_POSTS - (time.time() - ultimo)
+            if espera > 0:
+                print(f"[run] ritmo: último post há {(time.time() - ultimo) / 60:.0f} min; "
+                      f"o próximo sai em ~{espera / 60:.0f} min (1 a cada ~{config.INTERVALO_POSTS / 60:.0f} min)")
+                return
+            limit = 1
         restante = publish.quota_left()
         limit = min(limit, config.MAX_POSTS_PER_DAY - done_today, restante if restante > 0 else limit)
 
