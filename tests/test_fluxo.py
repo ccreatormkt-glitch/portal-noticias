@@ -381,3 +381,26 @@ def test_sem_video_de_parceiro_sai_noticia(ambiente, monkeypatch):
     (config.STATE_DIR / "parceiro.json").write_text(json.dumps({"vistos": {}, "tentativas": {}, "refazer": {}}))
     main.cmd_run(argparse.Namespace(dry_run=False, count=None))
     assert len(ambiente) == 1
+
+
+def test_noticia_cede_a_vaga_quando_ha_video_esperando(ambiente, monkeypatch):
+    """Notícia e vídeo de parceiro alternam: com vídeo esperando vaga e o último post sendo notícia,
+    a rodada de notícias não publica e deixa o aviso para o vigia chamar o parceiro."""
+    monkeypatch.setattr(config, "CANDIDATOS", 1)
+    monkeypatch.setattr(config, "BRASIL_A_CADA", 0)
+    db.record("velha", set(), "notícia antiga", "", "published")
+    con = db._conn()
+    con.execute("UPDATE posts SET ts = ts - 3600")
+    con.commit()
+    estado = config.STATE_DIR / "parceiro.json"
+    estado.write_text(json.dumps({"vistos": {"v": {"ts": time.time() - 7200, "status": "publicado"}},
+                                  "aguardando": time.time() - 60}))
+    sem_count = argparse.Namespace(dry_run=False, count=None)
+    main.cmd_run(sem_count)
+    assert len(ambiente) == 0 and (config.OUT_DIR / "vez_do_parceiro").exists()
+    # o vídeo saiu (último post agora é do parceiro): a próxima vaga volta para a notícia
+    estado.write_text(json.dumps({"vistos": {"v": {"ts": time.time() - 1000, "status": "publicado"}},
+                                  "aguardando": time.time() - 60}))
+    (config.OUT_DIR / "vez_do_parceiro").unlink()
+    main.cmd_run(sem_count)
+    assert len(ambiente) == 1

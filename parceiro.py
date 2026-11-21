@@ -105,6 +105,7 @@ def _estado() -> dict:
     est.setdefault("vistos", {})
     est.setdefault("tentativas", {})
     est.setdefault("refazer", {})
+    est.setdefault("aguardando", 0)   # hora em que um vídeo pronto para sair esperou vaga no perfil
     return est
 
 
@@ -113,8 +114,8 @@ def _guardar_estado(est: dict):
     vistos = dict(sorted(est["vistos"].items(), key=lambda kv: kv[1].get("ts", 0))[-400:])
     tent = {k: v for k, v in est.get("tentativas", {}).items() if k not in vistos}
     ESTADO.parent.mkdir(parents=True, exist_ok=True)
-    ESTADO.write_text(json.dumps({"vistos": vistos, "tentativas": tent, "refazer": est.get("refazer", {})},
-                                 ensure_ascii=False, indent=1),
+    ESTADO.write_text(json.dumps({"vistos": vistos, "tentativas": tent, "refazer": est.get("refazer", {}),
+                                  "aguardando": est.get("aguardando", 0)}, ensure_ascii=False, indent=1),
                       encoding="utf-8")
 
 
@@ -142,6 +143,20 @@ def ultimo_publicado(caminho: Path = None) -> float:
     except Exception:
         return 0.0
     return max([v.get("ts", 0) for v in vistos.values() if v.get("status") == "publicado"] or [0.0])
+
+
+def vez_do_video(caminho: Path = None) -> bool:
+    """Notícias e vídeos alternam: True quando há vídeo de parceiro esperando vaga (marcado na última
+    meia hora) e o último post do perfil foi notícia. Aí a notícia cede a vaga e o vigia chama o parceiro."""
+    import db
+    try:
+        arq = caminho or (config.STATE_DIR / "parceiro.json")
+        aguardando = float(json.loads(arq.read_text(encoding="utf-8")).get("aguardando") or 0)
+    except Exception:
+        return False
+    if time.time() - aguardando > 1800:
+        return False
+    return db.ultimo_publicado() >= ultimo_publicado(caminho)
 
 
 def _cedo_demais() -> bool:
@@ -822,6 +837,7 @@ def _publicar(card: dict, video: Path, capa_jpg: Path) -> str:
 def rodada(modo: str = None, limite: int = 1) -> int:
     """Uma rodada em todos os parceiros: até `limite` vídeos novos de cada um. Devolve quantos fez."""
     est = _estado()
+    est["aguardando"] = 0   # volta a marcar só se nesta rodada algum vídeo ficar esperando vaga
     total = _processar_refazer(est, modo or MODO) if est["refazer"] else 0   # pedidos do Arthur primeiro
     for p in parceiros():
         total += _rodada_parceiro(p, est, modo or MODO, limite)
@@ -889,9 +905,11 @@ def _rodada_parceiro(p: dict, est: dict, modo: str, limite: int, so_ids: set = N
             continue
         if modo == "auto" and so_ids is None and _cedo_demais():
             print("[parceiro] post há menos de ~15 min no perfil: o vídeo fica para a próxima rodada")
+            est["aguardando"] = time.time()   # a próxima vaga é do vídeo (notícias alternam com vídeos)
             break
         if modo == "auto" and _sem_vaga_no_instagram():
             print("[parceiro] limite de 24h do Instagram cheio: o vídeo fica para a próxima rodada")
+            est["aguardando"] = time.time()
             break
         stamp = f"parceiro_{m['id']}"
         pasta = config.OUT_DIR

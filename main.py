@@ -340,6 +340,11 @@ def cmd_run(args):
                 print(f"[run] ritmo: último post há {(time.time() - ultimo) / 60:.0f} min; "
                       f"o próximo sai em ~{espera / 60:.0f} min (1 a cada ~{config.INTERVALO_POSTS / 60:.0f} min)")
                 return
+            if parceiro.vez_do_video():   # notícia e vídeo de parceiro alternam quando os dois têm o que postar
+                print("[run] vez do vídeo de parceiro (há vídeo esperando e o último post foi notícia)")
+                config.OUT_DIR.mkdir(parents=True, exist_ok=True)
+                (config.OUT_DIR / "vez_do_parceiro").write_text("1")   # o vigia chama o parceiro agora
+                return
             limit = 1
         restante = publish.quota_left()
         limit = min(limit, config.MAX_POSTS_PER_DAY - done_today, restante if restante > 0 else limit)

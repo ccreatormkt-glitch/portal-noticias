@@ -56,6 +56,8 @@ Valem para tudo o que o sistema produz. Cada regra tem um teste que falha se ela
 - A notícia nunca espera vídeo: a sequência de notícias confere a cada ~5 min e, se não saiu vídeo de
   parceiro (nenhum novo, repetido, collab ou falhou), a vaga vai para a melhor notícia nova.
 - Só fica sem post quando o limite de 24h do Instagram está cheio (cerca de 100 posts por dia).
+- Quando há vídeo de parceiro esperando vaga, notícia e vídeo alternam: se o último post foi notícia,
+  a próxima vaga é do vídeo (`parceiro.vez_do_video`; o vigia do `publicar.yml` chama o parceiro na hora).
 - Onde: `main.cmd_run` (ritmo e limite contam notícias + `parceiro.publicados_24h()`), `parceiro._cedo_demais`.
 - Teste: `tests/test_fluxo.py::test_sem_video_de_parceiro_sai_noticia`.
 

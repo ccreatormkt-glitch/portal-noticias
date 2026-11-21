@@ -190,7 +190,10 @@ jobs:
           if [ "$ativos" -gt 0 ]; then echo "parceiro rodando"; exit 0; fi
           ultima=$(gh run list -R "$GITHUB_REPOSITORY" --workflow parceiro.yml -L 1 --json createdAt --jq '.[0].createdAt') || exit 0
           idade=$(( $(date +%s) - $(date -d "${ultima:-1970-01-01T00:00:00Z}" +%s) ))
-          if [ "$idade" -gt 1140 ]; then
+          if [ -f out/vez_do_parceiro ]; then
+            echo "vez do vídeo de parceiro: disparando agora"
+            gh workflow run parceiro.yml -R "$GITHUB_REPOSITORY" -f acao=rodada || true
+          elif [ "$idade" -gt 1140 ]; then
             echo "parceiro parado há $((idade / 60)) min: disparando"
             gh workflow run parceiro.yml -R "$GITHUB_REPOSITORY" -f acao=rodada || true
           else
