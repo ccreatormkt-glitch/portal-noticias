@@ -299,3 +299,5 @@
 {"ts": "2026-11-21T00:00:46", "event": "falha_publicacao", "headline": "Conmebol aciona Justiça após liquidação do Ueno Bank no Paraguai", "source": "g1", "ig_id": "", "note": "voz padrão indisponível agora (limite do Gemini); a notícia volta na próxima rodada"}
 {"ts": "2026-11-21T00:08:00", "event": "gerado", "headline": "Gilmar Mendes apoia fim do sigilo em relatórios da PF sobre ministros do STF", "source": "g1", "ig_id": "", "note": ""}
 {"ts": "2026-11-21T00:08:45", "event": "published", "headline": "Gilmar Mendes apoia fim do sigilo em relatórios da PF sobre ministros do STF", "source": "g1", "ig_id": "18171491053483205", "note": ""}
+{"ts": "2026-11-21T00:14:06", "event": "gerado", "headline": "Compositor paraibano lança livro sobre histórias com Luiz Gonzaga em João Pessoa", "source": "MaisPB", "ig_id": "", "note": ""}
+{"ts": "2026-11-21T00:14:53", "event": "published", "headline": "Compositor paraibano lança livro sobre histórias com Luiz Gonzaga em João Pessoa", "source": "MaisPB", "ig_id": "18124185458058824", "note": ""}
