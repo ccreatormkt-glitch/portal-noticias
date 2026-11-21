@@ -209,12 +209,9 @@ def _credito(d, texto, y, x_esq, largura):
 
 
 def _palavras_com_fonte(texto: str, destaques: list, tamanho: int):
-    """[(palavra, fonte, destaque?)] para desenhar a manchete com os destaques na serifada."""
-    out = []
-    for p, dest in _marcar_destaques(texto.split(), destaques):
-        arq = "InstrumentSerif-Italic.ttf" if dest else L.PAPEIS["manchete"]["fonte"]
-        out.append((p, fonte(arq, int(tamanho * (1.12 if dest else 1.0))), dest))
-    return out
+    """[(palavra, fonte, destaque?)] na fonte da manchete (regra: só Inter; destaque não muda a letra)."""
+    f = fonte(L.PAPEIS["manchete"]["fonte"], tamanho)
+    return [(p, f, dest) for p, dest in _marcar_destaques(texto.split(), destaques)]
 
 
 def _quebrar(itens, largura, track=0.0):

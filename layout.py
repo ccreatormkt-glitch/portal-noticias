@@ -13,6 +13,8 @@ Para mudar o visual, mexa só aqui:
   - MARCA / COR: cores; FONTE: arquivos por peso; PAPEIS: cada tipo de texto;
   - FORMATOS: tela, margens, barra do topo e áreas seguras de cada formato (Reels, feed).
 """
+import re
+
 try:
     from config import BRAND_COLOR
 except ImportError:  # pragma: no cover
@@ -91,9 +93,14 @@ FONTE = {400: "Inter-Regular.ttf", 500: "Inter-Medium.ttf", 600: "Inter-SemiBold
 FONTE_DISPLAY = {600: "InterDisplay-SemiBold.ttf", 700: "InterDisplay-Bold.ttf",
                  800: "InterDisplay-ExtraBold.ttf"}
 FAMILIA_DISPLAY = "Inter Display"   # nome da família para a legenda (libass)
-# A logo do PB Minuto não muda com a fonte do texto: é a marca.
-FONTE_LOGO = {300: "OpenSans-Light.ttf", 400: "OpenSans-Regular.ttf", 600: "OpenSans-SemiBold.ttf",
-              700: "OpenSans-Bold.ttf", 800: "OpenSans-ExtraBold.ttf"}
+# REGRA (pedido do Arthur, 20/11/2026): a Inter é a ÚNICA família de letra do PB Minuto. Capa, vídeo,
+# legenda do vídeo, logo, avatar e qualquer arte nova usam só os arquivos abaixo (Inter / Inter Display).
+# Nada de outra fonte nem de "destaque em outra fonte": destaque é peso, tamanho ou caixa, não família.
+# A única exceção são os ícones (MaterialIcons), que são desenhos, não letras. O teste
+# tests/test_regra_fonte.py falha se algum arquivo do sistema usar outra fonte.
+FONTE_LOGO = {600: FONTE_DISPLAY[600], 700: FONTE_DISPLAY[700], 800: FONTE_DISPLAY[800]}
+FONTES_PERMITIDAS = re.compile(r"^(Inter|InterDisplay)-[\w{}]+\.(ttf|otf)$|^MaterialIcons-Regular\.ttf$")
+FAMILIAS_PERMITIDAS = ("Inter", "Inter Display")
 
 # Cada tipo de texto: arquivo, espaço entre letras (em), entrelinha e caixa. Tamanhos e espaços
 # continuam na escala de antes (proporção em relação à manchete, com piso de leitura).

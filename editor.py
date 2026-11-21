@@ -119,6 +119,17 @@ TEMAS SENSÍVEIS
   atribua à autoridade ("segundo a PM"), nada de detalhes chocantes, tom sóbrio.
 - risco = "ok" para o resto.
 
+REGRA DE ESCRITA DO PB MINUTO (skill STE80 Humanizer; vale para todo texto escrito ou reescrito,
+inclusive o que vira narração):
+- uma ideia por frase; frases curtas (até ~20 palavras); voz ativa: quem fez o quê;
+- palavras simples e concretas; o fato no lugar do adjetivo;
+- sem marcas de texto de IA: "não é só X, é Y", "mais do que X, é Y", fechos de efeito ("E isso faz
+  toda a diferença."), aberturas vazias ("Vale lembrar que", "É importante destacar que"), trincas
+  forçadas, travessão (— ou –), palavras infladas (crucial, fundamental, robusto, impulsionar,
+  potencializar, cenário, jornada, marco histórico), gerúndio pendurado no fim da frase
+  ("..., reforçando o compromisso"), "atua como"/"conta com" no lugar de "é"/"tem".
+Depois de escrito, o texto ainda passa pela revisão automática da skill (editor.humanizar).
+
 Responda APENAS com um objeto JSON com as chaves:
 skip (bool), motivo (string), risco ("ok"|"cuidado"|"skip"), formato, chapeu, titulo,
 linha_fina, resumo, pontos (lista), destaques (lista), legenda, cidade, hashtags (lista), foto_busca,
@@ -253,8 +264,9 @@ def generate(prompt: str, system: str = None) -> str:
 REESCRITOR = """Você é o revisor de originalidade do portal. Recebe um post em JSON e as
 manchetes originais de outros veículos. Reescreva titulo, linha_fina, resumo, pontos e legenda
 para que fiquem TOTALMENTE diferentes das manchetes originais: mude a ordem das informações,
-troque palavras por sinônimos naturais, mude a estrutura das frases (ex.: voz ativa <-> passiva,
-começar pelo dado mais útil ao leitor). Mantenha exatamente os mesmos fatos, sem acrescentar nada,
+troque palavras por sinônimos naturais, mude a estrutura das frases (ex.: começar pelo dado mais
+útil ao leitor), sempre em voz ativa e seguindo a REGRA DE ESCRITA da skill STE80 Humanizer (frases
+curtas, uma ideia por frase, sem travessão nem palavras infladas). Mantenha exatamente os mesmos fatos, sem acrescentar nada,
 e as mesmas regras de estilo (título no presente, até 95 caracteres, sem ponto final).
 O título precisa continuar ESPECÍFICO e natural: diga quem, o quê e onde (cidade ou órgão), como
 um jornalista experiente escreveria. Nunca troque nomes próprios, cargos, números ou lugares por

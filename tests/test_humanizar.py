@@ -38,3 +38,16 @@ def test_ia_fora_do_ar_mantem_o_texto(monkeypatch):
         raise RuntimeError("429")
     monkeypatch.setattr(editor, "generate", falha)
     assert editor.humanizar(dict(CARD)) == CARD
+
+
+def test_regra_humanizer_em_toda_escrita():
+    """REGRA: a skill STE80 Humanizer vale para todo texto escrito ou reescrito."""
+    from pathlib import Path
+
+    import config
+    assert "STE80 Humanizer" in editor.SYSTEM and "STE80 Humanizer" in editor.REESCRITOR
+    assert "voz ativa <-> passiva" not in editor.REESCRITOR
+    assert editor.SKILL_HUMANIZER.exists() and "Pass 1: AI tells" in editor._regras_da_skill()
+    assert config.HUMANIZAR is True
+    main_py = (Path(__file__).resolve().parent.parent / "main.py").read_text(encoding="utf-8")
+    assert "editor.humanizar(card, c)" in main_py   # toda notícia (inclusive pauta) passa pela revisão

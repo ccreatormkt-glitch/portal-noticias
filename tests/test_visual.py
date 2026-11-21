@@ -417,10 +417,10 @@ def test_layout_segue_a_hierarquia_do_g1_e_cabe_na_grade():
     assert b["logo"] == round((fmt["barra"] - fmt["grade"][0]) * 48 / 74)  # logo 48 numa barra de 74
 
 
-def test_marca_em_open_sans_e_avatar():
+def test_marca_em_inter_e_avatar():
     import logo
     assert logo.lockup(96).height == 96 and logo.avatar(540).size == (540, 540)
-    assert logo.L.FONTE_LOGO[700] == "OpenSans-Bold.ttf"  # a logo não muda com a fonte do texto
+    assert logo.L.FONTE_LOGO[700] == "InterDisplay-Bold.ttf"  # regra: a logo também é Inter
 
 
 def test_capa_tira_a_linha_fina_quando_nao_cabe(monkeypatch, tmp_path):

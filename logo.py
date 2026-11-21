@@ -1,7 +1,7 @@
 """Marca do PB Minuto refeita com os parâmetros de design do g1 (layout.py).
 
-Do g1 vêm: a família de letra (Open Sans), o contraste de pesos do cabeçalho (nome forte + texto
-leve), o espaço entre letras dos títulos, o canto de 12 sobre 48 e a proporção da logo na barra
+Letra: Inter Display (regra do PB Minuto: só Inter em tudo, ver layout.py). Do g1 vêm o contraste
+de pesos do cabeçalho (nome forte + texto leve), o espaço entre letras dos títulos, o canto de 12 sobre 48 e a proporção da logo na barra
 vermelha. O desenho é do PB Minuto: monograma PB num quadrado branco + MINUTO.
 
   python logo.py   -> gera brand/avatar.png (foto do perfil), brand/logo_vermelho.png,
