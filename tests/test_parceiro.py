@@ -246,3 +246,30 @@ def test_grade_recorta_so_o_video_que_mexe(tmp_path):
     subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i", "color=c=gray:s=540x960:rate=15:d=6",
                     "-vf", "noise=alls=90:allf=t", str(sem)], check=True)
     assert parceiro.detectar_video(sem) is None
+
+
+def test_publicados_24h_conta_so_publicados_recentes(tmp_path):
+    import json, time
+    import parceiro
+    agora = time.time()
+    arq = tmp_path / "parceiro.json"
+    arq.write_text(json.dumps({"vistos": {
+        "1": {"ts": agora - 3600, "status": "publicado"},
+        "2": {"ts": agora - 90000, "status": "publicado"},     # mais de 24h
+        "3": {"ts": agora - 60, "status": "pulado"},
+    }}))
+    assert parceiro.publicados_24h(arq) == 1
+    assert parceiro.publicados_24h(tmp_path / "nao_existe.json") == 0
+
+
+def test_reels_de_ontem_de_todos_os_parceiros_entram(monkeypatch):
+    import re
+    from pathlib import Path
+    import parceiro
+    monkeypatch.setattr(parceiro, "DESDE", "")
+    # a fixture troca LISTA_PADRAO nos testes; aqui vale a lista real do código
+    fonte = (Path(parceiro.__file__)).read_text(encoding="utf-8")
+    bloco = re.search(r"LISTA_PADRAO = \((.*?)\)\n", fonte, re.S).group(1)
+    lista = parceiro.parceiros("".join(re.findall(r'"([^"]*)"', bloco)))
+    assert {p["usuario"] for p in lista} >= {"jornaldapb", "portalresumopb", "blognewspb", "noticiacertapb"}
+    assert all(p["desde"] <= "2026-11-20T03:00:00+0000" for p in lista)

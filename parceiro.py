@@ -39,11 +39,13 @@ USUARIO = config.env("PARCEIRO_USUARIO", "jornaldapb").lstrip("@").lower()   # p
 # Parceiros autorizados (pedido do Arthur): "perfil|desde|opções; ...". "desde" = só Reels publicados
 # depois disso (data em que o perfil entrou na lista); opção "grade" = o perfil põe o vídeo dentro de
 # uma moldura com a marca dele: o sistema recorta só a parte do vídeo que mexe antes de montar.
-LISTA_PADRAO = ("jornaldapb|2026-11-21T02:20:00+0000; "
-                "paraibabussines_|2026-11-21T10:40:00+0000; "
-                "portalresumopb|2026-11-21T10:40:00+0000|grade; "
-                "noticiacertapb|2026-11-21T10:40:00+0000; "
-                "blognewspb|2026-11-21T10:40:00+0000|grade")
+# 21/11/2026 (pedido do Arthur): entram também os Reels de ONTEM de todos os parceiros, ou seja,
+# desde 20/11/2026 00h de Fortaleza; continuam valendo a janela de 48h e a regra de nunca usar collab.
+LISTA_PADRAO = ("jornaldapb|2026-11-20T03:00:00+0000; "
+                "paraibabussines_|2026-11-20T03:00:00+0000; "
+                "portalresumopb|2026-11-20T03:00:00+0000|grade; "
+                "noticiacertapb|2026-11-20T03:00:00+0000; "
+                "blognewspb|2026-11-20T03:00:00+0000|grade")
 MODO = config.env("PARCEIRO_MODO", "auto")            # auto = publica direto (pedido do Arthur); review = fila
 JANELA_HORAS = int(config.env("PARCEIRO_JANELA_HORAS", "48"))   # vídeo mais velho que isso é ignorado
 # Só Reels NOVOS (pedido do Arthur): nada publicado antes deste momento entra, mesmo dentro da janela.
@@ -116,6 +118,23 @@ def _guardar_estado(est: dict):
 
 def _marcar(est: dict, mid: str, status: str, nota: str = ""):
     est["vistos"][mid] = {"ts": time.time(), "status": status, "nota": nota[:200]}
+
+
+def publicados_24h(caminho: Path = None) -> int:
+    """Vídeos de parceiro publicados nas últimas 24h (entram no limite diário das notícias, que
+    divide com eles os 100 posts por dia que a API do Instagram aceita)."""
+    try:
+        vistos = json.loads((caminho or ESTADO).read_text(encoding="utf-8")).get("vistos", {})
+    except Exception:
+        return 0
+    desde = time.time() - 86400
+    return sum(1 for v in vistos.values() if v.get("status") == "publicado" and v.get("ts", 0) > desde)
+
+
+def _sem_vaga_no_instagram() -> bool:
+    """True quando o limite de 24h da API está cheio: o vídeo espera em vez de ser perdido."""
+    import publish
+    return publish.quota_left() == 0
 
 
 # ------------------------------------------------------------------ 1-2) buscar e filtrar
@@ -718,6 +737,9 @@ def _rodada_parceiro(p: dict, est: dict, modo: str, limite: int) -> int:
             if motivo != "já usado":
                 print(f"[parceiro] pulei {m.get('permalink', m.get('id'))}: {motivo}")
             continue
+        if modo == "auto" and _sem_vaga_no_instagram():
+            print("[parceiro] limite de 24h do Instagram cheio: o vídeo fica para a próxima rodada")
+            break
         stamp = f"parceiro_{m['id']}"
         pasta = config.OUT_DIR
         pasta.mkdir(parents=True, exist_ok=True)

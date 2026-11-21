@@ -321,7 +321,8 @@ def cmd_run(args):
             return
 
     if mode == "auto":
-        done_today = db.published_today()
+        import parceiro
+        done_today = db.published_today() + parceiro.publicados_24h()  # notícias + vídeos de parceiro
         if done_today >= config.MAX_POSTS_PER_DAY:
             print(f"[run] limite diário atingido ({done_today}/{config.MAX_POSTS_PER_DAY}). Nada a fazer.")
             return
