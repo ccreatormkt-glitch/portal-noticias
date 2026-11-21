@@ -24,10 +24,24 @@
    "ts": 1795261312.9396067,
    "status": "publicado",
    "nota": "18120500087044431"
+  },
+  "18139555561657695": {
+   "ts": 1795263514.3219938,
+   "status": "publicado",
+   "nota": "18124370795319585"
+  },
+  "18108117053378991": {
+   "ts": 1795263744.5446215,
+   "status": "publicado",
+   "nota": "17932227891183116"
+  },
+  "18018693956752171": {
+   "ts": 1795264188.757204,
+   "status": "falha_publicacao",
+   "nota": "Instagram API 400: {\"error\":{\"message\":\"User is performing too many actions\",\"code\":9,\"type\":\"OAuthException\",\"error_subcode\":2207042,\"is_transient\":false,\"error_user_msg\":\"Você atingiu o número máxim"
   }
  },
  "tentativas": {
-  "18139555561657695": 1,
   "18112459814191084": 1
  }
 }
