@@ -6,7 +6,8 @@ com outras contas ficam de fora (a autorização não cobre o conteúdo das outr
 
 Fluxo de cada rodada:
   1. lê os posts recentes do perfil pela API oficial (Business Discovery, mesmo token do portal);
-  2. fica só com VÍDEO, cujo dono é o próprio parceiro, sem sinal de collab e ainda não usado;
+  2. fica só com REELS NOVOS (publicados depois de PARCEIRO_DESDE), cujo dono é o próprio parceiro,
+     sem sinal de collab e ainda não usados;
   3. baixa o vídeo, transcreve a fala (Whisper) e junta com a legenda do post;
   4. a IA escreve chapéu, manchete e legenda do PB Minuto com outras palavras (sem 4 palavras
      seguidas iguais ao original, sem citar o parceiro) e o texto passa pela skill STE80 Humanizer
@@ -36,6 +37,9 @@ import config
 USUARIO = config.env("PARCEIRO_USUARIO", "jornaldapb").lstrip("@").lower()
 MODO = config.env("PARCEIRO_MODO", "review")          # review = espera aprovação; auto = publica
 JANELA_HORAS = int(config.env("PARCEIRO_JANELA_HORAS", "48"))   # vídeo mais velho que isso é ignorado
+# Só Reels NOVOS (pedido do Arthur): nada publicado antes deste momento entra, mesmo dentro da janela.
+# Padrão: quando o @jornaldapb ativou o download dos Reels (20/11/2026, 23h20 de Fortaleza).
+DESDE = config.env("PARCEIRO_DESDE", "2026-11-21T02:20:00+0000")
 MAX_SEGUNDOS = int(config.env("PARCEIRO_MAX_SEGUNDOS", "180"))
 # Áreas a desfocar, em % da tela final 9:16: "x,y,largura,altura; ..." (ex.: "70,3,28,8; 0,70,100,18")
 COBRIR = config.env("PARCEIRO_COBRIR", "")
@@ -98,6 +102,8 @@ def motivo_para_pular(m: dict, vistos: dict, agora: float = None) -> str:
         return "já usado"
     if m.get("media_type") != "VIDEO":
         return "não é vídeo"
+    if m.get("media_product_type") and m["media_product_type"] != "REELS":
+        return "não é reels"
     dono = (m.get("username") or "").lower()
     if dono and dono != USUARIO:
         return f"collab: o dono do post é @{dono}"
@@ -107,13 +113,24 @@ def motivo_para_pular(m: dict, vistos: dict, agora: float = None) -> str:
             return f"possível collab/publi (\"{s}\" na legenda)"
     if not m.get("media_url"):
         return "sem link do vídeo (o parceiro desativou downloads ou o vídeo tem música protegida)"
-    try:
-        ts = time.mktime(time.strptime(m["timestamp"][:19], "%Y-%m-%dT%H:%M:%S")) - time.timezone
-        if agora - ts > JANELA_HORAS * 3600:
-            return "antigo"
-    except Exception:
-        pass
+    ts = _epoca(m.get("timestamp", ""))
+    if ts is None:
+        return "sem data de publicação"
+    if agora - ts > JANELA_HORAS * 3600:
+        return "antigo"
+    desde = _epoca(DESDE)
+    if desde is not None and ts < desde:
+        return "antigo"     # só Reels novos, publicados depois de PARCEIRO_DESDE
     return ""
+
+
+def _epoca(iso: str):
+    """'2026-11-21T02:20:00+0000' (UTC, como a API manda) -> segundos desde 1970; None se inválido."""
+    import calendar
+    try:
+        return calendar.timegm(time.strptime(str(iso)[:19], "%Y-%m-%dT%H:%M:%S"))
+    except (ValueError, TypeError):
+        return None
 
 
 def baixar(m: dict, destino: Path) -> Path:

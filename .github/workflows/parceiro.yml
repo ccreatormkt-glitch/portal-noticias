@@ -1,10 +1,10 @@
 name: parceiro-jornaldapb
 # Vídeos do @jornaldapb (só os que NÃO são collab, como prevê a autorização) refeitos com a marca
-# do PB Minuto: a cada 30 min, das 06h às 23h30 (Fortaleza). Por padrão vão para a fila
+# do PB Minuto: a cada 30 min, 24 horas por dia, 7 dias por semana. Por padrão vão para a fila
 # queue/parceiro e só saem com "aprovar" (variável PARCEIRO_MODO = auto publica direto).
 on:
   schedule:
-    - cron: "15,45 9-23,0-2 * * *"
+    - cron: "15,45 * * * *"
   workflow_dispatch:
     inputs:
       acao:
@@ -24,6 +24,7 @@ on:
 
 permissions:
   contents: write
+  actions: write      # o vigia religa a sequência de notícias (publicar-noticias)
 
 concurrency:
   group: parceiro
@@ -77,8 +78,6 @@ jobs:
           WHISPER_MODELO: ${{ vars.WHISPER_MODELO }}
           HUMANIZAR: ${{ vars.HUMANIZAR }}
         run: |
-          h=$(TZ=America/Fortaleza date +%-H)
-          if [ "$GITHUB_EVENT_NAME" = "schedule" ] && [ "$h" -lt 6 ]; then echo "madrugada: sem rodada"; exit 0; fi
           case "$ACAO" in
             aprovar)   if [ -n "$ID" ]; then python main.py parceiro-aprovar "$ID"; else python main.py parceiro-aprovar --all; fi ;;
             descartar) python main.py parceiro-descartar "$ID" ;;
@@ -103,6 +102,24 @@ jobs:
           git add -A
           git -c user.name="pbminuto-bot" -c user.email="pbminuto-bot@users.noreply.github.com" commit -qm "prévia parceiro $(date -u +%F_%H%M)" || exit 0
           git push -f origin previa-parceiro
+      - name: Vigia do PB Minuto (religa a sequência de notícias se ela parou)
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # o PB Minuto roda 24h, 7 dias por semana: se não houver rodada de notícias ativa e a
+          # última começou há mais de 15 min, a sequência caiu (ex.: agendamento do GitHub falhou)
+          ativos=$(gh run list -R "$GITHUB_REPOSITORY" --workflow publicar.yml --json status \
+            --jq '[.[] | select(.status=="queued" or .status=="in_progress" or .status=="waiting" or .status=="pending")] | length')
+          if [ "$ativos" -gt 0 ]; then echo "sequência de notícias ativa"; exit 0; fi
+          ultima=$(gh run list -R "$GITHUB_REPOSITORY" --workflow publicar.yml -L 1 --json createdAt --jq '.[0].createdAt')
+          idade=$(( $(date +%s) - $(date -d "${ultima:-1970-01-01T00:00:00Z}" +%s) ))
+          if [ "$idade" -gt 900 ]; then
+            echo "sequência parada há $((idade / 60)) min: religando"
+            gh workflow run publicar.yml -R "$GITHUB_REPOSITORY" -f modo=auto
+          else
+            echo "última rodada há $((idade / 60)) min: ok"
+          fi
       - name: Salvar estado e fila
         if: always()
         run: |

@@ -22,6 +22,7 @@ def post(**over):
 @pytest.fixture(autouse=True)
 def pastas(tmp_path, monkeypatch):
     import config
+    monkeypatch.setattr(parceiro, "DESDE", time.strftime("%Y-%m-%dT%H:%M:%S+0000", time.gmtime(AGORA - 7200)))
     monkeypatch.setattr(parceiro, "ESTADO", tmp_path / "state" / "parceiro.json")
     fila = tmp_path / "fila"
     fila.mkdir()
@@ -44,6 +45,7 @@ def test_aceita_video_do_proprio_parceiro():
     ({"caption": "#publi da loja X"}, "publi"),
     ({"media_url": None}, "sem link"),
     ({"timestamp": "2020-01-01T10:00:00+0000"}, "antigo"),
+    ({"media_product_type": "FEED"}, "não é reels"),
 ])
 def test_pula_o_que_a_autorizacao_nao_cobre(over, trecho):
     assert trecho in parceiro.motivo_para_pular(post(**over), {}, AGORA)
@@ -166,3 +168,14 @@ def test_etiqueta_usa_layout_e_cobre_o_pe(tmp_path):
     r, g, b, a = im.getpixel((im.width - 10, im.height - 10))
     assert a == 255 and max(r, g, b) < 10                       # pé 100% preto
     assert L.PARCEIRO["degrade"][1] < L.PARCEIRO["pe"]
+
+
+def test_so_reels_novos_publicados_depois_da_ativacao():
+    """Pedido do Arthur: só Reels novos; os que já estavam no perfil não entram, mesmo recentes."""
+    ativacao = time.strftime("%Y-%m-%dT%H:%M:%S+0000", time.gmtime(AGORA - 1800))
+    parceiro.DESDE = ativacao
+    antes = time.strftime("%Y-%m-%dT%H:%M:%S+0000", time.gmtime(AGORA - 3600))
+    depois = time.strftime("%Y-%m-%dT%H:%M:%S+0000", time.gmtime(AGORA - 600))
+    assert parceiro.motivo_para_pular(post(timestamp=antes, media_product_type="REELS"), {}, AGORA) == "antigo"
+    assert parceiro.motivo_para_pular(post(timestamp=depois, media_product_type="REELS"), {}, AGORA) == ""
+    assert "collab" in parceiro.motivo_para_pular(post(timestamp=depois, username="outra"), {}, AGORA)

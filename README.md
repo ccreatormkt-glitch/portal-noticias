@@ -1,6 +1,6 @@
 # PB Minuto — portal de notícias automático no Instagram
 
-Bot que roda sozinho no GitHub Actions, de hora em hora das 06h às 23h:
+Bot que roda sozinho no GitHub Actions, 24 horas por dia, 7 dias por semana (uma rodada a cada ~8 minutos):
 
 ```
 Google News (CG, JP, PB) + RSS dos portais e prefeituras
@@ -66,7 +66,7 @@ manda e-mail.
 ## Vídeos do parceiro (@jornaldapb)
 
 Com a autorização do @jornaldapb, os vídeos dele que **não são collab** entram no PB Minuto com a
-nossa marca (`parceiro.py`, workflow **parceiro-jornaldapb**, a cada 30 min das 06h às 23h30):
+nossa marca (`parceiro.py`, workflow **parceiro-jornaldapb**, a cada 30 min, 24 horas por dia):
 
 - lê os posts pela API oficial (Business Discovery, mesmo token do portal);
 - pula imagem, carrossel, post cujo dono é outra conta (collab) e legenda com sinal de collab/publi

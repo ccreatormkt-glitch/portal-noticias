@@ -1,14 +1,14 @@
 name: publicar-noticias
 
-# Ritmo: uma rodada a cada ~8 minutos (até 2 posts quando atrasado), das 06h às 23h50 (horário de Fortaleza/João Pessoa).
+# Ritmo: uma rodada a cada ~8 minutos (até 2 posts quando atrasado), 24 horas por dia, 7 dias por semana.
 # Como o agendamento do GitHub costuma atrasar ou pular execuções, cada rodada automática
-# chama a próxima no fim (passo "Próxima rodada"). O agendamento abaixo só (re)liga a sequência:
-# às 06h05 e, de reserva, a cada hora (se a sequência já estiver rodando, ele não duplica).
+# chama a próxima no fim (passo "Próxima rodada"). O agendamento abaixo só (re)liga a sequência,
+# de reserva, duas vezes por hora (se a sequência já estiver rodando, ele não duplica).
 # Limites: MAX_POSTS_PER_DAY (padrão 90) e o limite da API do Instagram (100 posts em 24h).
 on:
   schedule:
-    - cron: "5 9 * * *"
-    - cron: "35 9-23 * * *"
+    - cron: "5 * * * *"
+    - cron: "35 * * * *"
   workflow_dispatch:
     inputs:
       modo:
@@ -179,13 +179,11 @@ jobs:
           python main.py mesclar /tmp/posts_rodada.db
           git add state queue
           git commit -qm "histórico $(date -u +%F_%H%M) (mesclado)" && git push -q
-      - name: Próxima rodada (a cada ~8 min, das 06h às 23h50)
+      - name: Próxima rodada (a cada ~8 min, 24h por dia)
         if: always() && github.event.inputs.modo != 'dry' && github.event.inputs.modo != 'review'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          h=$(TZ=America/Fortaleza date +%H)
-          if [ "$h" -lt 6 ] || [ "$h" -gt 23 ]; then echo "fora do horário"; exit 0; fi
           # trava: se já houver outra rodada na fila ou rodando, não cria uma segunda sequência
           outras=$(gh run list -R "$GITHUB_REPOSITORY" --workflow publicar.yml --json databaseId,status \
             --jq "[.[] | select((.status==\"queued\" or .status==\"in_progress\" or .status==\"waiting\" or .status==\"pending\") and .databaseId != $GITHUB_RUN_ID)] | length")
@@ -193,32 +191,6 @@ jobs:
           espera=$(( 480 - ($(date +%s) - INICIO) ))   # uma rodada a cada ~8 min
           if [ "$espera" -gt 0 ]; then sleep "$espera"; fi
           # confere de novo depois da espera (alguém pode ter disparado uma rodada nesse meio-tempo)
-          outras=$(gh run list -R "$GITHUB_REPOSITORY" --workflow publicar.yml --json databaseId,status \
-            --jq "[.[] | select((.status==\"queued\" or .status==\"in_progress\" or .status==\"waiting\" or .status==\"pending\") and .databaseId != $GITHUB_RUN_ID)] | length")
-          if [ "$outras" -gt 0 ]; then echo "já existe rodada na fila ($outras)"; exit 0; fi
-          gh workflow run publicar.yml -R "$GITHUB_REPOSITORY" -f modo=auto
-
-  # O agendamento do GitHub falha com frequência (no dia 20/11 nenhum dos horários das 06h05 em
-  # diante disparou). Então a própria sequência atravessa a madrugada: a rodada depois da meia-noite
-  # espera aqui até as 06h (no máximo 5h40 por vez, por causa do limite de 6h do GitHub) e chama a
-  # próxima. Às 06h a sequência normal recomeça sozinha, sem depender do agendamento.
-  madrugada:
-    needs: run
-    if: always() && github.event.inputs.modo != 'dry' && github.event.inputs.modo != 'review' && github.event.inputs.pauta == ''
-    runs-on: ubuntu-latest
-    timeout-minutes: 350
-    steps:
-      - name: Esperar até as 06h e religar a sequência
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          h=$(TZ=America/Fortaleza date +%-H)
-          if [ "$h" -ge 6 ]; then echo "dentro do horário: a sequência normal cuida"; exit 0; fi
-          alvo=$(TZ=America/Fortaleza date -d "today 06:01" +%s)
-          espera=$(( alvo - $(date +%s) ))
-          if [ "$espera" -gt 20400 ]; then espera=20400; fi   # 5h40 no máximo; a próxima rodada continua a espera
-          echo "madrugada: esperando $espera s"
-          if [ "$espera" -gt 0 ]; then sleep "$espera"; fi
           outras=$(gh run list -R "$GITHUB_REPOSITORY" --workflow publicar.yml --json databaseId,status \
             --jq "[.[] | select((.status==\"queued\" or .status==\"in_progress\" or .status==\"waiting\" or .status==\"pending\") and .databaseId != $GITHUB_RUN_ID)] | length")
           if [ "$outras" -gt 0 ]; then echo "já existe rodada na fila ($outras)"; exit 0; fi
