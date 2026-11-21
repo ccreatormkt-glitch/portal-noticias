@@ -241,6 +241,79 @@ def _ler(name, url):
         return name, None, f"{type(e).__name__}: {str(e)[:60]}"
 
 
+CAMINHOS_FEED = ("/feed/", "/feed", "/rss", "/rss.xml", "/feed.xml", "/?feed=rss2", "/index.php/feed/",
+                 "/noticias/feed/", "/RSS", "/noticias/RSS", "/rss/ultimas-noticias.xml")
+
+
+def _feeds_anunciados(base: str) -> list:
+    """Endereços de RSS que a página inicial anuncia (<link rel="alternate" type="application/rss+xml">)."""
+    try:
+        r = requests.get(base + "/", headers={"User-Agent": UA}, timeout=(6, 12))
+    except requests.RequestException:
+        return []
+    achados = []
+    for tag in re.findall(r"<link[^>]+>", r.text[:200000], re.IGNORECASE):
+        if re.search(r"application/(rss|atom)\+xml", tag, re.IGNORECASE):
+            m = re.search(r'href=["\']([^"\']+)', tag)
+            if m:
+                href = html.unescape(m.group(1))
+                if href.startswith("//"):
+                    href = "https:" + href
+                elif href.startswith("/"):
+                    href = base + href
+                if "comments" not in href:
+                    achados.append(href)
+    return achados
+
+
+def testar_site(site: str) -> dict:
+    """Procura o RSS de um site e mede se serve para o portal: notícias novas, locais e permitidas.
+
+    Devolve {site, feed, robots, itens, ult_horas, em_24h, locais, erro}.
+    """
+    site = site.strip().rstrip("/")
+    base = site if site.startswith("http") else "https://" + site
+    out = {"site": site, "feed": "", "robots": True, "itens": 0, "ult_horas": None,
+           "em_24h": 0, "locais": 0.0, "erro": ""}
+    tentados = _feeds_anunciados(base) + [base + c for c in CAMINHOS_FEED]
+    visto = set()
+    for url in tentados:
+        if url in visto:
+            continue
+        visto.add(url)
+        if not _robots_ok(url):
+            out["robots"] = False
+            out["erro"] = "robots.txt pede para robôs não acessarem"
+            continue
+        try:
+            r = requests.get(url, headers={"User-Agent": UA}, timeout=(6, 15))
+            if r.status_code != 200:
+                continue
+            feed = feedparser.parse(r.content)
+        except requests.RequestException as e:
+            out["erro"] = type(e).__name__
+            continue
+        if not feed.entries:
+            continue
+        agora = time.time()
+        datas, locais = [], 0
+        for e in feed.entries[:40]:
+            ts = e.get("published_parsed") or e.get("updated_parsed")
+            if ts:
+                datas.append(time.mktime(ts))
+            texto = " " + fold(strip_html(e.get("title", "")) + " " + strip_html(e.get("summary", ""))[:400]) + " "
+            locais += any(t in texto for t in LOCAL_TERMS)
+        n = min(len(feed.entries), 40)
+        out.update(feed=url, robots=True, erro="", itens=n,
+                   ult_horas=round((agora - max(datas)) / 3600, 1) if datas else None,
+                   em_24h=sum(1 for d in datas if agora - d < 86400),
+                   locais=round(locais / n, 2) if n else 0.0)
+        return out
+    if not out["erro"]:
+        out["erro"] = "nenhum RSS encontrado"
+    return out
+
+
 def fetch_items(verbose=False, extra=None) -> list:
     from concurrent.futures import ThreadPoolExecutor
 

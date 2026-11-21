@@ -1,0 +1,27 @@
+name: testar-fontes
+# Testa sites candidatos a fonte de notícias (acha o RSS, confere robots.txt, frequência e se é local).
+# Não publica nada. Ex.: python main.py testar-fontes reporterpb.com.br pontopb.com.br
+on:
+  workflow_dispatch:
+    inputs:
+      sites:
+        description: "sites separados por espaço ou vírgula"
+        required: true
+permissions:
+  contents: read
+jobs:
+  testar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -q -r requirements.txt
+      - env:
+          SITES: ${{ inputs.sites }}
+        run: python main.py testar-fontes $SITES
+      - uses: actions/upload-artifact@v4
+        with:
+          name: testar-fontes
+          path: out/testar_fontes.json

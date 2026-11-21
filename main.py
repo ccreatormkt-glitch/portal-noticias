@@ -496,6 +496,25 @@ def cmd_check_feeds(_):
         print(f"  {c.score:5.1f} | {c.n_sources} fonte(s) | {c.rep.title[:80]}")
 
 
+def cmd_testar_fontes(args):
+    """Testa sites candidatos a fonte: acha o RSS, confere robots.txt, frequência e se é notícia local."""
+    import re
+    from concurrent.futures import ThreadPoolExecutor
+    import sources
+
+    sites = [s for s in re.split(r"[\s,;]+", " ".join(args.sites)) if s]
+    with ThreadPoolExecutor(max_workers=8) as ex:
+        res = list(ex.map(sources.testar_site, sites))
+    res.sort(key=lambda r: (not r["feed"], -(r["em_24h"] or 0)))
+    print(f"{'site':34} {'24h':>4} {'últ.h':>6} {'local':>5}  feed / motivo")
+    for r in res:
+        ult = "" if r["ult_horas"] is None else f"{r['ult_horas']:.1f}"
+        info = r["feed"] or r["erro"]
+        print(f"{r['site'][:34]:34} {r['em_24h']:>4} {ult:>6} {r['locais']:>5.2f}  {info}")
+    Path("out").mkdir(exist_ok=True)
+    Path("out/testar_fontes.json").write_text(json.dumps(res, ensure_ascii=False, indent=1))
+
+
 def cmd_check(_):
     import editor
     import publish
@@ -641,6 +660,9 @@ def main():
     a.set_defaults(fn=cmd_approve)
     sub.add_parser("list").set_defaults(fn=cmd_list)
     sub.add_parser("check-feeds").set_defaults(fn=cmd_check_feeds)
+    p = sub.add_parser("testar-fontes", help="testa sites candidatos a fonte (RSS, robots, frequência)")
+    p.add_argument("sites", nargs="+")
+    p.set_defaults(fn=cmd_testar_fontes)
     sub.add_parser("modelos").set_defaults(fn=cmd_modelos)
     sub.add_parser("teste-upload").set_defaults(fn=cmd_teste_upload)
     sub.add_parser("check").set_defaults(fn=cmd_check)
