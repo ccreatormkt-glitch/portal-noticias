@@ -431,3 +431,6 @@
 {"ts": "2026-11-21T21:00:04", "event": "published", "headline": "México prende líder do tráfico procurado pelo FBI", "source": "Portal Correio, g1 e +1", "ig_id": "18443684755182971", "note": ""}
 {"ts": "2026-11-21T21:45:38", "event": "gerado", "headline": "Incêndio destrói frota escolar no pátio da prefeitura de Manaíra", "source": "Repórter PB, MaisPB e +10", "ig_id": "", "note": ""}
 {"ts": "2026-11-21T21:46:17", "event": "published", "headline": "Incêndio destrói frota escolar no pátio da prefeitura de Manaíra", "source": "Repórter PB, MaisPB e +10", "ig_id": "18125404853476159", "note": ""}
+{"ts": "2026-11-21T22:29:59", "event": "pulado", "headline": "Corpo de homem é encontrado com marcas de tiros e orelha decepada na Grande João Pessoa", "source": "", "ig_id": "", "note": "repetida: Suspeitos executam homem de 41 anos a tiros no bairro Tibiri 2 em Santa Rita"}
+{"ts": "2026-11-21T22:32:46", "event": "gerado", "headline": "PM prende suspeito de esfaquear homem na zona rural de Serra Branca", "source": "Cariri Ligado, Paraíba Mix e +4", "ig_id": "", "note": ""}
+{"ts": "2026-11-21T22:34:21", "event": "published", "headline": "PM prende suspeito de esfaquear homem na zona rural de Serra Branca", "source": "Cariri Ligado, Paraíba Mix e +4", "ig_id": "17916869658283198", "note": ""}
