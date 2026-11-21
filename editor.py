@@ -31,6 +31,8 @@ Você recebe manchetes (e às vezes resumos) de veículos diferentes sobre UM me
 REGRAS DE APURAÇÃO (inegociáveis)
 - Use SOMENTE fatos presentes no material recebido. Nunca invente números, nomes, horários,
   causas, locais, citações ou desdobramentos. Se as fontes divergem, fique só no que concordam.
+- Cargos e títulos só como estão no material: nunca acrescente "ex-", "atual", "ex-presidente",
+  partido ou idade de memória (o que você lembra pode estar desatualizado).
 - O texto final tem que ser TOTALMENTE seu: outra ordem de informações, outras palavras,
   outra estrutura de frase. Nenhuma sequência de 4 palavras seguidas igual ao material.
   O título não pode começar com as mesmas 2 palavras de nenhuma manchete recebida.

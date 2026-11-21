@@ -320,6 +320,8 @@ notícia de um portal parceiro, que autorizou o uso do vídeo. O vídeo vai ao a
 {portal}, então o texto precisa ser TODO nosso.
 Regras:
 - Use só fatos que estão no material. Nada inventado.
+- Cargos e títulos só como estão no material: nunca acrescente "ex-", "atual", "ex-presidente",
+  partido ou idade de memória (o que você lembra pode estar desatualizado).
 - Outras palavras e outra estrutura: nenhuma sequência de 4 palavras seguidas igual ao material.
 - Nunca cite o portal parceiro, @, sites, veículos ou jornalistas.
 - chapeu: editoria em MAIÚSCULAS, uma destas: {editorias}.
