@@ -268,7 +268,7 @@ def test_destaque_usa_outra_fonte(tmp_path):
     assert "Instrument Serif" not in txt and "Inter Display" in txt  # uma fonte só (estilo CNN)
     caixas = [l for l in txt.splitlines() if l.startswith("Dialogue: 1,") or l.startswith("Dialogue: 2,")]
     assert any("339" in l for l in caixas)  # destaque = caixa branca
-    assert any("339 \\hvagas" in l for l in txt.splitlines() if l.startswith("Dialogue: 2,"))  # 1 caixa só
+    assert any("339\\hvagas" in l for l in txt.splitlines() if l.startswith("Dialogue: 2,"))  # 1 caixa só
     # sem destaque do editor, os números ganham a outra fonte
     assert any(d for p, d in audiograma._marcar_destaques("Concurso tem 339 vagas".split(), []) if p == "339")
 
@@ -480,3 +480,22 @@ def test_cada_editoria_tem_cor_fixa_e_legivel():
         assert (a + 0.05) / (b + 0.05) >= 4.5, ed
     assert L.cor_editoria("polícia") == L.cor_editoria("POLÍCIA")       # não depende de maiúsculas
     assert L.cor_editoria("INEXISTENTE") == L.cor_editoria("CIDADE")    # desconhecida: cor de CIDADE
+
+
+def test_legenda_no_maximo_2_linhas_sem_partir_destaque_e_sem_subir_na_onda():
+    import audiograma as A
+    frase = "Espetáculo no Rio homenageia figuras históricas negras no Dia da Consciência Negra."
+    pal = [(p, i * 0.35, i * 0.35 + 0.3, 0) for i, p in enumerate(frase.split())]
+    pags = A.paginas(pal, ["Dia da Consciência Negra"])
+    destaque = {"Dia", "da", "Consciência", "Negra."}
+    com_destaque = [pg for pg in pags if any(p in destaque and d for p, d, *_ in pg)]
+    assert len(com_destaque) == 1                                   # o destaque não se divide entre páginas
+    lh = A.FONTE_TEXTO[2] * A.ALTURA_LINHA
+    onda_pe = A.ONDA[1] + A.ONDA[3]
+    for pg in pags:
+        linhas = A._linhas_da_pagina(pg)
+        assert len(linhas) <= A.MAX_LINHAS
+        assert not any(len(l) == 1 and l[0][0] == "Dia" for l in linhas)   # "Dia" não fica sozinho
+        topo = A.LEG_Y - (len(linhas) - 1) * lh / 2 - A.FONTE_TEXTO[2] / 2 - A.CAIXA
+        pe = A.LEG_Y + (len(linhas) - 1) * lh / 2 + A.FONTE_TEXTO[2] / 2 + A.CAIXA
+        assert topo >= onda_pe + 10 and pe <= 1600                   # entre a onda e o texto do Instagram

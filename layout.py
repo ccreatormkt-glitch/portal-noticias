@@ -194,8 +194,10 @@ VIDEO = {
     "fundo_preto": (1010, 1270),        # onde o preto começa e fica sólido (onda + legenda), mais baixo
     "preto": 0.80,                      # quanto de preto sobre a foto desfocada (antes 0,86)
     "preto_video": 0.86,                # com vídeo de fundo: preto sólido (o movimento não atrapalha a legenda)
-    "onda": ((1080 - 800) // 2, 1300, 800, 104),   # x, y, largura, altura do visualizador
-    "legenda_y": 1495,                  # centro da legenda (mais baixa, ainda acima do nome/legenda do IG)
+    # onda logo acima e legenda numa faixa fixa embaixo dela (2 linhas no máximo, centralizadas),
+    # sem nunca encostar na onda e terminando antes do nome/legenda do Instagram (~1600)
+    "onda": ((1080 - 800) // 2, 1240, 800, 104),   # x, y, largura, altura do visualizador
+    "legenda_y": 1480,                  # centro da faixa da legenda (1370 a 1590)
     "legenda_w": 820,                   # largura máxima da legenda (longe dos botões)
 }
 

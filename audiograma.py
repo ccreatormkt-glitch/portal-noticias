@@ -49,8 +49,9 @@ FONTE_TEXTO = (L.FAMILIA_DISPLAY, L.PAPEIS["legenda"]["fonte"], 76)
 FONTE_DESTAQUE = FONTE_TEXTO
 FONTE_NEGRITO = -1      # no ASS, -1 = negrito (pega o arquivo Bold da família "Inter Display")
 ALTURA_LINHA = 1.12     # entrelinha da legenda (em múltiplos do tamanho ASS)
-CAIXA = 12              # folga da caixa branca da palavra falada (px no desenho 1080)
-RESPIRO = 18            # espaço extra entre palavras, para a caixa não encostar na vizinha
+CAIXA = 10              # folga da caixa branca da palavra falada (px no desenho 1080)
+RESPIRO = 8             # espaço extra entre palavras (medido no quadro: ~22 px no desenho, natural na Inter Display)
+MAX_LINHAS = 2          # cada página da legenda tem no máximo 2 linhas (nunca sobe por cima da onda)
 TRACK_LEG = round(L.PAPEIS["legenda"]["track"] * 63, 1)  # espaço entre letras da legenda (px no desenho): -2%
 MESES = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"]
 
@@ -641,8 +642,9 @@ PAUSA_GRUPO = 0.15       # pausa de 150 ms ou mais na fala também fecha o grupo
 
 def paginas(palavras_t: list, destaques: list) -> list:
     """Agrupa as palavras (regras da skill de legendas da HyperFrames/HeyGen): até 5 palavras e
-    2 linhas, quebra no fim da frase e nas pausas da fala, nunca separa um destaque (ex.: "339 vagas").
-    Devolve [[(palavra, destaque?, início, fim)]]."""
+    NO MÁXIMO 2 linhas (medidas com a mesma conta da quebra de linha), quebra no fim da frase e nas
+    pausas da fala e nunca separa um destaque entre páginas (ex.: "Dia da Consciência Negra" vai
+    inteiro para a página seguinte). Devolve [[(palavra, destaque?, início, fim)]]."""
     out = []
     frases = {}
     for p, a, b, k in palavras_t:
@@ -650,35 +652,43 @@ def paginas(palavras_t: list, destaques: list) -> list:
     for k in sorted(frases):
         ws = frases[k]
         marcas = [d for _, d in _marcar_destaques([p for p, _, _ in ws], destaques)]
-        itens = [(p, d, a, b) for (p, a, b), d in zip(ws, marcas)]
-        pag, w, linhas = [], 0.0, 1
-        for p, d, a, b in itens:
-            lw = _largura(p, d)
-            dentro_destaque = bool(pag) and d and pag[-1][1]
-            cheia = len(pag) >= MAX_PALAVRAS_GRUPO or (pag and a - pag[-1][3] >= PAUSA_GRUPO)
-            estoura = pag and w + lw > LEG_W and linhas == 2
-            if pag and (cheia or estoura) and not dentro_destaque:
-                out.append(pag)
-                pag, w, linhas = [], 0.0, 1
-            elif pag and w + lw > LEG_W:
-                linhas += 1
-                w = 0.0
-            pag.append((p, d, a, b))
-            w += lw
+        pag = []
+        for (p, a, b), d in zip(ws, marcas):
+            item = (p, d, a, b)
+            if pag:
+                pausa = a - pag[-1][3] >= PAUSA_GRUPO
+                cheia = len(pag) >= MAX_PALAVRAS_GRUPO
+                estoura = len(_linhas_da_pagina(pag + [item])) > MAX_LINHAS
+                if pausa or cheia or estoura:
+                    levar = []
+                    if d and pag[-1][1] and not pausa:  # o destaque segue inteiro para a próxima página
+                        while pag and pag[-1][1]:
+                            levar.insert(0, pag.pop())
+                        if not pag:  # o destaque sozinho não cabe numa página: aí pode partir
+                            pag, levar = levar, []
+                    if pag:
+                        out.append(pag)
+                    pag = levar
+            pag.append(item)
         if pag:
             out.append(pag)
     return out
 
 
 def _linhas_da_pagina(pag: list) -> list:
+    """Quebra a página em linhas de até LEG_W. Um destaque que começa no meio da linha e não cabe
+    nela desce inteiro para a linha de baixo (não deixa "Dia" sozinho e "da Consciência Negra" embaixo)."""
     linhas, atual, w = [], [], 0.0
     for item in pag:
         lw = _largura(item[0], False)
         if atual and w + lw > LEG_W:
             levar = []
-            if item[1]:  # não parte um destaque ("jornada 5x2") entre duas linhas
-                while atual and atual[-1][1] and len(atual) > 1:
-                    levar.insert(0, atual.pop())
+            if item[1] and atual[-1][1]:
+                k = len(atual)
+                while k > 0 and atual[k - 1][1]:
+                    k -= 1
+                if k > 0:  # o destaque começou no meio da linha: desce todo junto
+                    levar, atual = atual[k:], atual[:k]
             linhas.append(atual)
             atual = levar
             w = sum(_largura(i[0], False) for i in atual)
@@ -740,8 +750,8 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
                     while k + 1 < len(linha) and linha[k + 1][1]:
                         k += 1
                     if k > j:
-                        # " \\h": espaço + espaço fixo, o mesmo respiro das palavras soltas
-                        frase = " \\h".join(w for w, *_ in linha[j:k + 1]).replace("{", "(").replace("}", ")")
+                        # espaço fixo (\\h): o mesmo espaço das palavras soltas, sem quebrar a linha
+                        frase = "\\h".join(w for w, *_ in linha[j:k + 1]).replace("{", "(").replace("}", ")")
                         xc_f = round((pos[j][0] + pos[k][0] + pos[k][1]) / 2)
                         eventos.append(f"Dialogue: 2,{_ts(t(linha[k][2]))},{_ts(fim)},Caixa,,0,0,0,,"
                                        f"{{\\an5\\pos({xc_f},{y})\\fad(0,120)}}{frase}")
