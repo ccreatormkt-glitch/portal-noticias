@@ -41,7 +41,7 @@ USUARIO = config.env("PARCEIRO_USUARIO", "jornaldapb").lstrip("@").lower()   # p
 # uma moldura com a marca dele: o sistema recorta só a parte do vídeo que mexe antes de montar.
 LISTA_PADRAO = ("jornaldapb|2026-11-21T02:20:00+0000; "
                 "paraibabussines_|2026-11-21T10:40:00+0000; "
-                "portalresumopb|2026-11-21T10:40:00+0000; "
+                "portalresumopb|2026-11-21T10:40:00+0000|grade; "
                 "noticiacertapb|2026-11-21T10:40:00+0000; "
                 "blognewspb|2026-11-21T10:40:00+0000|grade")
 MODO = config.env("PARCEIRO_MODO", "auto")            # auto = publica direto (pedido do Arthur); review = fila
@@ -247,7 +247,7 @@ def _testar_um(p: dict, k: int, limite: int) -> bool:
         return False
     m = max(reels, key=lambda x: x.get("timestamp", ""))
     config.OUT_DIR.mkdir(parents=True, exist_ok=True)
-    destino = config.OUT_DIR / f"parceiro_teste{k}_original.mp4"
+    destino = config.OUT_DIR / f"parceiro_original_{k}.mp4"   # vai para a prévia junto com o montado
     via = "API" if m.get("media_url") else "página do post (yt-dlp)"
     try:
         baixar(m, destino)

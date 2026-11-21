@@ -32,7 +32,8 @@ Valem para tudo o que o sistema produz. Cada regra tem um teste que falha se ela
 - Parceiros: @jornaldapb, @paraibabussines_, @portalresumopb, @noticiacertapb e @blognewspb
   (`parceiro.LISTA_PADRAO` ou a variável `PARCEIRO_LISTA`). Só entram Reels publicados depois da data
   em que cada perfil entrou na lista.
-- @blognewspb usa moldura ("grade") com a marca dele: o sistema grava só a parte do vídeo que mexe.
+- @blognewspb e @portalresumopb usam moldura ("grade") com a marca deles: o sistema grava só a parte
+  do vídeo que mexe.
 - Só vídeos que NÃO são collab (a autorização cobre só esses).
 - Verifica o Instagram de cada um a cada 15 min (agendamento do `parceiro.yml` + vigia no `publicar.yml`).
 - Sem link pela API, baixa o Reel pela página do post (yt-dlp). Se o Instagram pedir login, salvar os
