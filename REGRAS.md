@@ -23,3 +23,16 @@ Valem para tudo o que o sistema produz. Cada regra tem um teste que falha se ela
   fonte, fica o texto original (a notícia sai do mesmo jeito).
 - Só desligar em emergência: variável `HUMANIZAR=0` no GitHub.
 - Teste: `tests/test_humanizar.py`.
+
+## 3. Visual: editoria só em texto (pedido do Arthur, 21/11/2026)
+- Na capa e nos Reels a editoria vai só como texto branco em CAIXA ALTA, sem o quadrado colorido do
+  tema (`layout.EDITORIA_CAIXA = False`). As cores de `COR_EDITORIA` ficam guardadas, sem uso.
+
+## 4. Vídeos do parceiro @jornaldapb (padrão desde 21/11/2026)
+- Só vídeos que NÃO são collab (a autorização cobre só esses).
+- Verifica o Instagram dele a cada 15 min (agendamento do `parceiro.yml` + vigia no `publicar.yml`).
+- Sem link pela API, baixa o Reel pela página do post (yt-dlp). Se o Instagram pedir login, salvar os
+  cookies de uma conta secundária no segredo `PARCEIRO_IG_COOKIES`.
+- Layout no vídeo e na capa do Reels: barra do PB Minuto, degradê preto que esconde a manchete antiga,
+  etiqueta nova e desfoque automático da marca d'água/texto parado (`PARCEIRO_AUTO_MARCA=0` desliga).
+- Publica direto, sem aprovação (`PARCEIRO_MODO=review` volta à fila de aprovação).
