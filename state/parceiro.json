@@ -149,11 +149,24 @@
    "ts": 1795299211.632281,
    "status": "publicado",
    "nota": "18135607577495538"
+  },
+  "17888244387626143": {
+   "ts": 1795301498.0231524,
+   "status": "erro",
+   "nota": "ERROR: [Instagram] DgA2-3YhSBi: This content isn't available to everyone: It can't be seen by certain audiences."
+  },
+  "17969317931982146": {
+   "ts": 1795301554.069238,
+   "status": "pulado",
+   "nota": "IA: Relato envolvendo denúncia de crime sexual e assédio."
+  },
+  "18077418968763589": {
+   "ts": 1795301704.9269445,
+   "status": "publicado",
+   "nota": "18133952773769767"
   }
  },
- "tentativas": {
-  "17888244387626143": 2
- },
+ "tentativas": {},
  "refazer": {},
- "aguardando": 1795301187.7698946
+ "aguardando": 0
 }
