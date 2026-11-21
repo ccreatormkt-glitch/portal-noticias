@@ -48,6 +48,9 @@ COBRIR = config.env("PARCEIRO_COBRIR", "")
 CORTE = config.env("PARCEIRO_CORTE", "0,0")
 # Degradê preto (padrão em layout.PARCEIRO; a variável só sobrepõe): "y0,y1" em px de 1920
 DEGRADE = tuple(int(v) for v in config.env("PARCEIRO_DEGRADE", "").split(",") if v.strip()) or None
+# Procura sozinha a marca d'água do parceiro (logo/texto parado na tela enquanto a imagem mexe) acima
+# do degradê e desfoca; "0" desliga. Soma-se às áreas fixas de PARCEIRO_COBRIR.
+AUTO_MARCA = config.env("PARCEIRO_AUTO_MARCA", "1") not in ("0", "false", "nao", "não")
 # Palavras na legenda do parceiro que indicam collab/parceria com outra conta: o vídeo é pulado.
 SINAIS_COLLAB = [s.strip().lower() for s in config.env(
     "PARCEIRO_SINAIS_COLLAB", "collab,colab,em parceria com,parceria com,publi,publicidade,#ad").split(",")
@@ -456,11 +459,74 @@ def _tem_audio(video: Path) -> bool:
     return bool(r.stdout.strip())
 
 
+def detectar_marcas(video: Path, amostras: int = 16) -> list:
+    """Áreas (x, y, largura, altura em % da tela 9:16) com marca d'água ou texto parado do parceiro.
+    Marca d'água = pedaço com contorno (letra/logo) que fica IGUAL em todos os quadros enquanto a
+    imagem atrás mexe. Só olha acima do degradê (abaixo dele o preto já cobre tudo). Se quase tudo
+    estiver parado (câmera fixa), não dá para separar marca de cenário: devolve []."""
+    import numpy as np
+    import layout as L
+    W, H, C = 360, 640, 18                      # 18 px = 5% da largura
+    dur = _duracao(video) or 10.0
+    r = subprocess.run(["ffmpeg", "-v", "error", "-i", str(video), "-vf",
+                        f"fps={amostras / max(dur, 1):.4f},scale={W}:{H}:force_original_aspect_ratio=increase,"
+                        f"crop={W}:{H},format=gray", "-f", "rawvideo", "-"], capture_output=True, timeout=300)
+    n = len(r.stdout) // (W * H)
+    if n < 6:
+        return []
+    q = np.frombuffer(r.stdout[:n * W * H], dtype=np.uint8).reshape(n, H, W).astype(np.float32)
+    var = q.std(axis=0)
+    borda = (np.abs(np.diff(q, axis=2))[:, :-1, :] + np.abs(np.diff(q, axis=1))[:, :, :-1]).mean(axis=0)
+    y_fim = (DEGRADE or L.PARCEIRO["degrade"])[0] / 1920      # começo do degradê
+    lin, col = int(H * y_fim) // C, W // C
+    # pixel de marca: não muda entre os quadros e é contorno (letra/logo); a célula conta como marca
+    # quando boa parte dos pixels dela é assim (pega também letra fina sem fundo, como um @ na tela)
+    px_marca = (var[:H - 1, :W - 1] < 10) & (borda > 20)
+    parado = np.zeros((lin, col), bool)
+    for i in range(lin):
+        for j in range(col):
+            parado[i, j] = px_marca[i * C:(i + 1) * C, j * C:(j + 1) * C].mean() > 0.12
+    if parado.mean() > 0.25:
+        return []
+    areas, visto = [], np.zeros_like(parado)
+    for i in range(lin):
+        for j in range(col):
+            if not parado[i, j] or visto[i, j]:
+                continue
+            pilha, cel = [(i, j)], []
+            visto[i, j] = True
+            while pilha:
+                a, b = pilha.pop()
+                cel.append((a, b))
+                for da in (-1, 0, 1):
+                    for db in (-1, 0, 1):
+                        x, y = a + da, b + db
+                        if 0 <= x < lin and 0 <= y < col and parado[x, y] and not visto[x, y]:
+                            visto[x, y] = True
+                            pilha.append((x, y))
+            i0, i1 = min(c[0] for c in cel) - 1, max(c[0] for c in cel) + 2      # 1 célula de folga
+            j0, j1 = min(c[1] for c in cel) - 1, max(c[1] for c in cel) + 2
+            i0, j0, j1 = max(i0, 0), max(j0, 0), min(j1, col)
+            px = lambda v, tot: round(100 * v * C / tot, 1)  # noqa: E731
+            areas.append((px(j0, W), px(i0, H), px(j1 - j0, W), px(i1 - i0, H)))
+    return areas
+
+
 def montar(origem: Path, card: dict, out_mp4: Path) -> Path:
     import audiograma as A
     png = etiqueta(card, out_mp4.with_suffix(".etiqueta.png"))
     topo, base = corte(CORTE)
-    filtro = _filtro(caixas(COBRIR), topo, base, A.VW, A.VH)
+    cobrir = caixas(COBRIR)
+    if AUTO_MARCA and not (topo or base):
+        try:
+            achadas = detectar_marcas(origem)
+        except Exception as e:
+            achadas = []
+            print(f"[parceiro] não deu para procurar marca d'água ({str(e)[:120]})")
+        if achadas:
+            print(f"[parceiro] marca d'água/texto parado desfocado em: {achadas}")
+        cobrir += achadas
+    filtro = _filtro(cobrir, topo, base, A.VW, A.VH)
     cmd = ["ffmpeg", "-v", "error", "-y", "-i", str(origem), "-loop", "1", "-i", str(png),
            "-filter_complex", filtro, "-map", "[saida]"]
     if _tem_audio(origem):

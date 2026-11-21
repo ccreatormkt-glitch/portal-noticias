@@ -200,3 +200,16 @@ def test_sem_link_da_api_baixa_pela_pagina_do_post(monkeypatch, tmp_path):
 def test_reserva_desligada_volta_a_pular_sem_link(monkeypatch):
     monkeypatch.setattr(parceiro, "BAIXAR_PAGINA", False)
     assert "sem link" in parceiro.motivo_para_pular(post(media_url=None), {}, AGORA)
+
+
+def test_acha_marca_dagua_parada_e_ignora_imagem_em_movimento(tmp_path):
+    """Logo parado no canto de cima sobre imagem que mexe: achado; vídeo sem marca: nada."""
+    limpo, marcado = tmp_path / "limpo.mp4", tmp_path / "marca.mp4"
+    base = ["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i", "testsrc2=size=540x960:rate=15:duration=6"]
+    subprocess.run(base + ["-vf", "hue=H=t*2", str(limpo)], check=True)
+    subprocess.run(base + ["-vf", "hue=H=t*2,drawbox=x=400:y=30:w=120:h=60:color=white:t=fill,"
+                           "drawbox=x=420:y=45:w=80:h=30:color=red:t=fill", str(marcado)], check=True)
+    areas = parceiro.detectar_marcas(marcado)
+    assert any(x >= 60 and y <= 10 for x, y, w, h in areas), areas
+    assert parceiro.detectar_marcas(limpo) == [] or all(
+        not (x >= 60 and y <= 10) for x, y, w, h in parceiro.detectar_marcas(limpo))
