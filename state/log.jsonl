@@ -297,3 +297,5 @@
 {"ts": "2026-11-20T23:51:55", "event": "published", "headline": "Sesuma coíbe atividade de guardadores de carros perto de parque em Campina Grande", "source": "ParaibaOnline, Blog do Márcio Rangel", "ig_id": "18003692718033620", "note": ""}
 {"ts": "2026-11-21T00:00:46", "event": "gerado", "headline": "Conmebol aciona Justiça após liquidação do Ueno Bank no Paraguai", "source": "g1", "ig_id": "", "note": ""}
 {"ts": "2026-11-21T00:00:46", "event": "falha_publicacao", "headline": "Conmebol aciona Justiça após liquidação do Ueno Bank no Paraguai", "source": "g1", "ig_id": "", "note": "voz padrão indisponível agora (limite do Gemini); a notícia volta na próxima rodada"}
+{"ts": "2026-11-21T00:08:00", "event": "gerado", "headline": "Gilmar Mendes apoia fim do sigilo em relatórios da PF sobre ministros do STF", "source": "g1", "ig_id": "", "note": ""}
+{"ts": "2026-11-21T00:08:45", "event": "published", "headline": "Gilmar Mendes apoia fim do sigilo em relatórios da PF sobre ministros do STF", "source": "g1", "ig_id": "18171491053483205", "note": ""}
