@@ -516,6 +516,32 @@ def cmd_testar_fontes(args):
     Path("out/testar_fontes.json").write_text(json.dumps(res, ensure_ascii=False, indent=1))
 
 
+def cmd_apagar(args):
+    """Acha posts do perfil pelo começo da legenda (ou pelo ID) e, só com --confirmar, apaga.
+    Sem --confirmar apenas lista o que seria apagado. Apagar não tem volta."""
+    import publish
+    texto = " ".join((args.texto or "").split()).lower()
+    alvos = []
+    for p in publish.posts_recentes():
+        legenda = " ".join((p.get("caption") or "").split()).lower()
+        if (args.id and p["id"] == args.id) or (texto and texto in legenda):
+            alvos.append(p)
+    if args.id and not alvos:
+        alvos = [{"id": args.id, "caption": "(fora dos 60 posts mais recentes)", "timestamp": "", "permalink": ""}]
+    print(f"[apagar] {len(alvos)} post(s) encontrado(s):")
+    for p in alvos:
+        print(f"  {p['id']} | {p.get('timestamp', '')} | {p.get('permalink', '')} | "
+              f"{' '.join((p.get('caption') or '').split())[:120]}")
+    if not args.confirmar:
+        print("[apagar] só consulta: nada foi apagado")
+        return
+    if len(alvos) != 1:
+        raise SystemExit("[apagar] para apagar, a busca tem que achar exatamente 1 post (use o ID)")
+    res = publish.apagar(alvos[0]["id"])
+    print(f"[apagar] apagado {alvos[0]['id']}: {res}")
+    db.log({"evento": "apagado", "ig_id": alvos[0]["id"], "permalink": alvos[0].get("permalink", "")})
+
+
 def cmd_check(_):
     import editor
     import publish
@@ -667,6 +693,11 @@ def main():
     a.set_defaults(fn=cmd_approve)
     sub.add_parser("list").set_defaults(fn=cmd_list)
     sub.add_parser("check-feeds").set_defaults(fn=cmd_check_feeds)
+    p = sub.add_parser("apagar", help="acha um post pela legenda ou ID; com --confirmar, apaga (sem volta)")
+    p.add_argument("--texto", default="")
+    p.add_argument("--id", default="")
+    p.add_argument("--confirmar", action="store_true")
+    p.set_defaults(fn=cmd_apagar)
     p = sub.add_parser("testar-fontes", help="testa sites candidatos a fonte (RSS, robots, frequência)")
     p.add_argument("sites", nargs="+")
     p.set_defaults(fn=cmd_testar_fontes)

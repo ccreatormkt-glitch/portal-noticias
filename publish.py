@@ -290,3 +290,17 @@ def build_caption(card: dict, source_line: str = "") -> str:
     if tags:
         partes.append(" ".join(f"#{t}" for t in tags[:7]))
     return "\n\n".join(partes)[:2200]
+
+
+def posts_recentes(limite: int = 60) -> list:
+    """Últimos posts do perfil: [{id, caption, timestamp, permalink, media_product_type}]."""
+    _need_creds()
+    r = _ig().get(f"{BASE}/{IG_USER_ID}/media", params={
+        "fields": "id,caption,timestamp,permalink,media_product_type", "limit": limite}, timeout=40)
+    return _check(r).get("data", [])
+
+
+def apagar(media_id: str) -> dict:
+    """Apaga um post do perfil (IG Media Deleting API da Meta, dez/2025). Não tem volta."""
+    _need_creds()
+    return _check(_ig().delete(f"{BASE}/{media_id}", timeout=40))

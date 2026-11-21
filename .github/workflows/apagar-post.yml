@@ -1,0 +1,41 @@
+name: apagar-post
+# Apaga um post do @pbminuto. Primeiro rode SEM marcar "confirmar": só lista o que seria apagado.
+# Marque "confirmar" para apagar de fato (não tem volta). Busca pelo começo da legenda ou pelo ID.
+on:
+  workflow_dispatch:
+    inputs:
+      texto:
+        description: "trecho da legenda do post"
+        required: false
+      post_id:
+        description: "ID do post no Instagram (mais seguro)"
+        required: false
+      confirmar:
+        description: "apagar de verdade (sem marcar, só consulta)"
+        type: boolean
+        default: false
+permissions:
+  contents: read
+env:
+  PYTHONUNBUFFERED: "1"
+jobs:
+  apagar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -q -r requirements.txt
+      - env:
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          TEXTO: ${{ inputs.texto }}
+          POST_ID: ${{ inputs.post_id }}
+          CONFIRMAR: ${{ inputs.confirmar }}
+        run: |
+          if [ "$CONFIRMAR" = "true" ]; then
+            python main.py apagar --texto "$TEXTO" --id "$POST_ID" --confirmar
+          else
+            python main.py apagar --texto "$TEXTO" --id "$POST_ID"
+          fi
