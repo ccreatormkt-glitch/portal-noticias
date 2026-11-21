@@ -325,3 +325,5 @@
 {"ts": "2026-11-21T01:24:33", "event": "published", "headline": "MP apura condenado por feminicídio trabalhando em delegacia de Humaitá", "source": "g1", "ig_id": "18111108143104805", "note": ""}
 {"ts": "2026-11-21T01:32:53", "event": "gerado", "headline": "Sete instituições brasileiras padronizam condutas contra câncer de próstata", "source": "g1", "ig_id": "", "note": ""}
 {"ts": "2026-11-21T01:33:32", "event": "published", "headline": "Sete instituições brasileiras padronizam condutas contra câncer de próstata", "source": "g1", "ig_id": "17883889257631272", "note": ""}
+{"ts": "2026-11-21T01:42:04", "event": "gerado", "headline": "Projeto audiovisual resgata legado de figuras negras históricas na Paraíba", "source": "G1", "ig_id": "", "note": ""}
+{"ts": "2026-11-21T01:42:04", "event": "falha_publicacao", "headline": "Projeto audiovisual resgata legado de figuras negras históricas na Paraíba", "source": "G1", "ig_id": "", "note": "voz padrão indisponível agora (limite do Gemini); a notícia volta na próxima rodada"}
