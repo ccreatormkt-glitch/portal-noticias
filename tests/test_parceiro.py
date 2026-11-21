@@ -290,3 +290,15 @@ def test_capa_do_parceiro_prefere_imagem_a_cartela_de_texto(tmp_path):
     cena.save(tmp_path / "b.jpg")
     assert parceiro.nota_do_quadro(tmp_path / "b.jpg") > parceiro.nota_do_quadro(tmp_path / "a.jpg")
     assert parceiro._momentos_da_capa(60)[0] >= 1.5 and parceiro._momentos_da_capa(2) == [1.0]
+
+
+def test_refazer_so_mexe_nos_ids_pedidos(monkeypatch):
+    import parceiro
+    feitos = []
+    est = {"vistos": {"A": {"status": "publicado", "ts": 1}, "B": {"status": "publicado", "ts": 1}}, "tentativas": {}}
+    monkeypatch.setattr(parceiro, "_estado", lambda: est)
+    monkeypatch.setattr(parceiro, "_guardar_estado", lambda e: None)
+    monkeypatch.setattr(parceiro, "parceiros", lambda: [{"usuario": "x", "desde": "", "grade": False}])
+    monkeypatch.setattr(parceiro, "_rodada_parceiro", lambda p, e, modo, limite, so_ids=None: feitos.append(so_ids) or len(so_ids))
+    assert parceiro.refazer(["A"], modo="auto") == 1
+    assert feitos == [{"A"}] and "A" not in est["vistos"] and "B" in est["vistos"]

@@ -651,6 +651,12 @@ def cmd_parceiro_fila(_):
         print("fila do parceiro vazia")
 
 
+def cmd_parceiro_refazer(args):
+    import parceiro
+    ids = [i for i in " ".join(args.ids).replace(",", " ").split() if i]
+    print(f"[parceiro] {parceiro.refazer(ids)} vídeo(s) refeito(s)")
+
+
 def cmd_parceiro_aprovar(args):
     import parceiro
     if not (args.all or args.id):
@@ -721,6 +727,9 @@ def main():
     pc.add_argument("--limite", type=int, default=1, help="vídeos por rodada")
     pc.set_defaults(fn=cmd_parceiro)
     sub.add_parser("parceiro-fila").set_defaults(fn=cmd_parceiro_fila)
+    pr = sub.add_parser("parceiro-refazer", help="refaz vídeos de parceiro já publicados (ids do parceiro)")
+    pr.add_argument("ids", nargs="+")
+    pr.set_defaults(fn=cmd_parceiro_refazer)
     pa = sub.add_parser("parceiro-aprovar")
     pa.add_argument("id", nargs="?")
     pa.add_argument("--all", action="store_true")

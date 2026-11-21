@@ -10,7 +10,7 @@ on:
       acao:
         description: "rodada (busca vídeos novos), aprovar (publica a fila), descartar (tira um da fila), calibrar (quadros com grade) ou testar (só baixa o Reel mais recente)"
         type: choice
-        options: [rodada, aprovar, descartar, calibrar, testar]
+        options: [rodada, aprovar, descartar, calibrar, testar, refazer]
         default: rodada
       modo:
         description: "na rodada: review (fila), auto (publica) ou dry (só prévia)"
@@ -18,7 +18,7 @@ on:
         options: [padrao, review, auto, dry]
         default: padrao
       id:
-        description: "aprovar/descartar: ID da fila (vazio em aprovar = todos)"
+        description: "aprovar/descartar: ID da fila (vazio em aprovar = todos); refazer: IDs dos Reels do parceiro"
         required: false
         default: ""
 
@@ -87,6 +87,7 @@ jobs:
             descartar) python main.py parceiro-descartar "$ID" ;;
             calibrar)  python main.py parceiro-calibrar ;;
             testar)    python main.py parceiro-testar ;;
+            refazer)   python main.py parceiro-refazer $ID ;;
             *)         if [ -n "$MODO" ] && [ "$MODO" != "padrao" ]; then python main.py parceiro --modo "$MODO"; else python main.py parceiro; fi
                        python main.py parceiro-fila ;;
           esac

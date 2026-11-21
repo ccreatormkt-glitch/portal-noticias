@@ -794,7 +794,23 @@ def rodada(modo: str = None, limite: int = 1) -> int:
     return total
 
 
-def _rodada_parceiro(p: dict, est: dict, modo: str, limite: int) -> int:
+def refazer(ids: list, modo: str = None) -> int:
+    """Faz de novo vídeos de parceiro já publicados (ids do Reels do PARCEIRO, como no estado), com o
+    layout e a capa atuais. O post antigo continua no perfil: apague pelo apagar-post se quiser."""
+    est = _estado()
+    alvo = {str(i).strip() for i in ids if str(i).strip()}
+    for i in alvo:   # libera para passar de novo pelo filtro (collab, janela e data continuam valendo)
+        est["vistos"].pop(i, None)
+        est["tentativas"].pop(i, None)
+    total = 0
+    for p in parceiros():
+        total += _rodada_parceiro(p, est, modo or MODO, len(alvo), so_ids=alvo)
+    if (modo or MODO) != "dry":
+        _guardar_estado(est)
+    return total
+
+
+def _rodada_parceiro(p: dict, est: dict, modo: str, limite: int, so_ids: set = None) -> int:
     usuario = p["usuario"]
     feitos = 0
     try:
@@ -802,6 +818,10 @@ def _rodada_parceiro(p: dict, est: dict, modo: str, limite: int) -> int:
     except Exception as e:
         print(f"[parceiro] não deu para ler @{usuario}: {str(e)[:300]}")
         return 0
+    if so_ids is not None:
+        posts = [m for m in posts if m.get("id") in so_ids]
+        if not posts:
+            return 0
     print(f"[parceiro] @{usuario}: {len(posts)} posts lidos")
     for m in sorted(posts, key=lambda x: x.get("timestamp", "")):   # do mais antigo ao mais novo
         if feitos >= limite:
