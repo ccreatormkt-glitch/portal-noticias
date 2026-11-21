@@ -405,3 +405,5 @@
 {"ts": "2026-11-21T08:07:48", "event": "pulado", "headline": "Calor de até 37°C e pancadas de chuva: veja a previsão para o fim de semana no Vale do Paraíba", "source": "", "ig_id": "", "note": "A notícia refere-se ao Vale do Paraíba (SP), não possuindo relevância local para o público de Campina Grande ou João Pessoa (PB)."}
 {"ts": "2026-11-21T08:16:14", "event": "gerado", "headline": "Pobreza na Colômbia exige 11 gerações para ser superada", "source": "g1", "ig_id": "", "note": ""}
 {"ts": "2026-11-21T08:16:55", "event": "published", "headline": "Pobreza na Colômbia exige 11 gerações para ser superada", "source": "g1", "ig_id": "18121010086812352", "note": ""}
+{"ts": "2026-11-21T08:23:12", "event": "gerado", "headline": "México arrecada pouco com imposto predial e mantém carga tributária baixa", "source": "g1", "ig_id": "", "note": ""}
+{"ts": "2026-11-21T08:24:17", "event": "published", "headline": "México arrecada pouco com imposto predial e mantém carga tributária baixa", "source": "g1", "ig_id": "17871944511661139", "note": ""}
