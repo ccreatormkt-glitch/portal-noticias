@@ -311,3 +311,6 @@
 {"ts": "2026-11-21T00:42:40", "event": "falha_publicacao", "headline": "Motociclista é baleado após briga no trânsito em Campina Grande", "source": "Paraíba dia a dia, G1", "ig_id": "", "note": "voz padrão indisponível agora (limite do Gemini); a notícia volta na próxima rodada"}
 {"ts": "2026-11-21T00:53:56", "event": "gerado", "headline": "Restos de drones atingem embaixada do Brasil em Kiev", "source": "g1", "ig_id": "", "note": ""}
 {"ts": "2026-11-21T00:54:42", "event": "published", "headline": "Restos de drones atingem embaixada do Brasil em Kiev", "source": "g1", "ig_id": "17919012819557093", "note": ""}
+{"ts": "2026-11-21T00:56:35", "event": "pulado", "headline": "Tempestade atinge cidades do Vale do Paraíba e causa alagamentos em Lorena e Aparecida nesta sexta", "source": "", "ig_id": "", "note": "mesmo fato já postado: Forte temporal deixa um morto e danifica casas em Tupanciret"}
+{"ts": "2026-11-21T00:59:01", "event": "gerado", "headline": "Briga entre condutores termina com motociclista baleado em Campina Grande", "source": "Paraíba dia a dia, G1", "ig_id": "", "note": ""}
+{"ts": "2026-11-21T00:59:40", "event": "published", "headline": "Motociclista é baleado após briga no trânsito em Campina Grande", "source": "Paraíba dia a dia, G1", "ig_id": "17922561957460804", "note": ""}
