@@ -167,8 +167,10 @@ DESCENDENTE = 0.2412
 # A barra vai do topo até "barra"; a parte que aparece na grade (de grade[0] até barra) tem a
 # proporção do cabeçalho do g1 e a logo ocupa 48/74 dela, centralizada.
 FORMATOS = {
+    # pe_capa: pé do texto da capa. Na grade o Instagram desenha o contador de visualizações no canto
+    # de baixo (de y ~1510 a ~1620 no desenho 1080x1920): o texto termina acima dele.
     "reels": dict(w=1080, h=1920, margem=80, grade=(240, 1680), barra=388, base_segura=1540,
-                  direita_segura=950, largura_texto=900),
+                  direita_segura=950, largura_texto=900, pe_capa=1460),
     "feed": dict(w=1080, h=1350, margem=80, grade=(0, 1350), barra=148, base_segura=1350,
                  direita_segura=1000, largura_texto=900),
 }
@@ -232,7 +234,8 @@ def pilha_capa(n_linhas_titulo: int, tam_titulo: int, n_linhas_fina: int, tem_cr
     passo_tit = round(tam_titulo * PAPEIS["manchete"]["entrelinha"])
     passo_fina = round(t_fina * PAPEIS["linha_fina"]["entrelinha"])
 
-    y = fmt["grade"][1] - esp(3)                       # pé de tudo: 48 px acima do corte da grade
+    # pé de tudo: acima do contador de visualizações da grade (Reels) ou 48 px acima do corte
+    y = fmt.get("pe_capa", fmt["grade"][1] - esp(3))
     pos = {}
     if tem_credito:
         pos["credito"] = y

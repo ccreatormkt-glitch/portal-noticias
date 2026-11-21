@@ -124,7 +124,8 @@ def publicados_24h(caminho: Path = None) -> int:
     """Vídeos de parceiro publicados nas últimas 24h (entram no limite diário das notícias, que
     divide com eles os 100 posts por dia que a API do Instagram aceita)."""
     try:
-        vistos = json.loads((caminho or ESTADO).read_text(encoding="utf-8")).get("vistos", {})
+        arq = caminho or (config.STATE_DIR / "parceiro.json")   # lido na hora (os testes trocam a pasta)
+        vistos = json.loads(arq.read_text(encoding="utf-8")).get("vistos", {})
     except Exception:
         return 0
     desde = time.time() - 86400
@@ -417,6 +418,18 @@ def corte(texto: str) -> tuple:
     return min(nums[0], 45.0), min(nums[1], 45.0)
 
 
+def _degrade_parceiro(camada: Image.Image):
+    """Degradê preto que cobre a manchete antiga do parceiro (suave no começo, sólido a partir de y1)."""
+    import audiograma as A
+    import layout as L
+    W, H = camada.size
+    y0, y1 = (A.z(v) for v in (DEGRADE or L.PARCEIRO["degrade"]))
+    dd = ImageDraw.Draw(camada)
+    for y in range(y0, H):
+        t = min(1.0, (y - y0) / max(y1 - y0, 1))
+        dd.line((0, y, W, y), fill=L.MARCA["preto"] + (round(255 * t * t * (3 - 2 * t)),))
+
+
 def etiqueta(card: dict, out_png: Path) -> Path:
     """Camada transparente do tamanho do vídeo, toda medida por layout.py (só Inter): barra vermelha
     com a logo (barra_video), degradê preto que cobre a manchete antiga (PARCEIRO["degrade"]) e a
@@ -431,11 +444,7 @@ def etiqueta(card: dict, out_png: Path) -> Path:
     camada = Image.new("RGBA", (W, H), (0, 0, 0, 0))
 
     # 1) degradê preto (suave no começo, sólido a partir de y1)
-    y0, y1 = (z(v) for v in (DEGRADE or P["degrade"]))
-    dd = ImageDraw.Draw(camada)
-    for y in range(y0, H):
-        t = min(1.0, (y - y0) / max(y1 - y0, 1))
-        dd.line((0, y, W, y), fill=L.MARCA["preto"] + (round(255 * t * t * (3 - 2 * t)),))
+    _degrade_parceiro(camada)
 
     # 2) barra do topo com a logo
     b = L.barra_video()
@@ -670,6 +679,7 @@ def montar(origem: Path, card: dict, out_mp4: Path, grade: bool = False) -> Path
     w0, h0 = _tamanho(origem)
     if w0 / h0 > 0.8:     # largo demais para encher a tela 9:16 sem cortar a cena
         filtro = _filtro_encaixe(A.VW, A.VH, A.z(L.barra_video()["fim"]))
+        _quadro_limpo(origem, filtro, out_mp4)
         return _rodar_ffmpeg(origem, png, filtro, out_mp4)
     if AUTO_MARCA and not (topo or base):
         try:
@@ -681,7 +691,27 @@ def montar(origem: Path, card: dict, out_mp4: Path, grade: bool = False) -> Path
             print(f"[parceiro] marca d'água/texto parado desfocado em: {achadas}")
         cobrir += achadas
     filtro = _filtro(cobrir, topo, base, A.VW, A.VH)
+    _quadro_limpo(origem, filtro, out_mp4)
     return _rodar_ffmpeg(origem, png, filtro, out_mp4)
+
+
+def _quadro_limpo(origem: Path, filtro: str, out_mp4: Path, segundo: float = 1.0) -> Path:
+    """Um quadro do vídeo já tratado (marca d'água desfocada, moldura recortada, manchete antiga sob o
+    degradê), sem a nossa barra nem texto: é a foto da capa do Reels. Falha aqui não para o vídeo."""
+    from PIL import Image as _Img
+    import audiograma as A
+    out_jpg = out_mp4.with_suffix(".limpo.jpg")
+    png = out_mp4.with_suffix(".degrade.png")
+    camada = _Img.new("RGBA", (A.VW, A.VH), (0, 0, 0, 0))
+    _degrade_parceiro(camada)
+    camada.save(png)
+    try:
+        subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", str(segundo), "-i", str(origem), "-loop", "1",
+                        "-i", str(png), "-filter_complex", filtro, "-map", "[saida]", "-frames:v", "1",
+                        "-q:v", "2", str(out_jpg)], check=True, capture_output=True, timeout=120)
+    except Exception as e:
+        print(f"[parceiro] sem quadro limpo para a capa ({str(e)[:120]})")
+    return out_jpg
 
 
 def _rodar_ffmpeg(origem: Path, png: Path, filtro: str, out_mp4: Path) -> Path:
@@ -695,7 +725,17 @@ def _rodar_ffmpeg(origem: Path, png: Path, filtro: str, out_mp4: Path) -> Path:
     return out_mp4
 
 
-def capa(video: Path, out_jpg: Path, segundo: float = 1.0) -> Path:
+def capa(video: Path, out_jpg: Path, segundo: float = 1.0, card: dict = None) -> Path:
+    """Capa do Reels no mesmo padrão das notícias (barra vermelha visível na grade, foto, manchete,
+    data e cidade acima do contador de visualizações), com a foto tirada do vídeo já tratado.
+    Sem o quadro limpo (ou sem o card), usa um quadro do vídeo pronto."""
+    limpo = video.with_suffix(".limpo.jpg")
+    if card and limpo.exists():
+        try:
+            import audiograma as A
+            return A.capa(dict(card, _credito=""), out_jpg, image_path=limpo)
+        except Exception as e:
+            print(f"[parceiro] capa no padrão falhou, uso um quadro do vídeo ({str(e)[:120]})")
     subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", str(segundo), "-i", str(video), "-frames:v", "1",
                     "-q:v", "2", str(out_jpg)], check=True, capture_output=True)
     return out_jpg
@@ -754,7 +794,7 @@ def _rodada_parceiro(p: dict, est: dict, modo: str, limite: int) -> int:
             card["_origem"] = {"id": m["id"], "permalink": m.get("permalink"), "timestamp": m.get("timestamp"),
                                "parceiro": usuario}
             video = montar(origem, card, pasta / f"{stamp}.mp4", grade=p["grade"])
-            capa_jpg = capa(video, pasta / f"{stamp}_capa.jpg")
+            capa_jpg = capa(video, pasta / f"{stamp}_capa.jpg", card=card)
         except Exception as e:
             print(f"[parceiro] falhou {m.get('permalink')}: {str(e)[:300]}")
             if modo != "dry":  # tenta de novo nas próximas rodadas; na 3ª falha desiste
