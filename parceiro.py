@@ -104,6 +104,7 @@ def _estado() -> dict:
         est = {}
     est.setdefault("vistos", {})
     est.setdefault("tentativas", {})
+    est.setdefault("refazer", {})
     return est
 
 
@@ -112,7 +113,8 @@ def _guardar_estado(est: dict):
     vistos = dict(sorted(est["vistos"].items(), key=lambda kv: kv[1].get("ts", 0))[-400:])
     tent = {k: v for k, v in est.get("tentativas", {}).items() if k not in vistos}
     ESTADO.parent.mkdir(parents=True, exist_ok=True)
-    ESTADO.write_text(json.dumps({"vistos": vistos, "tentativas": tent}, ensure_ascii=False, indent=1),
+    ESTADO.write_text(json.dumps({"vistos": vistos, "tentativas": tent, "refazer": est.get("refazer", {})},
+                                 ensure_ascii=False, indent=1),
                       encoding="utf-8")
 
 
@@ -802,7 +804,7 @@ def _publicar(card: dict, video: Path, capa_jpg: Path) -> str:
 def rodada(modo: str = None, limite: int = 1) -> int:
     """Uma rodada em todos os parceiros: até `limite` vídeos novos de cada um. Devolve quantos fez."""
     est = _estado()
-    total = 0
+    total = _processar_refazer(est, modo or MODO) if est["refazer"] else 0   # pedidos do Arthur primeiro
     for p in parceiros():
         total += _rodada_parceiro(p, est, modo or MODO, limite)
     if (modo or MODO) != "dry":
@@ -812,17 +814,35 @@ def rodada(modo: str = None, limite: int = 1) -> int:
 
 def refazer(ids: list, modo: str = None) -> int:
     """Faz de novo vídeos de parceiro já publicados (ids do Reels do PARCEIRO, como no estado), com o
-    layout e a capa atuais. O post antigo continua no perfil: apague pelo apagar-post se quiser."""
+    layout e a capa atuais. Ficam com prioridade: se o limite do Instagram estiver cheio, saem nas
+    próximas rodadas antes de qualquer outro (por até 24h). O post antigo continua no perfil."""
     est = _estado()
-    alvo = {str(i).strip() for i in ids if str(i).strip()}
+    agora = time.time()
+    for i in ids:
+        if str(i).strip():
+            est["refazer"][str(i).strip()] = agora
+    total = _processar_refazer(est, modo or MODO)
+    if (modo or MODO) != "dry":
+        _guardar_estado(est)
+    return total
+
+
+def _processar_refazer(est: dict, modo: str) -> int:
+    agora = time.time()
+    pend = {k: v for k, v in est["refazer"].items() if agora - v < 86400}   # pedido vale por 24h
+    est["refazer"] = pend
+    if not pend:
+        return 0
+    alvo = set(pend)
     for i in alvo:   # libera para passar de novo pelo filtro (collab, janela e data continuam valendo)
         est["vistos"].pop(i, None)
         est["tentativas"].pop(i, None)
     total = 0
     for p in parceiros():
-        total += _rodada_parceiro(p, est, modo or MODO, len(alvo), so_ids=alvo)
-    if (modo or MODO) != "dry":
-        _guardar_estado(est)
+        total += _rodada_parceiro(p, est, modo, len(alvo), so_ids=alvo)
+    for i in list(est["refazer"]):
+        if est["vistos"].get(i, {}).get("status") in ("publicado", "pulado", "erro"):
+            est["refazer"].pop(i)
     return total
 
 

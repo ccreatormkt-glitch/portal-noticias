@@ -292,13 +292,18 @@ def test_capa_do_parceiro_prefere_imagem_a_cartela_de_texto(tmp_path):
     assert parceiro._momentos_da_capa(60)[0] >= 1.5 and parceiro._momentos_da_capa(2) == [1.0]
 
 
-def test_refazer_so_mexe_nos_ids_pedidos(monkeypatch):
+def test_refazer_so_mexe_nos_ids_pedidos_e_fica_pendente_se_nao_sair(monkeypatch):
     import parceiro
     feitos = []
-    est = {"vistos": {"A": {"status": "publicado", "ts": 1}, "B": {"status": "publicado", "ts": 1}}, "tentativas": {}}
+    est = {"vistos": {"A": {"status": "publicado", "ts": 1}, "B": {"status": "publicado", "ts": 1}},
+           "tentativas": {}, "refazer": {}}
     monkeypatch.setattr(parceiro, "_estado", lambda: est)
     monkeypatch.setattr(parceiro, "_guardar_estado", lambda e: None)
     monkeypatch.setattr(parceiro, "parceiros", lambda: [{"usuario": "x", "desde": "", "grade": False}])
-    monkeypatch.setattr(parceiro, "_rodada_parceiro", lambda p, e, modo, limite, so_ids=None: feitos.append(so_ids) or len(so_ids))
-    assert parceiro.refazer(["A"], modo="auto") == 1
+    monkeypatch.setattr(parceiro, "_rodada_parceiro", lambda p, e, modo, limite, so_ids=None: feitos.append(so_ids) or 0)
+    assert parceiro.refazer(["A"], modo="auto") == 0          # limite cheio: não saiu
     assert feitos == [{"A"}] and "A" not in est["vistos"] and "B" in est["vistos"]
+    assert "A" in est["refazer"]                               # fica pendente para a próxima rodada
+    est["vistos"]["A"] = {"status": "publicado", "ts": 2}       # a rodada seguinte publicou
+    parceiro._processar_refazer(est, "auto")
+    assert "A" not in est["refazer"] or est["vistos"].get("A") is None
