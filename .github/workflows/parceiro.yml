@@ -1,7 +1,7 @@
 name: parceiro-jornaldapb
 # Vídeos do @jornaldapb (só os que NÃO são collab, como prevê a autorização) refeitos com a marca
-# do PB Minuto: a cada 30 min, 24 horas por dia, 7 dias por semana. Por padrão vão para a fila
-# queue/parceiro e só saem com "aprovar" (variável PARCEIRO_MODO = auto publica direto).
+# do PB Minuto: a cada 30 min, 24 horas por dia, 7 dias por semana. Por padrão são publicados direto
+# (pedido do Arthur); a variável PARCEIRO_MODO = review volta a usar a fila queue/parceiro.
 on:
   schedule:
     - cron: "15,45 * * * *"

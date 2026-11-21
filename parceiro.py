@@ -16,7 +16,7 @@ Fluxo de cada rodada:
      pode cortar faixas de cima/baixo (PARCEIRO_CORTE) e põe por cima a barra vermelha com a logo,
      o degradê preto que cobre a manchete antiga e a etiqueta nova (editoria na caixa colorida,
      manchete e data/cidade), tudo medido pelo layout.py e só em Inter; o áudio original fica;
-  6. modo "review" (padrão): vai para queue/parceiro esperando o "aprovar"; "auto": publica já.
+  6. modo "auto" (padrão, pedido do Arthur): publica já; "review": vai para queue/parceiro esperando o "aprovar".
 
   python main.py parceiro [--modo review|auto|dry] [--limite N]
   python main.py parceiro-calibrar      quadros do último vídeo com grade em % (para PARCEIRO_COBRIR)
@@ -35,7 +35,7 @@ from PIL import Image, ImageDraw, ImageFilter
 import config
 
 USUARIO = config.env("PARCEIRO_USUARIO", "jornaldapb").lstrip("@").lower()
-MODO = config.env("PARCEIRO_MODO", "review")          # review = espera aprovação; auto = publica
+MODO = config.env("PARCEIRO_MODO", "auto")            # auto = publica direto (pedido do Arthur); review = fila
 JANELA_HORAS = int(config.env("PARCEIRO_JANELA_HORAS", "48"))   # vídeo mais velho que isso é ignorado
 # Só Reels NOVOS (pedido do Arthur): nada publicado antes deste momento entra, mesmo dentro da janela.
 # Padrão: quando o @jornaldapb ativou o download dos Reels (20/11/2026, 23h20 de Fortaleza).
