@@ -423,3 +423,5 @@
 {"ts": "2026-11-21T18:51:00", "event": "pulado", "headline": "Bolsonaro tem obstrução intestinal e segue internado em hospital em Brasília/DF", "source": "", "ig_id": "", "note": "mesmo fato já postado (IA): Dores abdominais levam Jair Bolsonaro a unidade de saúde em "}
 {"ts": "2026-11-21T18:53:09", "event": "gerado", "headline": "Tornado em Tupanciretã deixa 3 mortos e 60 feridos no Rio Grande do Sul", "source": "Portal CZN, Agência Brasil", "ig_id": "", "note": ""}
 {"ts": "2026-11-21T18:54:22", "event": "published", "headline": "Tornado em Tupanciretã deixa 3 mortos e 60 feridos no Rio Grande do Sul", "source": "Portal CZN, Agência Brasil", "ig_id": "18431370790150387", "note": ""}
+{"ts": "2026-11-21T19:40:49", "event": "gerado", "headline": "Campina Grande tem queda de 19,2% nos casos de dengue em 2026", "source": "G1, CBN Paraíba e +8", "ig_id": "", "note": ""}
+{"ts": "2026-11-21T19:42:13", "event": "published", "headline": "Campina Grande tem queda de 19,2% nos casos de dengue em 2026", "source": "G1, CBN Paraíba e +8", "ig_id": "18001958829034454", "note": ""}
