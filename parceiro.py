@@ -576,9 +576,23 @@ def detectar_video(video: Path, amostras: int = 16):
     mexe = q.std(axis=0) > 12
 
     def faixa(frac):
-        ativo = frac > 0.25
+        # linha/coluna "mexe" com pouco movimento já (cena parada, ex.: entrevista); buracos curtos
+        # (até 4% do tamanho) dentro da faixa não a quebram
+        ativo = list(frac > 0.08)
+        buraco = max(2, len(ativo) // 25)
+        i = 0
+        while i < len(ativo):
+            if not ativo[i]:
+                j = i
+                while j < len(ativo) and not ativo[j]:
+                    j += 1
+                if 0 < i and j < len(ativo) and j - i <= buraco:
+                    ativo[i:j] = [True] * (j - i)
+                i = j
+            else:
+                i += 1
         melhor, ini = (0, 0), None
-        for i, a in enumerate(list(ativo) + [False]):
+        for i, a in enumerate(ativo + [False]):
             if a and ini is None:
                 ini = i
             elif not a and ini is not None:
