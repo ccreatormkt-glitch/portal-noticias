@@ -635,6 +635,12 @@ def cmd_parceiro_descartar(args):
     print("descartado" if parceiro.descartar(args.id) else "ID não está na fila")
 
 
+def cmd_parceiro_testar(_):
+    import parceiro
+    if not parceiro.testar_download():
+        raise SystemExit(1)
+
+
 def cmd_parceiro_calibrar(_):
     import parceiro
     parceiro.calibrar()
@@ -690,6 +696,8 @@ def main():
     pd.add_argument("id")
     pd.set_defaults(fn=cmd_parceiro_descartar)
     sub.add_parser("parceiro-calibrar").set_defaults(fn=cmd_parceiro_calibrar)
+    sub.add_parser("parceiro-testar", help="testa o download do Reel mais recente do parceiro").set_defaults(
+        fn=cmd_parceiro_testar)
     args = ap.parse_args()
     args.fn(args)
 

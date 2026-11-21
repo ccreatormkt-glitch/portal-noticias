@@ -56,6 +56,13 @@ SINAIS_COLLAB = [s.strip().lower() for s in config.env(
 ESTADO = config.STATE_DIR / "parceiro.json"
 FILA = config.ROOT / "queue" / "parceiro"
 FILA.mkdir(parents=True, exist_ok=True)
+# Quando a API não manda o arquivo do Reel (media_url vazio: acontece com reels de outra conta,
+# principalmente com música do Instagram), baixa direto da página pública do post com o yt-dlp.
+# O @jornaldapb ativou o download dos Reels e autorizou o uso; "0" desliga essa reserva.
+BAIXAR_PAGINA = config.env("PARCEIRO_BAIXAR_PAGINA", "1") not in ("0", "false", "nao", "não")
+# Opcional: cookies de uma conta do Instagram (formato Netscape, um "cookies.txt" exportado do
+# navegador) para quando o Instagram exigir login. Use uma conta secundária, não a do PB Minuto.
+COOKIES = config.env("PARCEIRO_IG_COOKIES", "")
 CAMPOS = "id,media_type,media_product_type,media_url,caption,permalink,timestamp,username"
 
 
@@ -111,7 +118,7 @@ def motivo_para_pular(m: dict, vistos: dict, agora: float = None) -> str:
     for s in SINAIS_COLLAB:
         if re.search(rf"(?<!\w){re.escape(s)}(?!\w)", legenda):
             return f"possível collab/publi (\"{s}\" na legenda)"
-    if not m.get("media_url"):
+    if not m.get("media_url") and not (BAIXAR_PAGINA and m.get("permalink")):
         return "sem link do vídeo (o parceiro desativou downloads ou o vídeo tem música protegida)"
     ts = _epoca(m.get("timestamp", ""))
     if ts is None:
@@ -134,12 +141,90 @@ def _epoca(iso: str):
 
 
 def baixar(m: dict, destino: Path) -> Path:
-    with requests.get(m["media_url"], stream=True, timeout=120) as r:
-        r.raise_for_status()
-        with open(destino, "wb") as f:
-            for parte in r.iter_content(1 << 20):
-                f.write(parte)
+    """Arquivo do Reel: pelo link da API; sem ele, pela página pública do post (yt-dlp)."""
+    if m.get("media_url"):
+        with requests.get(m["media_url"], stream=True, timeout=120) as r:
+            r.raise_for_status()
+            with open(destino, "wb") as f:
+                for parte in r.iter_content(1 << 20):
+                    f.write(parte)
+        return destino
+    if not (BAIXAR_PAGINA and m.get("permalink")):
+        raise RuntimeError("sem link do vídeo")
+    return baixar_pela_pagina(m["permalink"], destino)
+
+
+def baixar_pela_pagina(url: str, destino: Path) -> Path:
+    """Baixa o vídeo (com áudio) da página do post com o yt-dlp e devolve o .mp4 em `destino`."""
+    import tempfile
+    import yt_dlp
+    destino = Path(destino)
+    for velho in destino.parent.glob(destino.stem + ".*"):
+        velho.unlink()
+    opcoes = {
+        "outtmpl": str(destino.parent / (destino.stem + ".%(ext)s")),
+        "format": "bv*+ba/b",
+        "merge_output_format": "mp4",
+        "noplaylist": True,
+        "quiet": True,
+        "no_warnings": True,
+        "retries": 3,
+        "socket_timeout": 60,
+    }
+    arq_cookies = None
+    if COOKIES.strip():
+        arq_cookies = tempfile.NamedTemporaryFile("w", suffix=".txt", delete=False, encoding="utf-8")
+        arq_cookies.write(COOKIES.strip() + "\n")
+        arq_cookies.close()
+        opcoes["cookiefile"] = arq_cookies.name
+    try:
+        with yt_dlp.YoutubeDL(opcoes) as ydl:
+            ydl.download([url])
+    finally:
+        if arq_cookies:
+            Path(arq_cookies.name).unlink(missing_ok=True)
+    feitos = sorted(destino.parent.glob(destino.stem + ".*"))
+    if not feitos:
+        raise RuntimeError("o yt-dlp não salvou nenhum arquivo")
+    if feitos[0] != destino:
+        feitos[0].replace(destino)
+    if destino.stat().st_size < 50_000:
+        raise RuntimeError(f"arquivo pequeno demais ({destino.stat().st_size} bytes)")
     return destino
+
+
+def testar_download(limite: int = 25) -> bool:
+    """Tenta baixar o Reel mais recente do parceiro (sem filtro de data) e conta o resultado.
+    Não escreve texto, não publica e não mexe no estado: só prova que o download funciona."""
+    posts = buscar(limite)
+    reels = [m for m in posts if m.get("media_type") == "VIDEO"]
+    if not reels:
+        print(f"[parceiro] teste: nenhum vídeo entre os {len(posts)} posts de @{USUARIO}")
+        return False
+    m = max(reels, key=lambda x: x.get("timestamp", ""))
+    config.OUT_DIR.mkdir(parents=True, exist_ok=True)
+    destino = config.OUT_DIR / "parceiro_teste_original.mp4"
+    via = "API" if m.get("media_url") else "página do post (yt-dlp)"
+    try:
+        baixar(m, destino)
+    except Exception as e:
+        print(f"[parceiro] teste: FALHOU o download de {m.get('permalink')} pela {via}: {str(e)[:400]}")
+        return False
+    dur = _duracao(destino)
+    print(f"[parceiro] teste: OK {m.get('permalink')} pela {via}: "
+          f"{destino.stat().st_size // 1024} KB, {dur:.0f}s, áudio={'sim' if _tem_audio(destino) else 'não'}")
+    # cópia com nome que o passo "Prévia" do workflow publica (quadros de 1s e 4s)
+    shutil.copy(destino, config.OUT_DIR / "parceiro_teste_1.mp4")
+    return True
+
+
+def _duracao(video: Path) -> float:
+    try:
+        r = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0",
+                            str(video)], capture_output=True, text=True, timeout=30)
+        return float(r.stdout.strip() or 0)
+    except Exception:
+        return 0.0
 
 
 # ------------------------------------------------------------------ 3) o que o vídeo diz

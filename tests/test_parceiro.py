@@ -43,7 +43,7 @@ def test_aceita_video_do_proprio_parceiro():
     ({"caption": "Vídeo em parceria com @prefeitura"}, "collab"),
     ({"caption": "Collab com o pessoal do bairro"}, "collab"),
     ({"caption": "#publi da loja X"}, "publi"),
-    ({"media_url": None}, "sem link"),
+    ({"media_url": None, "permalink": None}, "sem link"),
     ({"timestamp": "2020-01-01T10:00:00+0000"}, "antigo"),
     ({"media_product_type": "FEED"}, "não é reels"),
 ])
@@ -179,3 +179,24 @@ def test_so_reels_novos_publicados_depois_da_ativacao():
     assert parceiro.motivo_para_pular(post(timestamp=antes, media_product_type="REELS"), {}, AGORA) == "antigo"
     assert parceiro.motivo_para_pular(post(timestamp=depois, media_product_type="REELS"), {}, AGORA) == ""
     assert "collab" in parceiro.motivo_para_pular(post(timestamp=depois, username="outra"), {}, AGORA)
+
+
+def test_sem_link_da_api_baixa_pela_pagina_do_post(monkeypatch, tmp_path):
+    m = post(media_url=None)
+    assert parceiro.motivo_para_pular(m, {}, AGORA) == ""
+    chamado = {}
+
+    def falso(url, destino):
+        chamado["url"] = url
+        destino.write_bytes(b"x")
+        return destino
+
+    monkeypatch.setattr(parceiro, "baixar_pela_pagina", falso)
+    destino = tmp_path / "v.mp4"
+    assert parceiro.baixar(m, destino) == destino
+    assert chamado["url"] == "https://ig/p/111"
+
+
+def test_reserva_desligada_volta_a_pular_sem_link(monkeypatch):
+    monkeypatch.setattr(parceiro, "BAIXAR_PAGINA", False)
+    assert "sem link" in parceiro.motivo_para_pular(post(media_url=None), {}, AGORA)

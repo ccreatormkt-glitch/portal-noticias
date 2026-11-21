@@ -8,9 +8,9 @@ on:
   workflow_dispatch:
     inputs:
       acao:
-        description: "rodada (busca vídeos novos), aprovar (publica a fila), descartar (tira um da fila) ou calibrar (quadros com grade)"
+        description: "rodada (busca vídeos novos), aprovar (publica a fila), descartar (tira um da fila), calibrar (quadros com grade) ou testar (só baixa o Reel mais recente)"
         type: choice
-        options: [rodada, aprovar, descartar, calibrar]
+        options: [rodada, aprovar, descartar, calibrar, testar]
         default: rodada
       modo:
         description: "na rodada: review (fila), auto (publica) ou dry (só prévia)"
@@ -64,6 +64,8 @@ jobs:
           PARCEIRO_DEGRADE: ${{ vars.PARCEIRO_DEGRADE }}
           PARCEIRO_JANELA_HORAS: ${{ vars.PARCEIRO_JANELA_HORAS }}
           PARCEIRO_SINAIS_COLLAB: ${{ vars.PARCEIRO_SINAIS_COLLAB }}
+          PARCEIRO_BAIXAR_PAGINA: ${{ vars.PARCEIRO_BAIXAR_PAGINA }}
+          PARCEIRO_IG_COOKIES: ${{ secrets.PARCEIRO_IG_COOKIES }}
           PORTAL_NAME: ${{ vars.PORTAL_NAME }}
           PORTAL_HANDLE: ${{ vars.PORTAL_HANDLE }}
           LLM_PROVIDER: ${{ vars.LLM_PROVIDER }}
@@ -82,6 +84,7 @@ jobs:
             aprovar)   if [ -n "$ID" ]; then python main.py parceiro-aprovar "$ID"; else python main.py parceiro-aprovar --all; fi ;;
             descartar) python main.py parceiro-descartar "$ID" ;;
             calibrar)  python main.py parceiro-calibrar ;;
+            testar)    python main.py parceiro-testar ;;
             *)         if [ -n "$MODO" ] && [ "$MODO" != "padrao" ]; then python main.py parceiro --modo "$MODO"; else python main.py parceiro; fi
                        python main.py parceiro-fila ;;
           esac
