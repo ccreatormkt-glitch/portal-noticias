@@ -51,3 +51,11 @@ Valem para tudo o que o sistema produz. Cada regra tem um teste que falha se ela
   `build_caption` já monta as hashtags em minúsculas. Os prompts do editor e do parceiro pedem o mesmo.
 - Teste: `tests/test_regra_hashtag.py`.
 
+## 6. Perfil nunca parado: sem vídeo, sai notícia (pedido do Arthur, 21/11/2026)
+- Vídeo de parceiro e notícia dividem o mesmo ritmo (1 post a cada ~14 min) e o mesmo limite de 24h.
+- A notícia nunca espera vídeo: a sequência de notícias confere a cada ~5 min e, se não saiu vídeo de
+  parceiro (nenhum novo, repetido, collab ou falhou), a vaga vai para a melhor notícia nova.
+- Só fica sem post quando o limite de 24h do Instagram está cheio (cerca de 100 posts por dia).
+- Onde: `main.cmd_run` (ritmo e limite contam notícias + `parceiro.publicados_24h()`), `parceiro._cedo_demais`.
+- Teste: `tests/test_fluxo.py::test_sem_video_de_parceiro_sai_noticia`.
+

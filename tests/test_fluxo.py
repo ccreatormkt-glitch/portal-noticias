@@ -372,3 +372,12 @@ def test_madrugada_nao_posta_mas_pauta_pedida_sim(monkeypatch, capsys):
     monkeypatch.setattr(config, "GEMINI_API_KEY", "x")
     main.cmd_run(argparse.Namespace(dry_run=False, count=None))
     assert "madrugada" in capsys.readouterr().out
+
+
+def test_sem_video_de_parceiro_sai_noticia(ambiente, monkeypatch):
+    """Regra 6: sem vídeo de parceiro (nenhum publicado ou na fila), a rodada publica notícia."""
+    monkeypatch.setattr(config, "CANDIDATOS", 1)
+    monkeypatch.setattr(config, "BRASIL_A_CADA", 0)
+    (config.STATE_DIR / "parceiro.json").write_text(json.dumps({"vistos": {}, "tentativas": {}, "refazer": {}}))
+    main.cmd_run(argparse.Namespace(dry_run=False, count=None))
+    assert len(ambiente) == 1
