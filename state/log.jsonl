@@ -327,3 +327,6 @@
 {"ts": "2026-11-21T01:33:32", "event": "published", "headline": "Sete instituições brasileiras padronizam condutas contra câncer de próstata", "source": "g1", "ig_id": "17883889257631272", "note": ""}
 {"ts": "2026-11-21T01:42:04", "event": "gerado", "headline": "Projeto audiovisual resgata legado de figuras negras históricas na Paraíba", "source": "G1", "ig_id": "", "note": ""}
 {"ts": "2026-11-21T01:42:04", "event": "falha_publicacao", "headline": "Projeto audiovisual resgata legado de figuras negras históricas na Paraíba", "source": "G1", "ig_id": "", "note": "voz padrão indisponível agora (limite do Gemini); a notícia volta na próxima rodada"}
+{"ts": "2026-11-21T01:46:25", "event": "pulado", "headline": "Homem é preso após invadir casa da ex, ameaçá-la e desligar energia do imóvel em Patos - Paraíba - Notícia", "source": "", "ig_id": "", "note": "mesmo link de uma notícia já postada (Homem acaba detido em Campina Grande por invadir casa da ex )"}
+{"ts": "2026-11-21T01:48:22", "event": "gerado", "headline": "Espetáculo no Rio homenageia figuras históricas negras no Dia da Consciência Negra", "source": "g1", "ig_id": "", "note": ""}
+{"ts": "2026-11-21T01:49:06", "event": "published", "headline": "Espetáculo no Rio homenageia figuras históricas negras no Dia da Consciência Negra", "source": "g1", "ig_id": "18422550640082237", "note": ""}
