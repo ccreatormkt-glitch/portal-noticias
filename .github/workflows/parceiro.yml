@@ -1,10 +1,10 @@
 name: parceiro-jornaldapb
 # Vídeos do @jornaldapb (só os que NÃO são collab, como prevê a autorização) refeitos com a marca
-# do PB Minuto: a cada 15 min, 24 horas por dia, 7 dias por semana. Por padrão são publicados direto
+# do PB Minuto: a cada 20 min, 24 horas por dia, 7 dias por semana. Por padrão são publicados direto
 # (pedido do Arthur); a variável PARCEIRO_MODO = review volta a usar a fila queue/parceiro.
 on:
   schedule:
-    - cron: "7,22,37,52 * * * *"
+    - cron: "2,22,42 * * * *"
   workflow_dispatch:
     inputs:
       acao:

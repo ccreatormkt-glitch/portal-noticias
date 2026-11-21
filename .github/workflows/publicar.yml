@@ -1,6 +1,7 @@
 name: publicar-noticias
 
-# Ritmo: uma rodada a cada ~8 minutos (até 2 posts quando atrasado), 24 horas por dia, 7 dias por semana.
+# Ritmo: confere notícia nova a cada ~5 minutos, 24 horas por dia, 7 dias por semana; publica 1 post a cada
+# ~14 min no perfil (notícias + vídeos de parceiro), o ritmo que cabe no limite de 24h do Instagram.
 # Como o agendamento do GitHub costuma atrasar ou pular execuções, cada rodada automática
 # chama a próxima no fim (passo "Próxima rodada"). O agendamento abaixo só (re)liga a sequência,
 # de reserva, duas vezes por hora (se a sequência já estiver rodando, ele não duplica).
@@ -179,7 +180,7 @@ jobs:
           python main.py mesclar /tmp/posts_rodada.db
           git add state queue
           git commit -qm "histórico $(date -u +%F_%H%M) (mesclado)" && git push -q
-      - name: Vigia do parceiro (o agendamento do GitHub falha; dispara o @jornaldapb a cada ~15 min)
+      - name: Vigia do parceiro (o agendamento do GitHub falha; confere os vídeos dos parceiros a cada ~20 min)
         if: always() && github.event.inputs.modo != 'dry' && github.event.inputs.modo != 'review'
         env:
           GH_TOKEN: ${{ github.token }}
@@ -189,13 +190,13 @@ jobs:
           if [ "$ativos" -gt 0 ]; then echo "parceiro rodando"; exit 0; fi
           ultima=$(gh run list -R "$GITHUB_REPOSITORY" --workflow parceiro.yml -L 1 --json createdAt --jq '.[0].createdAt') || exit 0
           idade=$(( $(date +%s) - $(date -d "${ultima:-1970-01-01T00:00:00Z}" +%s) ))
-          if [ "$idade" -gt 840 ]; then
+          if [ "$idade" -gt 1140 ]; then
             echo "parceiro parado há $((idade / 60)) min: disparando"
             gh workflow run parceiro.yml -R "$GITHUB_REPOSITORY" -f acao=rodada || true
           else
             echo "parceiro rodou há $((idade / 60)) min: ok"
           fi
-      - name: Próxima rodada (a cada ~8 min, 24h por dia)
+      - name: Próxima rodada (a cada ~5 min, 24h por dia)
         if: always() && github.event.inputs.modo != 'dry' && github.event.inputs.modo != 'review'
         env:
           GH_TOKEN: ${{ github.token }}
@@ -204,7 +205,7 @@ jobs:
           outras=$(gh run list -R "$GITHUB_REPOSITORY" --workflow publicar.yml --json databaseId,status \
             --jq "[.[] | select((.status==\"queued\" or .status==\"in_progress\" or .status==\"waiting\" or .status==\"pending\") and .databaseId != $GITHUB_RUN_ID)] | length")
           if [ "$outras" -gt 0 ]; then echo "já existe rodada na fila ($outras)"; exit 0; fi
-          espera=$(( 480 - ($(date +%s) - INICIO) ))   # uma rodada a cada ~8 min
+          espera=$(( 300 - ($(date +%s) - INICIO) ))   # uma rodada a cada ~5 min
           if [ "$espera" -gt 0 ]; then sleep "$espera"; fi
           # confere de novo depois da espera (alguém pode ter disparado uma rodada nesse meio-tempo)
           outras=$(gh run list -R "$GITHUB_REPOSITORY" --workflow publicar.yml --json databaseId,status \

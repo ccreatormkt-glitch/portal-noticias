@@ -150,6 +150,24 @@ def _cedo_demais() -> bool:
     return time.time() - max(db.ultimo_publicado(), ultimo_publicado()) < config.INTERVALO_POSTS
 
 
+def ja_postado(card: dict) -> str:
+    """O fato deste vídeo já está no perfil? Usa a mesma checagem das notícias (banco de publicadas,
+    legendas dos últimos posts do Instagram e comparação por IA). Devolve o motivo, ou ''."""
+    import db
+    import publish
+    try:
+        legendas = publish.legendas_recentes()
+    except Exception as e:
+        print(f"[parceiro] não consegui ler os últimos posts do Instagram ({str(e)[:80]}); sigo pelo banco")
+        legendas = []
+    dados = dict(card, resumo=card.get("legenda", ""))   # o vídeo não tem resumo: compara a legenda
+    try:
+        return db.ja_publicada(dados, legendas)
+    except Exception as e:
+        print(f"[parceiro] checagem de repetição falhou ({type(e).__name__}); sigo")
+        return ""
+
+
 def _sem_vaga_no_instagram() -> bool:
     """True quando o limite de 24h da API está cheio: o vídeo espera em vez de ser perdido."""
     import publish
@@ -888,6 +906,11 @@ def _rodada_parceiro(p: dict, est: dict, modo: str, limite: int, so_ids: set = N
                 continue
             card["_origem"] = {"id": m["id"], "permalink": m.get("permalink"), "timestamp": m.get("timestamp"),
                                "parceiro": usuario}
+            ja = "" if (so_ids is not None or modo == "dry") else ja_postado(card)
+            if ja:   # o mesmo fato já saiu no perfil (notícia ou vídeo de outro parceiro)
+                print(f"[parceiro] pulei {m.get('permalink')}: {ja}")
+                _marcar(est, m["id"], "pulado", ja)
+                continue
             video = montar(origem, card, pasta / f"{stamp}.mp4", grade=p["grade"])
             capa_jpg = capa(video, pasta / f"{stamp}_capa.jpg", card=card)
         except Exception as e:

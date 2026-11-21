@@ -35,7 +35,9 @@ Valem para tudo o que o sistema produz. Cada regra tem um teste que falha se ela
 - @blognewspb e @portalresumopb usam moldura ("grade") com a marca deles: o sistema grava só a parte
   do vídeo que mexe.
 - Só vídeos que NÃO são collab (a autorização cobre só esses).
-- Verifica o Instagram de cada um a cada 15 min (agendamento do `parceiro.yml` + vigia no `publicar.yml`).
+- Verifica o Instagram de cada um a cada 20 min (agendamento do `parceiro.yml` + vigia no `publicar.yml`).
+- Antes de montar, confere se o fato já saiu no perfil (mesma checagem das notícias: banco, legendas
+  dos últimos posts e IA). Se já saiu, pula.
 - Sem link pela API, baixa o Reel pela página do post (yt-dlp). Se o Instagram pedir login, salvar os
   cookies de uma conta secundária no segredo `PARCEIRO_IG_COOKIES`.
 - Layout no vídeo e na capa do Reels: barra do PB Minuto, degradê preto que esconde a manchete antiga,

@@ -307,3 +307,16 @@ def test_refazer_so_mexe_nos_ids_pedidos_e_fica_pendente_se_nao_sair(monkeypatch
     est["vistos"]["A"] = {"status": "publicado", "ts": 2}       # a rodada seguinte publicou
     parceiro._processar_refazer(est, "auto")
     assert "A" not in est["refazer"] or est["vistos"].get("A") is None
+
+
+def test_video_de_parceiro_com_fato_ja_postado_e_pulado(monkeypatch):
+    import parceiro
+    import publish
+    monkeypatch.setattr(publish, "legendas_recentes", lambda *a, **k: [
+        "🐎 Carro atinge cavalo solto em via pública de Pedras de Fogo\n\nO motorista não se feriu."])
+    card = {"chapeu": "TRÂNSITO", "titulo": "Carro atinge cavalo solto em via pública de Pedras de Fogo",
+            "legenda": "O animal estava solto na pista.", "cidade": "Pedras de Fogo"}
+    assert parceiro.ja_postado(card)
+    novo = {"chapeu": "CULTURA", "titulo": "Festival de inverno abre inscrições em Bananeiras",
+            "legenda": "Artistas podem se inscrever até dezembro.", "cidade": "Bananeiras"}
+    assert parceiro.ja_postado(novo) == ""

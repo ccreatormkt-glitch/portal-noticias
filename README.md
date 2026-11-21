@@ -1,6 +1,6 @@
 # PB Minuto — portal de notícias automático no Instagram
 
-Bot que roda sozinho no GitHub Actions, 24 horas por dia, 7 dias por semana (uma rodada a cada ~8 minutos):
+Bot que roda sozinho no GitHub Actions, 24 horas por dia, 7 dias por semana (confere notícia nova a cada ~5 minutos e vídeos dos parceiros a cada ~20; publica 1 post a cada ~14 min):
 
 ```
 Google News (CG, JP, PB) + RSS dos portais e prefeituras
