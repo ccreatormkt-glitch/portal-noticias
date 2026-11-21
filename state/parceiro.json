@@ -109,11 +109,51 @@
    "ts": 1795296251.4816911,
    "status": "publicado",
    "nota": "17886519948529682"
+  },
+  "18419769586086577": {
+   "ts": 1795298669.180587,
+   "status": "pulado",
+   "nota": "IA: O conteúdo é apenas uma peça publicitária de supermercado sem valor jornalístico."
+  },
+  "18087022967527905": {
+   "ts": 1795298679.0206494,
+   "status": "pulado",
+   "nota": "IA: O conteúdo é uma peça publicitária de uma loja de informática, não uma notícia."
+  },
+  "18418097470091235": {
+   "ts": 1795298722.613568,
+   "status": "pulado",
+   "nota": "mesmo fato já postado: Colisão entre moto e caminhão-pipa resulta na morte de jovem"
+  },
+  "18495777400109550": {
+   "ts": 1795298752.582675,
+   "status": "pulado",
+   "nota": "mesmo fato já postado: Briga entre condutores termina com motociclista baleado em C"
+  },
+  "18040496300894047": {
+   "ts": 1795298806.713725,
+   "status": "pulado",
+   "nota": "mesmo fato já postado: Jovem é achado morto com marcas de tiros em terreno em Bayeu"
+  },
+  "18440592508179761": {
+   "ts": 1795298849.4417236,
+   "status": "pulado",
+   "nota": "mesmo fato já postado: Procon-CG mobiliza equipe e abre plantão no Natal Iluminado "
+  },
+  "18116062088520695": {
+   "ts": 1795298896.6559446,
+   "status": "pulado",
+   "nota": "mesmo fato já postado: Bombeiros controlam incêndio em terreno com materiais descar"
+  },
+  "18076499840769550": {
+   "ts": 1795299211.632281,
+   "status": "publicado",
+   "nota": "18135607577495538"
   }
  },
  "tentativas": {
-  "17888244387626143": 1
+  "17888244387626143": 2
  },
  "refazer": {},
- "aguardando": 1795298352.3218586
+ "aguardando": 0
 }
