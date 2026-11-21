@@ -375,3 +375,6 @@
 {"ts": "2026-11-21T04:33:15", "event": "published", "headline": "João Pessoa tem sábado de sol com temperaturas entre 26ºC e 33ºC", "source": "g1 Paraíba, G1 e +2", "ig_id": "18121969730082274", "note": ""}
 {"ts": "2026-11-21T04:41:53", "event": "gerado", "headline": "Portugal vira placar e vence primeira regata do mundial de vela na Baía de Guanabara", "source": "Agência Brasil", "ig_id": "", "note": ""}
 {"ts": "2026-11-21T04:41:53", "event": "falha_publicacao", "headline": "Portugal vira placar e vence primeira regata do mundial de vela na Baía de Guanabara", "source": "Agência Brasil", "ig_id": "", "note": "voz padrão indisponível agora (limite do Gemini); a notícia volta na próxima rodada"}
+{"ts": "2026-11-21T04:45:04", "event": "pulado", "headline": "Portugal estreia com vitória de virada na Copa do Mundo de vela no RJ", "source": "", "ig_id": "", "note": "repetida: Seleção da Paraíba vence Santa Catarina na Taça das Favelas"}
+{"ts": "2026-11-21T04:51:25", "event": "gerado", "headline": "Nações estabelecem prazo até 2028 para criar normas sobre armas autônomas", "source": "g1", "ig_id": "", "note": ""}
+{"ts": "2026-11-21T04:52:31", "event": "published", "headline": "Nações estabelecem prazo até 2028 para criar normas sobre armas autônomas", "source": "g1", "ig_id": "18205837681377273", "note": ""}
