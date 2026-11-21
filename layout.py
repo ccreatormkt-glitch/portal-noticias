@@ -83,8 +83,8 @@ COR = {
 # versões como a CNN Sans tem: "Display" (desenhada para tamanhos grandes) e "Text" (para tamanhos pequenos).
 # Regras de variação por uso, como na CNN:
 #   - manchete: Display Bold, letras apertadas (-2,5%), entrelinha curta (1,10), caixa normal;
-#   - chapéu (editoria): Text Bold, CAIXA ALTA, letras abertas (+6%), pequeno, dentro de uma caixa
-#     com a cor fixa do tema (COR_EDITORIA);
+#   - chapéu (editoria): Text Bold, CAIXA ALTA, letras abertas (+6%), pequeno, só o texto em branco,
+#     sem caixa colorida (pedido do Arthur, 21/11/2026; EDITORIA_CAIXA = True volta a caixa);
 #   - linha fina: Text Regular, entrelinha confortável (1,30), quase sem aperto;
 #   - data/cidade: Text Medium, cinza, letras levemente abertas (+1%);
 #   - crédito da foto: Text Regular, o menor de todos;
@@ -136,8 +136,13 @@ COR_EDITORIA = {
     "BRASIL":   ("#006B28", "#FFDF00"),  # verde e amarelo da bandeira
 }
 COR_EDITORIA_PADRAO = COR_EDITORIA["CIDADE"]
+# REGRA (pedido do Arthur, 21/11/2026): na capa e nos Reels a editoria vai SÓ como texto (branco,
+# CAIXA ALTA), sem o quadrado colorido do tema. COR_EDITORIA fica guardada para quem quiser voltar.
+EDITORIA_CAIXA = False
 # Caixa da editoria (em múltiplos do tamanho da letra): folga dos lados, acima/abaixo e canto.
-CAIXA_EDITORIA = dict(folga_x=0.55, folga_y=0.42, raio=0.18)
+# Sem caixa, as folgas são zero e a editoria alinha com a margem da manchete.
+CAIXA_EDITORIA = (dict(folga_x=0.55, folga_y=0.42, raio=0.18) if EDITORIA_CAIXA
+                  else dict(folga_x=0.0, folga_y=0.0, raio=0.0))
 
 
 def cor_editoria(chapeu: str) -> tuple:

@@ -14,7 +14,7 @@ Fluxo de cada rodada:
      (regra do PB Minuto para toda escrita);
   5. monta o vídeo: desfoca as áreas onde fica a marca/texto do parceiro (PARCEIRO_COBRIR),
      pode cortar faixas de cima/baixo (PARCEIRO_CORTE) e põe por cima a barra vermelha com a logo,
-     o degradê preto que cobre a manchete antiga e a etiqueta nova (editoria na caixa colorida,
+     o degradê preto que cobre a manchete antiga e a etiqueta nova (editoria só em texto,
      manchete e data/cidade), tudo medido pelo layout.py e só em Inter; o áudio original fica;
   6. modo "auto" (padrão, pedido do Arthur): publica já; "review": vai para queue/parceiro esperando o "aprovar".
 
@@ -403,7 +403,7 @@ def etiqueta(card: dict, out_png: Path) -> Path:
     m = z(L.FORMATOS["reels"]["margem"])
 
     d = ImageDraw.Draw(camada)
-    A._editoria(d, m, y_chap, card, z(t_chap))          # caixa com a cor fixa do tema
+    A._editoria(d, m, y_chap, card, z(t_chap))          # editoria só em texto (layout.EDITORIA_CAIXA)
 
     # manchete + data/cidade numa camada própria, para levar a sombra
     txt = Image.new("RGBA", (W, H), (0, 0, 0, 0))

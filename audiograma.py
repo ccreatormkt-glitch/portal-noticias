@@ -216,13 +216,17 @@ def _palavras_com_fonte(texto: str, destaques: list, tamanho: int):
 
 
 def _editoria(d, x, y_base, card, t):
-    """Editoria em CAIXA ALTA dentro da caixa com a cor fixa do tema (layout.COR_EDITORIA).
+    """Editoria em CAIXA ALTA: só o texto em branco (layout.EDITORIA_CAIXA = False, regra atual) ou
+    dentro da caixa com a cor fixa do tema (layout.COR_EDITORIA).
     `x` é a borda esquerda da caixa e `y_base` a linha de base do texto (tudo já em pixels finais)."""
     papel, cx = L.PAPEIS["chapeu"], L.CAIXA_EDITORIA
     texto = _chapeu(card)
     f = fonte(papel["fonte"], t)
     larg = f.getlength(texto) + papel["track"] * t * (len(texto) - 1)
     fx, fy = round(t * cx["folga_x"]), round(t * cx["folga_y"])
+    if not L.EDITORIA_CAIXA:   # regra atual: só o texto da editoria, sem o quadrado colorido
+        _texto(d, (x, y_base), texto, f, L.COR["texto"], track=papel["track"])
+        return
     fundo, cor_txt = L.cor_editoria(card.get("chapeu"))
     d.rounded_rectangle((x, y_base - round(t * L.ALTURA_MAIUSCULA) - fy, x + larg + 2 * fx, y_base + fy),
                         radius=round(t * cx["raio"]), fill=fundo + (255,))
