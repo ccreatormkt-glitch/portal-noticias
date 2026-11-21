@@ -99,9 +99,21 @@
    "ts": 1795293550.4839625,
    "status": "publicado",
    "nota": "18135634042757711"
+  },
+  "18415722613089569": {
+   "ts": 1795295871.3573895,
+   "status": "pulado",
+   "nota": "IA: O conteúdo enviado é apenas uma peça publicitária de um estabelecimento comercial, sem caráter informativo ou notícia."
+  },
+  "18130214623900064": {
+   "ts": 1795296251.4816911,
+   "status": "publicado",
+   "nota": "17886519948529682"
   }
  },
- "tentativas": {},
+ "tentativas": {
+  "17888244387626143": 1
+ },
  "refazer": {},
- "aguardando": 1795295230.995499
+ "aguardando": 1795296252.191724
 }
