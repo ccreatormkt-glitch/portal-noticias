@@ -108,9 +108,15 @@ def quota_left() -> int:
         return -1
 
 
+def hashtags_minusculas(texto: str) -> str:
+    """Regra do PB Minuto (REGRAS.md): toda hashtag em letras minúsculas (#JoaoPessoa -> #joaopessoa)."""
+    return re.sub(r"#([\wÀ-ÿ]+)", lambda m: "#" + m.group(1).lower(), texto or "")
+
+
 def post(image_paths: list, caption: str) -> str:
     """Publica 1 imagem ou um carrossel (2 a 10 imagens). Devolve o id do post."""
     _need_creds()
+    caption = hashtags_minusculas(caption)
     urls = [host_image(p) for p in image_paths]
     if len(urls) == 1:
         cid = _container(image_url=urls[0], caption=caption)
@@ -156,6 +162,7 @@ def post_reel(video_path: Path, caption: str, cover_url: str = None, thumb_ms: i
     repositório) que a Meta baixa — é o que tem funcionado. 2º caminho (fora do GitHub ou se o
     link falhar): envia o arquivo direto para a Meta. Aparece também no feed."""
     _need_creds()
+    caption = hashtags_minusculas(caption)
     if GRAPH_HOST != "graph.facebook.com":
         raise RuntimeError("upload direto de vídeo só existe no login pelo Facebook (graph.facebook.com)")
     video_path = Path(video_path)
@@ -284,8 +291,8 @@ def build_caption(card: dict, source_line: str = "") -> str:
         partes.append(card["_credito_legenda"])
     tags = []
     for t in card.get("hashtags", []):  # limpeza defensiva: sem '#' duplo nem espaços
-        t = re.sub(r"[^\wÀ-ÿ]", "", str(t))
-        if t and t.lower() not in (x.lower() for x in tags):
+        t = re.sub(r"[^\wÀ-ÿ]", "", str(t)).lower()   # regra: hashtag sempre em minúsculas
+        if t and t not in tags:
             tags.append(t)
     if tags:
         partes.append(" ".join(f"#{t}" for t in tags[:7]))

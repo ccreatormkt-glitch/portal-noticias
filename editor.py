@@ -84,7 +84,7 @@ PADRÃO DE REDAÇÃO (o mesmo dos grandes portais de notícia)
      status -> "Manda para aquele amigo que sempre quer saber primeiro."
   NÃO coloque hashtags, fontes ou "siga" na legenda: o sistema acrescenta.
 - cidade: "Campina Grande", "João Pessoa", "Paraíba" ou "Brasil".
-- hashtags: 5 a 7, sem '#', locais primeiro (ex.: campinagrande, joaopessoa, paraiba, pb).
+- hashtags: 5 a 7, sem '#', só letras minúsculas, locais primeiro (ex.: campinagrande, joaopessoa, paraiba, pb).
 - foto_busca: 2 a 4 palavras EM INGLÊS para buscar uma foto genérica do tema num banco de imagens,
   SÓ de objetos e cenas sem pessoas, sem fachadas, letreiros ou marcas que identifiquem outro
   lugar (ex.: "shopping bags", "empty office desk", "flooded street rain", "school classroom empty").

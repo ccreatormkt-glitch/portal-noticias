@@ -41,3 +41,11 @@ Valem para tudo o que o sistema produz. Cada regra tem um teste que falha se ela
 - Layout no vídeo e na capa do Reels: barra do PB Minuto, degradê preto que esconde a manchete antiga,
   etiqueta nova e desfoque automático da marca d'água/texto parado (`PARCEIRO_AUTO_MARCA=0` desliga).
 - Publica direto, sem aprovação (`PARCEIRO_MODO=review` volta à fila de aprovação).
+
+## 5. Hashtags só em letras minúsculas (pedido do Arthur, 21/11/2026)
+- Toda hashtag sai em minúsculas: `#joaopessoa`, `#campinagrande`, `#cultura` (nunca `#JoaoPessoa`).
+- Vale para notícias, vídeos dos parceiros, boletim e qualquer post novo: `publish.post` e
+  `publish.post_reel` passam toda legenda por `publish.hashtags_minusculas` antes de enviar, e
+  `build_caption` já monta as hashtags em minúsculas. Os prompts do editor e do parceiro pedem o mesmo.
+- Teste: `tests/test_regra_hashtag.py`.
+

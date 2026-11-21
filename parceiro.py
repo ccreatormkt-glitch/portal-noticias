@@ -331,7 +331,7 @@ Regras:
   2) contexto em 2 a 4 frases simples; 3) uma chamada curta para comentar ou compartilhar.
   Sem hashtags e sem "siga" (o sistema acrescenta).
 - cidade: "Campina Grande", "João Pessoa", "Paraíba" ou "Brasil".
-- hashtags: 5 a 7, sem '#', locais primeiro.
+- hashtags: 5 a 7, sem '#', só letras minúsculas, locais primeiro.
 - risco: "skip" para suicídio, crime sexual, menor identificável, acusação sem confirmação contra
   pessoa identificada ou boato; "cuidado" para polícia/acidente/morte (sem nomes de vítimas ou
   suspeitos, atribuindo à autoridade); "ok" para o resto.
@@ -386,7 +386,7 @@ def escrever(legenda_original: str, transcricao: str, tentativas: int = 3) -> di
     card["chapeu"] = card["chapeu"].strip().upper()
     if card["chapeu"] not in editor.EDITORIAS:
         card["chapeu"] = "CIDADE"
-    card["hashtags"] = [re.sub(r"[^\wÀ-ÿ]", "", str(h)) for h in card.get("hashtags", [])][:7]
+    card["hashtags"] = [re.sub(r"[^\wÀ-ÿ]", "", str(h)).lower() for h in card.get("hashtags", [])][:7]
     card.setdefault("pontos", [])
     # regra do PB Minuto: todo texto passa pela skill STE80 Humanizer (sem voltar a copiar o original)
     if config.HUMANIZAR:
