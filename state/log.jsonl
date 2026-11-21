@@ -371,3 +371,5 @@
 {"ts": "2026-11-21T04:00:04", "event": "falha_publicacao", "headline": "Cerca de 100 milhões de brasileiros recebem 13º salário até o fim do ano", "source": "g1", "ig_id": "", "note": "voz padrão indisponível agora (limite do Gemini); a notícia volta na próxima rodada"}
 {"ts": "2026-11-21T04:07:43", "event": "gerado", "headline": "Filme Camisas Negras estreia nos cinemas sobre a história do Vasco em 1923", "source": "Agência Brasil", "ig_id": "", "note": ""}
 {"ts": "2026-11-21T04:09:42", "event": "published", "headline": "Filme Camisas Negras estreia nos cinemas sobre a história do Vasco em 1923", "source": "Agência Brasil", "ig_id": "18016228244764617", "note": ""}
+{"ts": "2026-11-21T04:32:14", "event": "gerado", "headline": "João Pessoa tem sábado de sol com temperaturas entre 26ºC e 33ºC", "source": "g1 Paraíba, G1 e +2", "ig_id": "", "note": ""}
+{"ts": "2026-11-21T04:33:15", "event": "published", "headline": "João Pessoa tem sábado de sol com temperaturas entre 26ºC e 33ºC", "source": "g1 Paraíba, G1 e +2", "ig_id": "18121969730082274", "note": ""}
