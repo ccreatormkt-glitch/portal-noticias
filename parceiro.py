@@ -213,8 +213,22 @@ def testar_download(limite: int = 25) -> bool:
     dur = _duracao(destino)
     print(f"[parceiro] teste: OK {m.get('permalink')} pela {via}: "
           f"{destino.stat().st_size // 1024} KB, {dur:.0f}s, áudio={'sim' if _tem_audio(destino) else 'não'}")
-    # cópia com nome que o passo "Prévia" do workflow publica (quadros de 1s e 4s)
-    shutil.copy(destino, config.OUT_DIR / "parceiro_teste_1.mp4")
+    # monta como numa rodada de verdade (texto novo + layout do PB Minuto), sem fila e sem publicar;
+    # o nome casa com o passo "Prévia" do workflow (quadros de 1s e 4s no ramo previa-parceiro)
+    final = config.OUT_DIR / "parceiro_teste_1.mp4"
+    try:
+        card = escrever(m.get("caption") or "", transcrever(destino))
+        if card.get("skip"):
+            print(f"[parceiro] teste: a IA pularia este vídeo ({card.get('motivo', '')}); "
+                  "montando assim mesmo só para ver o layout")
+        print(f"[parceiro] teste: {card.get('chapeu')} | {card.get('titulo')} | {card.get('cidade')}")
+        print("[parceiro] teste: legenda: " + str(card.get("legenda", "")).replace("\n", " / ")[:600])
+        montar(destino, card, final)
+        print(f"[parceiro] teste: vídeo montado com o layout ({final.stat().st_size // 1024} KB)")
+    except Exception as e:
+        print(f"[parceiro] teste: baixou, mas falhou a montagem: {str(e)[:400]}")
+        shutil.copy(destino, final)
+        return False
     return True
 
 
