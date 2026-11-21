@@ -309,3 +309,5 @@
 {"ts": "2026-11-21T00:38:26", "event": "pulado", "headline": "Temporal causado por supercélula em Tupanciretã (RS) deixa três mortos, 60 feridos e cerca de 5 mil casas destelhadas", "source": "", "ig_id": "", "note": "mesmo fato já postado (IA): Tempestades no Rio Grande do Sul deixam três mortos e atinge"}
 {"ts": "2026-11-21T00:42:40", "event": "gerado", "headline": "Motociclista é baleado após briga no trânsito em Campina Grande", "source": "Paraíba dia a dia, G1", "ig_id": "", "note": ""}
 {"ts": "2026-11-21T00:42:40", "event": "falha_publicacao", "headline": "Motociclista é baleado após briga no trânsito em Campina Grande", "source": "Paraíba dia a dia, G1", "ig_id": "", "note": "voz padrão indisponível agora (limite do Gemini); a notícia volta na próxima rodada"}
+{"ts": "2026-11-21T00:53:56", "event": "gerado", "headline": "Restos de drones atingem embaixada do Brasil em Kiev", "source": "g1", "ig_id": "", "note": ""}
+{"ts": "2026-11-21T00:54:42", "event": "published", "headline": "Restos de drones atingem embaixada do Brasil em Kiev", "source": "g1", "ig_id": "17919012819557093", "note": ""}
