@@ -520,10 +520,11 @@ def cmd_apagar(args):
     """Acha posts do perfil pelo começo da legenda (ou pelo ID) e, só com --confirmar, apaga.
     Sem --confirmar apenas lista o que seria apagado. Apagar não tem volta."""
     import publish
-    texto = " ".join((args.texto or "").split()).lower()
+    from sources import fold   # sem acento e em minúsculas: "João" casa com "joao"
+    texto = fold(" ".join((args.texto or "").split()))
     alvos = []
     for p in publish.posts_recentes():
-        legenda = " ".join((p.get("caption") or "").split()).lower()
+        legenda = fold(" ".join((p.get("caption") or "").split()))
         if (args.id and p["id"] == args.id) or (texto and texto in legenda):
             alvos.append(p)
     if args.id and not alvos:
