@@ -164,9 +164,24 @@
    "ts": 1795301704.9269445,
    "status": "publicado",
    "nota": "18133952773769767"
+  },
+  "18144626071615908": {
+   "ts": 1795304066.6701546,
+   "status": "pulado",
+   "nota": "mesmo fato já postado: Procon-CG mobiliza equipe e abre plantão no Natal Iluminado "
+  },
+  "18157023157531501": {
+   "ts": 1795304129.2296834,
+   "status": "pulado",
+   "nota": "mesmo fato já postado: Ataque a tiros deixa um morto e um ferido em Esperança"
+  },
+  "17915753118508916": {
+   "ts": 1795304246.0150564,
+   "status": "publicado",
+   "nota": "17942252217403701"
   }
  },
  "tentativas": {},
  "refazer": {},
- "aguardando": 1795303038.0952244
+ "aguardando": 0
 }
