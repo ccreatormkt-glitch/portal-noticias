@@ -338,9 +338,15 @@
    "ts": 1795379823.5104306,
    "status": "pulado",
    "nota": "IA: O material apresenta apenas propaganda comercial de um estabelecimento, sem qualquer fato jornalístico."
+  },
+  "18171584155480183": {
+   "ts": 1795381600.5748854,
+   "status": "publicado",
+   "nota": "18158148445480968",
+   "categoria": "brasil"
   }
  },
  "tentativas": {},
  "refazer": {},
- "aguardando": 1795381063.6956928
+ "aguardando": 0
 }
