@@ -186,10 +186,10 @@ def barra(fmt: dict) -> dict:
 
 
 def barra_video() -> dict:
-    """Barra do vídeo: colada no topo da tela, na proporção exata do cabeçalho do g1 (74 x K de
-    altura, logo de 48 x K no centro). A capa mantém a barra alta, pensada para o corte da grade."""
-    alt = G1["barra"]["altura"] * K
-    return dict(fim=alt, logo=G1["barra"]["logo"] * K, centro=alt // 2, borda=max(2, K))
+    """Barra do vídeo: a mesma da capa (do topo até y 388, logo de 96 centrada em y 314). No iPhone a
+    ilha da câmera, o relógio e o cabeçalho "Reels" do Instagram cobrem os ~250 px de cima; a logo
+    fica logo abaixo deles, inteira à vista (antes ficava em y 74, embaixo da câmera)."""
+    return barra(FORMATOS["reels"])
 
 
 # Degradê preto da capa (destaque do g1), mais leve para a foto aparecer: começa logo acima do texto,
