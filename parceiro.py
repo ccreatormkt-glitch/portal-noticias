@@ -48,7 +48,10 @@ LISTA_PADRAO = ("jornaldapb|2026-11-20T03:00:00+0000; "
                 "blognewspb|2026-11-20T03:00:00+0000|grade; "
                 # 22/11/2026: só as postagens de IMAGEM (nada de Reels/Stories); a foto central sai da
                 # moldura e vira a foto do nosso Reels; o texto é reescrito pela regra das notícias
-                "bombaparaiba_|2026-11-22T03:00:00+0000|imagem")
+                "bombaparaiba_|2026-11-22T03:00:00+0000|imagem; "
+                # 22/11/2026: Reels e posts de imagem, só os novos; sem a faixa roxa e o logo deles
+                "destaques.dodia|2026-11-22T16:40:00+0000|faixa|marca|pausado; "
+                "destaques.dodia|2026-11-22T16:40:00+0000|imagem|faixa|pausado")
 MODO = config.env("PARCEIRO_MODO", "auto")            # auto = publica direto (pedido do Arthur); review = fila
 JANELA_HORAS = int(config.env("PARCEIRO_JANELA_HORAS", "48"))   # vídeo mais velho que isso é ignorado
 # Só Reels NOVOS (pedido do Arthur): nada publicado antes deste momento entra, mesmo dentro da janela.
@@ -85,7 +88,12 @@ def parceiros(texto: str = None) -> list:
                       "grade": any(x.lower() == "grade" for x in partes[2:]),
                       "imagem": any(x.lower() == "imagem" for x in partes[2:]),
                       # "pausado": fica fora das rodadas (o teste-imagem continua funcionando)
-                      "pausado": any(x.lower() == "pausado" for x in partes[2:])})
+                      "pausado": any(x.lower() == "pausado" for x in partes[2:]),
+                      # "faixa": o parceiro põe uma faixa colorida fixa com a manchete dele (ex.:
+                      # @destaques.dodia, roxa): o robô corta o post acima dela
+                      "faixa": any(x.lower() == "faixa" for x in partes[2:]),
+                      # "marca": logo translúcido fixo do parceiro no meio do vídeo: some com removelogo
+                      "marca": any(x.lower() == "marca" for x in partes[2:])})
     return lista
 
 
@@ -799,10 +807,128 @@ def _filtro_encaixe(W: int, H: int, y_topo: int) -> str:
             f"[v0][1:v]overlay=0:0,format=yuv420p,fps=30[saida]")
 
 
-def montar(origem: Path, card: dict, out_mp4: Path, grade: bool = False) -> Path:
+# ------------------------------------------------------------------ faixa e logo fixos do parceiro
+def _linhas_da_faixa(quadros) -> tuple:
+    """(topo do conteúdo, topo da faixa) em fração da altura, a partir de quadros RGB (numpy HxWx3).
+    Faixa = linhas onde boa parte do miolo é da cor forte e saturada da faixa do parceiro (roxo do
+    @destaques.dodia: matiz ~197/255 no HSV do PIL). Conteúdo começa na primeira linha que não é preta."""
+    import numpy as np
+    roxo, claro = [], []
+    for a in quadros:
+        hsv = np.asarray(Image.fromarray(a).convert("HSV")).astype(np.int16)
+        H, W = hsv.shape[:2]
+        miolo = hsv[:, int(W * .2):int(W * .8)]
+        m = (miolo[..., 0] >= 182) & (miolo[..., 0] <= 212) & (miolo[..., 1] > 110) & (miolo[..., 2] > 60)
+        roxo.append(m.mean(axis=1))
+        claro.append(a.mean(axis=(1, 2)))
+    roxo, claro = np.median(np.stack(roxo), axis=0), np.median(np.stack(claro), axis=0)
+    H = len(roxo)
+    linhas = np.where(roxo > 0.3)[0]
+    linhas = linhas[linhas > H * 0.3]          # a faixa fica na metade de baixo
+    if not len(linhas):
+        return None
+    topo_faixa = linhas.min() / H - 0.045      # inclui a etiqueta "DESTAQUES DO DIA" logo acima
+    vivas = np.where(claro[: int(linhas.min())] > 18)[0]
+    topo = (vivas.min() / H) if len(vivas) else 0.0
+    if topo_faixa - topo < 0.2:
+        return None
+    return topo, topo_faixa
+
+
+def cortar_faixa(origem: Path) -> Path:
+    """Vídeo: corta acima da faixa fixa do parceiro (e tira as barras pretas de cima)."""
+    import numpy as np
+    w0, h0 = _tamanho(origem)
+    dur = _duracao(origem) or 10.0
+    quadros = []
+    for f in (0.15, 0.35, 0.55, 0.75, 0.9):
+        r = subprocess.run(["ffmpeg", "-v", "error", "-ss", f"{dur * f:.2f}", "-i", str(origem), "-frames:v", "1",
+                            "-vf", "scale=270:480,format=rgb24", "-f", "rawvideo", "-"], capture_output=True, timeout=120)
+        if len(r.stdout) == 270 * 480 * 3:
+            quadros.append(np.frombuffer(r.stdout, np.uint8).reshape(480, 270, 3))
+    achou = _linhas_da_faixa(quadros) if quadros else None
+    if not achou:
+        print("[parceiro] faixa: não achei a faixa do parceiro, uso o vídeo inteiro")
+        return origem
+    y0, y1 = int(achou[0] * h0) // 2 * 2, int(achou[1] * h0) // 2 * 2
+    saida = origem.with_name(origem.stem + "_sem_faixa.mp4")
+    cmd = ["ffmpeg", "-v", "error", "-y", "-i", str(origem), "-vf", f"crop={w0}:{y1 - y0}:0:{y0}",
+           "-c:v", "libx264", "-preset", "medium", "-crf", "16"]
+    cmd += ["-c:a", "copy"] if _tem_audio(origem) else ["-an"]
+    subprocess.run(cmd + [str(saida)], check=True, capture_output=True, timeout=900)
+    print(f"[parceiro] faixa: cortei acima da faixa do parceiro (linhas {y0} a {y1} de {h0})")
+    return saida
+
+
+def cortar_faixa_imagem(post_jpg: Path, out_jpg: Path) -> Path:
+    """Foto: fica só a parte acima da faixa fixa do parceiro (sem a manchete e o telefone dele)."""
+    import numpy as np
+    img = Image.open(post_jpg).convert("RGB")
+    achou = _linhas_da_faixa([np.asarray(img.resize((270, int(270 * img.height / img.width))))])
+    if not achou:
+        raise ValueError("não achei a faixa do parceiro na foto")
+    foto = img.crop((0, int(achou[0] * img.height), img.width, int(achou[1] * img.height)))
+    foto.save(out_jpg, quality=95)
+    print(f"[parceiro] foto cortada acima da faixa do parceiro: {foto.width}x{foto.height}")
+    return out_jpg
+
+
+def mascara_marca_fixa(origem: Path, amostras: int = 16):
+    """Máscara (PNG do tamanho do vídeo, branco = logo) do logo translúcido fixo: contorno que continua
+    no mesmo lugar em todos os quadros enquanto a cena mexe (mediana das bordas no tempo). Câmera
+    parada (cena inteira fixa) ou nada fixo: devolve None."""
+    import numpy as np
+    w0, h0 = _tamanho(origem)
+    W, H = max(2, w0 // 2), max(2, h0 // 2)
+    dur = _duracao(origem) or 10.0
+    r = subprocess.run(["ffmpeg", "-v", "error", "-i", str(origem), "-vf",
+                        f"fps={amostras / max(dur, 1):.4f},scale={W}:{H},format=gray", "-f", "rawvideo", "-"],
+                       capture_output=True, timeout=300)
+    n = len(r.stdout) // (W * H)
+    if n < 8:
+        return None
+    q = np.frombuffer(r.stdout[:n * W * H], np.uint8).reshape(n, H, W).astype(np.float32)
+    borda = np.zeros_like(q)
+    borda[:, :, 1:] += np.abs(np.diff(q, axis=2))
+    borda[:, 1:, :] += np.abs(np.diff(q, axis=1))
+    fixa = np.median(borda, axis=0) > 22
+    fixa[: int(H * .05)] = False                 # bordas do quadro e barras pretas não são logo
+    fixa[int(H * .95):] = False
+    if not (0.001 < fixa.mean() < 0.06):
+        return None
+    m = fixa.copy()
+    for dy in (-1, 0, 1):
+        for dx in (-1, 0, 1):
+            m |= np.roll(np.roll(fixa, dy, axis=0), dx, axis=1)
+    png = origem.with_name(origem.stem + "_mascara.png")
+    Image.fromarray((m * 255).astype(np.uint8)).resize((w0, h0), Image.NEAREST).save(png)
+    return png
+
+
+def tirar_marca_fixa(origem: Path) -> Path:
+    """Apaga o logo translúcido fixo do parceiro autorizado (removelogo preenche só os traços do logo)."""
+    png = mascara_marca_fixa(origem)
+    if not png:
+        print("[parceiro] marca: não achei logo fixo neste vídeo")
+        return origem
+    saida = origem.with_name(origem.stem + "_sem_marca.mp4")
+    cmd = ["ffmpeg", "-v", "error", "-y", "-i", str(origem), "-vf", f"removelogo=f={png}",
+           "-c:v", "libx264", "-preset", "medium", "-crf", "16"]
+    cmd += ["-c:a", "copy"] if _tem_audio(origem) else ["-an"]
+    subprocess.run(cmd + [str(saida)], check=True, capture_output=True, timeout=900)
+    print("[parceiro] marca: logo fixo do parceiro apagado")
+    return saida
+
+
+def montar(origem: Path, card: dict, out_mp4: Path, grade: bool = False, faixa: bool = False,
+           marca: bool = False) -> Path:
     import audiograma as A
     import layout as L
     png = etiqueta(card, out_mp4.with_suffix(".etiqueta.png"))
+    if faixa:            # primeiro corta a faixa (ela também é fixa e entraria na máscara do logo)
+        origem = cortar_faixa(origem)
+    if marca:
+        origem = tirar_marca_fixa(origem)
     if grade:
         origem = recortar_grade(origem)
     topo, base = corte(CORTE)
@@ -1081,7 +1207,8 @@ def _rodada_imagens(p: dict, est: dict, modo: str, limite: int, so_ids: set = No
         try:
             post_jpg = pasta / f"{stamp}_post.jpg"
             post_jpg.write_bytes(requests.get(m["media_url"], timeout=60).content)
-            foto = recortar_foto(post_jpg, pasta / f"{stamp}_foto.jpg")
+            foto = (cortar_faixa_imagem(post_jpg, pasta / f"{stamp}_foto.jpg") if p.get("faixa")
+                    else recortar_foto(post_jpg, pasta / f"{stamp}_foto.jpg"))
             card = editor.make_card(_cluster_do_post(m, usuario))
             if card.get("skip"):
                 print(f"[parceiro] pulei {m.get('permalink')}: {card.get('motivo', 'a IA pulou')}")
@@ -1339,7 +1466,8 @@ def _rodada_parceiro(p: dict, est: dict, modo: str, limite: int, so_ids: set = N
                 print(f"[parceiro] pulei {m.get('permalink')}: {ja}")
                 _marcar(est, m["id"], "pulado", ja)
                 continue
-            video = montar(origem, card, pasta / f"{stamp}.mp4", grade=p["grade"])
+            video = montar(origem, card, pasta / f"{stamp}.mp4", grade=p["grade"],
+                           faixa=p.get("faixa", False), marca=p.get("marca", False))
             capa_jpg = capa(video, pasta / f"{stamp}_capa.jpg", card=card)
         except Exception as e:
             print(f"[parceiro] falhou {m.get('permalink')}: {str(e)[:300]}")

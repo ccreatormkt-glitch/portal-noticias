@@ -272,7 +272,8 @@ def test_reels_de_ontem_de_todos_os_parceiros_entram(monkeypatch):
     bloco = re.search(r"LISTA_PADRAO = \((.*?)\)\n", fonte, re.S).group(1)
     lista = parceiro.parceiros("".join(re.findall(r'"([^"]*)"', bloco)))
     assert {p["usuario"] for p in lista} >= {"jornaldapb", "portalresumopb", "blognewspb", "noticiacertapb"}
-    assert all(p["desde"] <= "2026-11-20T03:00:00+0000" for p in lista if not p["imagem"])
+    ontem = {"jornaldapb", "portalresumopb", "blognewspb", "noticiacertapb"}   # os de 21/11 (com os de ontem)
+    assert all(p["desde"] <= "2026-11-20T03:00:00+0000" for p in lista if p["usuario"] in ontem)
     assert "bombaparaiba_" in [p["usuario"] for p in lista if p["imagem"]]
 
 
@@ -373,3 +374,25 @@ def test_conferir_fatos_aponta_numero_que_nao_esta_no_post():
     legenda = "O Sine-PB oferta 825 vagas a partir desta segunda-feira (23)."
     assert parceiro.conferir_fatos({"titulo": "Sine-PB abre 825 vagas", "legenda": "A partir do dia 23."}, legenda) == []
     assert parceiro.conferir_fatos({"titulo": "Sine-PB abre 900 vagas", "legenda": ""}, legenda)
+
+
+def test_faixa_roxa_do_parceiro_e_cortada():
+    """@destaques.dodia: faixa roxa fixa com a manchete dele; o post é cortado acima dela."""
+    import numpy as np
+    import parceiro
+    quadros = []
+    for i in range(5):
+        a = np.zeros((480, 270, 3), np.uint8)
+        a[60:300] = (np.random.RandomState(i).rand(240, 270, 3) * 200 + 30).astype(np.uint8)   # cena
+        a[336:384, 20:250] = (110, 35, 150)                                                     # faixa roxa
+        quadros.append(a)
+    topo, topo_faixa = parceiro._linhas_da_faixa(quadros)
+    assert abs(topo - 60 / 480) < 0.01 and 0.6 < topo_faixa < 0.66
+    assert parceiro._linhas_da_faixa([np.full((480, 270, 3), 90, np.uint8)]) is None    # sem faixa
+
+
+def test_flags_faixa_e_marca():
+    import parceiro
+    p = parceiro.parceiros("destaques.dodia|2026-11-22T16:40:00+0000|faixa|marca; destaques.dodia|x|imagem|faixa")
+    assert p[0]["faixa"] and p[0]["marca"] and not p[0]["imagem"]
+    assert p[1]["imagem"] and p[1]["faixa"] and not p[1]["marca"]
