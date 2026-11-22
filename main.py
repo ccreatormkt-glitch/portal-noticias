@@ -659,6 +659,11 @@ def cmd_parceiro_fila(_):
         print("fila do parceiro vazia")
 
 
+def cmd_parceiro_amostra(args):
+    import parceiro
+    parceiro.amostra(args.usuario.lstrip("@"))
+
+
 def cmd_parceiro_refazer(args):
     import parceiro
     ids = [i for i in " ".join(args.ids).replace(",", " ").split() if i]
@@ -735,6 +740,9 @@ def main():
     pc.add_argument("--limite", type=int, default=1, help="vídeos por rodada")
     pc.set_defaults(fn=cmd_parceiro)
     sub.add_parser("parceiro-fila").set_defaults(fn=cmd_parceiro_fila)
+    pam = sub.add_parser("parceiro-amostra", help="baixa as últimas imagens de um perfil para estudar a moldura")
+    pam.add_argument("usuario")
+    pam.set_defaults(fn=cmd_parceiro_amostra)
     pr = sub.add_parser("parceiro-refazer", help="refaz vídeos de parceiro já publicados (ids do parceiro)")
     pr.add_argument("ids", nargs="+")
     pr.set_defaults(fn=cmd_parceiro_refazer)

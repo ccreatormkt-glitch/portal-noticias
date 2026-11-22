@@ -865,6 +865,22 @@ def rodada(modo: str = None, limite: int = 1) -> int:
     return total
 
 
+def amostra(usuario: str, n: int = 12) -> int:
+    """Baixa as últimas postagens de IMAGEM de um perfil (para estudar a moldura): grava em
+    out/calibrar_<usuario>_<i>.jpg e out/calibrar_<usuario>.json. Não publica nada."""
+    import requests
+    posts = [m for m in buscar(usuario=usuario, limite=40) if m.get("media_type") == "IMAGE" and m.get("media_url")]
+    config.OUT_DIR.mkdir(parents=True, exist_ok=True)
+    meta = []
+    for i, m in enumerate(posts[:n]):
+        arq = config.OUT_DIR / f"calibrar_{usuario}_{i:02d}.jpg"
+        arq.write_bytes(requests.get(m["media_url"], timeout=60).content)
+        meta.append({k: m.get(k) for k in ("id", "timestamp", "permalink", "caption")})
+    (config.OUT_DIR / f"calibrar_{usuario}.json").write_text(json.dumps(meta, ensure_ascii=False, indent=1))
+    print(f"[parceiro] amostra de @{usuario}: {len(meta)} imagens de {len(posts)} posts de imagem")
+    return len(meta)
+
+
 def refazer(ids: list, modo: str = None) -> int:
     """Faz de novo vídeos de parceiro já publicados (ids do Reels do PARCEIRO, como no estado), com o
     layout e a capa atuais. Ficam com prioridade: se o limite do Instagram estiver cheio, saem nas
