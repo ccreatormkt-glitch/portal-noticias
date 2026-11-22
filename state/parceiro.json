@@ -244,9 +244,19 @@
    "ts": 1795350930.0843174,
    "status": "publicado",
    "nota": "18210148417374277"
+  },
+  "18171491275473710": {
+   "ts": 1795354609.467321,
+   "status": "pulado",
+   "nota": "mesmo fato já postado: Boca Juniors vence o Atlético Mineiro e conquista a Sul-Amer"
+  },
+  "18078548069468950": {
+   "ts": 1795355482.42135,
+   "status": "publicado",
+   "nota": "17928887376202314"
   }
  },
  "tentativas": {},
  "refazer": {},
- "aguardando": 1795353587.2411582
+ "aguardando": 0
 }
