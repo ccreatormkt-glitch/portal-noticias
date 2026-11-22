@@ -414,3 +414,15 @@ def test_noticia_cede_a_vaga_quando_ha_video_esperando(ambiente, monkeypatch):
     (config.OUT_DIR / "vez_do_parceiro").unlink()
     main.cmd_run(sem_count)
     assert len(ambiente) == 1
+
+
+def test_mix_nao_faz_rajada_da_mesma_categoria(ambiente, monkeypatch):
+    """Mundo muito atrasado não sai 4 vezes seguidas: depois de 2 seguidas, intercala outra categoria."""
+    import parceiro
+    agora = time.time()
+    ev = [(agora - 3000 + i, "cg") for i in range(10)] + [(agora - 100, "mundo"), (agora - 50, "mundo")]
+    monkeypatch.setattr(db, "categorias_recentes", lambda n=20: ev)
+    monkeypatch.setattr(parceiro, "categorias_recentes", lambda n=20, caminho=None: [])
+    monkeypatch.setattr(config, "MIX", {"cg": .3, "jp": .2, "brasil": .3, "mundo": .2})
+    ordem = main._ordem_do_mix()
+    assert ordem[0] != "mundo" and ordem[1] == "mundo"

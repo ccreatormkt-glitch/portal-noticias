@@ -315,6 +315,10 @@ def _ordem_do_mix() -> list:
     n = len(ev)
     falta = {k: config.MIX[k] * (n + 1) - cont[k] for k in config.MIX}
     ordem = sorted(config.MIX, key=lambda k: (falta[k], config.MIX[k]), reverse=True)
+    # sem rajada da mesma categoria: depois de 2 seguidas, a próxima vez é de outra (o atraso continua
+    # sendo compensado, só que intercalado)
+    if len(ev) >= 2 and ev[-1][1] == ev[-2][1] == ordem[0]:
+        ordem = ordem[1:2] + ordem[:1] + ordem[2:]
     print("[run] mix (últimos %d): " % n + ", ".join(f"{k} {cont[k]:.0f}/{config.MIX[k]:.0%}" for k in config.MIX)
           + f" -> vez de {ordem[0]}")
     return ordem
