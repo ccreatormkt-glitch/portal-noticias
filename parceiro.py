@@ -45,7 +45,9 @@ LISTA_PADRAO = ("jornaldapb|2026-11-20T03:00:00+0000; "
                 "paraibabussines_|2026-11-20T03:00:00+0000; "
                 "portalresumopb|2026-11-20T03:00:00+0000|grade; "
                 "noticiacertapb|2026-11-20T03:00:00+0000; "
-                "blognewspb|2026-11-20T03:00:00+0000|grade; "
+                # 22/11/2026: o logo BLOG NEWS PB fica no alto do próprio vídeo (dentro da moldura): corta
+                # 18% de cima depois de tirar a moldura, para a barra vermelha ficar por cima dele
+                "blognewspb|2026-11-20T03:00:00+0000|grade|topo=18; "
                 # 22/11/2026: só as postagens de IMAGEM (nada de Reels/Stories); a foto central sai da
                 # moldura e vira a foto do nosso Reels; o texto é reescrito pela regra das notícias
                 "bombaparaiba_|2026-11-22T03:00:00+0000|imagem; "
@@ -97,7 +99,12 @@ def parceiros(texto: str = None) -> list:
                       # "barra=NNN": a barra vermelha desce até y NNN (de 1920) e cobre a marca do
                       # parceiro no alto do vídeo; sem a opção, vale layout.PARCEIRO["barra"] (480)
                       "barra": next((int(x.split("=", 1)[1]) for x in partes[2:]
-                                     if x.lower().startswith("barra=") and x.split("=", 1)[1].strip().isdigit()), None)})
+                                     if x.lower().startswith("barra=") and x.split("=", 1)[1].strip().isdigit()), None),
+                      # "topo=NN": corta NN% de cima do vídeo do parceiro (depois da moldura), onde fica
+                      # o logo dele dentro do próprio vídeo; o resto encosta embaixo da barra vermelha
+                      "topo": next((float(x.split("=", 1)[1].replace(",", ".")) for x in partes[2:]
+                                    if x.lower().startswith("topo=")
+                                    and re.fullmatch(r"\d+([.,]\d+)?", x.split("=", 1)[1].strip())), 0.0)})
     return lista
 
 
@@ -406,7 +413,7 @@ def _testar_um(p: dict, k: int, limite: int) -> bool:
                   "montando assim mesmo só para ver o layout")
         print(f"[parceiro] teste @{usuario}: {card.get('chapeu')} | {card.get('titulo')} | {card.get('cidade')}")
         montar(destino, card, final, grade=p["grade"], faixa=p.get("faixa", False),
-               marca=p.get("marca", False), barra=p.get("barra"))
+               marca=p.get("marca", False), barra=p.get("barra"), topo=p.get("topo", 0.0))
         print(f"[parceiro] teste @{usuario}: vídeo montado -> {final.name}")
     except Exception as e:
         print(f"[parceiro] teste @{usuario}: baixou, mas falhou a montagem: {str(e)[:400]}")
@@ -812,6 +819,21 @@ def _filtro_encaixe(W: int, H: int, y_topo: int) -> str:
             f"[v0][1:v]overlay=0:0,format=yuv420p,fps=30[saida]")
 
 
+def cortar_topo(origem: Path, pct: float) -> Path:
+    """Corta pct% de cima do vídeo (logo do parceiro gravado no alto do próprio vídeo)."""
+    w, h = _tamanho(origem)
+    y = int(h * min(max(pct, 0), 60) / 100) // 2 * 2
+    if not y:
+        return origem
+    saida = origem.with_name(origem.stem + "_sem_topo.mp4")
+    cmd = ["ffmpeg", "-v", "error", "-y", "-i", str(origem), "-vf", f"crop={w}:{h - y}:0:{y}",
+           "-c:v", "libx264", "-preset", "medium", "-crf", "16"]
+    cmd += ["-c:a", "copy"] if _tem_audio(origem) else ["-an"]
+    subprocess.run(cmd + [str(saida)], check=True, capture_output=True, timeout=900)
+    print(f"[parceiro] topo: cortei {y}px de cima ({pct:g}%), onde fica o logo do parceiro")
+    return saida
+
+
 # ------------------------------------------------------------------ faixa e logo fixos do parceiro
 def _linhas_da_faixa(quadros) -> tuple:
     """(topo do conteúdo, topo da faixa) em fração da altura, a partir de quadros RGB (numpy HxWx3).
@@ -957,7 +979,7 @@ def tirar_marca_fixa(origem: Path) -> Path:
 
 
 def montar(origem: Path, card: dict, out_mp4: Path, grade: bool = False, faixa: bool = False,
-           marca: bool = False, barra: int = None) -> Path:
+           marca: bool = False, barra: int = None, topo: float = 0.0) -> Path:
     import audiograma as A
     import layout as L
     png = etiqueta(card, out_mp4.with_suffix(".etiqueta.png"), barra=barra)
@@ -967,6 +989,8 @@ def montar(origem: Path, card: dict, out_mp4: Path, grade: bool = False, faixa: 
         origem = tirar_marca_fixa(origem)
     if grade:
         origem = recortar_grade(origem)
+    if topo:
+        origem = cortar_topo(origem, topo)
     topo, base = corte(CORTE)
     cobrir = caixas(COBRIR)
     w0, h0 = _tamanho(origem)
@@ -1504,7 +1528,7 @@ def _rodada_parceiro(p: dict, est: dict, modo: str, limite: int, so_ids: set = N
                 continue
             video = montar(origem, card, pasta / f"{stamp}.mp4", grade=p["grade"],
                            faixa=p.get("faixa", False), marca=p.get("marca", False),
-                           barra=p.get("barra"))
+                           barra=p.get("barra"), topo=p.get("topo", 0.0))
             capa_jpg = capa(video, pasta / f"{stamp}_capa.jpg", card=card)
         except Exception as e:
             print(f"[parceiro] falhou {m.get('permalink')}: {str(e)[:300]}")

@@ -415,3 +415,26 @@ def test_barra_480_em_todos_os_parceiros():
     assert padrao["fim"] == 388 and baixa["fim"] == 480 and baixa["logo"] == padrao["logo"]
     # a logo fica inteira abaixo da câmera e do cabeçalho do Instagram (~250) e dentro da barra
     assert baixa["centro"] - baixa["logo"] // 2 > 250 and baixa["centro"] + baixa["logo"] // 2 < 480
+
+
+def test_blognewspb_corta_o_topo_onde_fica_o_logo():
+    """@blognewspb grava o logo no alto do próprio vídeo: o robô corta o topo para a barra cobrir."""
+    import re
+    from pathlib import Path
+    fonte = Path(parceiro.__file__).read_text(encoding="utf-8")
+    bloco = re.search(r"LISTA_PADRAO = \((.*?)\)\n", fonte, re.S).group(1)
+    lista = {p["usuario"]: p for p in parceiro.parceiros("".join(re.findall(r'"([^"]*)"', bloco)))}
+    assert lista["blognewspb"]["grade"] and lista["blognewspb"]["topo"] >= 15
+    assert lista["jornaldapb"]["topo"] == 0.0
+    outros = parceiro.parceiros("a|x|topo=12,5; b|x|topo=abc")
+    assert outros[0]["topo"] == 12.5 and outros[1]["topo"] == 0.0
+
+
+def test_cortar_topo_tira_a_parte_de_cima(tmp_path):
+    import subprocess
+    src = tmp_path / "v.mp4"
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i", "color=red:s=720x882:d=1",
+                    str(src)], check=True)
+    out = parceiro.cortar_topo(src, 18)
+    assert parceiro._tamanho(out) == (720, 882 - int(882 * 0.18) // 2 * 2)
+    assert parceiro.cortar_topo(src, 0) == src
