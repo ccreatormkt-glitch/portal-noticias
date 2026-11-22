@@ -73,3 +73,23 @@ Valem para tudo o que o sistema produz. Cada regra tem um teste que falha se ela
 - Fontes de Mundo: g1 Mundo, Agência Brasil Internacional e BBC News Brasil.
 - Onde: `sources.categoria`, `main._ordem_do_mix`, `parceiro.categoria_do_card`. Testes em `tests/test_fluxo.py`.
 
+## 8. Stories só dos posts da Paraíba (pedido do Arthur, 22/11/2026)
+- Todo post da Paraíba (Campina Grande, João Pessoa, interior e estado), notícia ou vídeo de parceiro,
+  sai no feed e também nos Stories, com o mesmo vídeo (cortado em 59 s se for mais longo).
+- Brasil e Mundo saem só no feed.
+- Cada Story conta como 1 publicação no limite de 100 por 24h da API do Instagram: o ritmo e o
+  limite diário contam os Stories (post com Story gasta 2 vagas; a próxima vaga demora o dobro).
+- Story que falha ou sem vaga no limite não derruba o post do feed.
+- Variável `STORIES`: `paraiba` (padrão), `todos` ou `nenhum`.
+- Onde: `publish.story_se_paraiba`, `publish.post_story`, `parceiro.espera_ritmo`. Testes: `tests/test_stories.py`.
+
+## 9. Parceiro de imagem @bombaparaiba_ (pedido do Arthur, 22/11/2026)
+- Só postagens estáticas de imagem; nunca Reels, carrossel ou Stories do parceiro; nunca collab.
+- A foto central sai da moldura (cartão branco, manchete, logo e site ficam de fora) e vira a foto do
+  nosso Reels e da capa. Recorte com sobra branca da moldura é recusado.
+- O texto passa pelas mesmas regras das notícias (`editor.make_card`: original, sem copiar, STE80).
+- Fidelidade: números/datas do nosso texto precisam estar no post; a IA confere se o texto novo é fiel
+  e se o original deixa algo duvidoso. Qualquer dúvida: vai para a fila de aprovação, não publica direto.
+- Polícia e temas sensíveis: foto ilustrativa, nunca a foto do caso (regra de credibilidade).
+- As fontes não aparecem no post (regra do PB Minuto), como nos outros parceiros.
+

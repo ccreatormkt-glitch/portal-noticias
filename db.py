@@ -113,6 +113,21 @@ def update_status(fp, status, ig_id="", note=""):
          "ig_id": ig_id, "note": note})
 
 
+def ultimo_evento() -> tuple:
+    """(hora do último post de notícia, publicações que ele gastou: 1, ou 2 se também saiu nos Stories)."""
+    with _conn() as c:
+        ts = c.execute("SELECT MAX(ts) FROM posts WHERE status='published'").fetchone()[0] or 0.0
+        story = c.execute("SELECT COUNT(*) FROM posts WHERE status='story' AND ts >= ?", (ts - 1,)).fetchone()[0]
+    return ts, 1 + (1 if ts and story else 0)
+
+
+def publicacoes_24h() -> int:
+    """Publicações de notícia nas últimas 24h, contando os Stories (o limite da API conta os dois)."""
+    with _conn() as c:
+        return c.execute("SELECT COUNT(*) FROM posts WHERE status IN ('published','story') AND ts > ?",
+                         (time.time() - 86400,)).fetchone()[0]
+
+
 def ultimo_publicado() -> float:
     """Hora (epoch) do último post de notícia publicado; 0 se nenhum."""
     with _conn() as c:

@@ -200,6 +200,73 @@ def post_reel(video_path: Path, caption: str, cover_url: str = None, thumb_ms: i
         raise
 
 
+STORY_MAX_S = 59   # Stories por API aceitam vídeo de até 60 s
+
+
+def _video_para_story(video_path: Path) -> Path:
+    """O mesmo vídeo do Reels, cortado em 59 s se for mais longo (vídeo de parceiro pode passar)."""
+    import subprocess
+    try:
+        dur = float(subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of",
+                                    "csv=p=0", str(video_path)], capture_output=True, text=True,
+                                   timeout=60).stdout.strip() or 0)
+    except Exception:
+        dur = 0
+    if dur and dur <= STORY_MAX_S:
+        return Path(video_path)
+    saida = Path(video_path).with_name(Path(video_path).stem + "_story.mp4")
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(video_path), "-t", str(STORY_MAX_S),
+                    "-c:v", "libx264", "-preset", "veryfast", "-crf", "20", "-c:a", "aac", str(saida)],
+                   check=True, capture_output=True, timeout=600)
+    return saida
+
+
+def post_story(video_path: Path) -> str:
+    """Publica o vídeo também nos Stories (some em 24h). Conta no limite de 100 publicações/24h.
+    Mesmo caminho do Reels: link público temporário; se falhar, envio direto."""
+    _need_creds()
+    video_path = _video_para_story(Path(video_path))
+    try:
+        import hospedar
+        links = hospedar.links_publicos(video_path)
+    except Exception as e:
+        links = []
+        if "GitHub Actions" not in str(e):
+            print(f"[story] sem link público para o vídeo ({str(e)[:160]})")
+    for url in links:
+        try:
+            media_id = _esperar_processar(_container(media_type="STORIES", video_url=url))
+            print(f"[story] publicado nos Stories ({url.split('/')[2]})")
+            return media_id
+        except Exception as e:
+            if "OAuthException" in str(e):
+                raise
+            print(f"[story] link público {url.split('/')[2]} não deu certo: {_sem_segredos(str(e)[:160])}")
+    dados = video_path.read_bytes()
+    cid = _container(media_type="STORIES", upload_type="resumable")
+    r = requests.post(f"https://rupload.facebook.com/ig-api-upload/{GRAPH_VERSION}/{cid}",
+                      headers={"Authorization": f"OAuth {IG_ACCESS_TOKEN}", "offset": "0",
+                               "file_size": str(len(dados))}, data=dados, timeout=300)
+    _check(r)
+    return _esperar_processar(cid)
+
+
+def story_se_paraiba(categoria: str, video_path) -> str:
+    """Regra dos Stories: post da Paraíba (cg, jp, pb) vai também para os Stories; Brasil e Mundo não.
+    Falha no Story não derruba o post do feed. Devolve o id do Story ou ''."""
+    from config import STORIES
+    if not video_path or STORIES == "nenhum" or (STORIES == "paraiba" and categoria not in ("cg", "jp", "pb")):
+        return ""
+    try:
+        if quota_left() == 0:
+            print("[story] limite de 24h do Instagram cheio: este post fica só no feed")
+            return ""
+        return post_story(Path(video_path))
+    except Exception as e:
+        print(f"[story] não deu para publicar nos Stories: {_sem_segredos(str(e)[:200])}")
+        return ""
+
+
 def testar_upload(video_path: Path) -> str:
     """Diagnóstico: cria um contêiner de Reels e envia o vídeo, SEM publicar. Devolve o resultado."""
     _need_creds()

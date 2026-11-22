@@ -138,7 +138,8 @@ def publicados_24h(caminho: Path = None) -> int:
     except Exception:
         return 0
     desde = time.time() - 86400
-    return sum(1 for v in vistos.values() if v.get("status") == "publicado" and v.get("ts", 0) > desde)
+    return sum(1 + (1 if v.get("story") else 0) for v in vistos.values()
+               if v.get("status") == "publicado" and v.get("ts", 0) > desde)
 
 
 def categoria_do_card(card: dict) -> str:
@@ -189,10 +190,31 @@ def vez_do_video(caminho: Path = None) -> bool:
     return db.ultimo_publicado() >= ultimo_publicado(caminho)
 
 
-def _cedo_demais() -> bool:
-    """Ritmo único do perfil (notícias + parceiros): um post a cada ~15 min, o dia todo."""
+def ultimo_evento(caminho: Path = None) -> tuple:
+    """(hora do último vídeo de parceiro publicado, publicações gastas: 2 se também foi para os Stories)."""
+    try:
+        arq = caminho or (config.STATE_DIR / "parceiro.json")
+        vistos = json.loads(arq.read_text(encoding="utf-8")).get("vistos", {})
+    except Exception:
+        return 0.0, 1
+    pub = [v for v in vistos.values() if v.get("status") == "publicado"]
+    if not pub:
+        return 0.0, 1
+    v = max(pub, key=lambda x: x.get("ts", 0))
+    return v.get("ts", 0.0), 2 if v.get("story") else 1
+
+
+def espera_ritmo() -> float:
+    """Segundos até a próxima vaga no perfil: 1 publicação a cada ~14 min; um post que também foi
+    para os Stories gastou 2 publicações, então a próxima vaga demora o dobro."""
     import db
-    return time.time() - max(db.ultimo_publicado(), ultimo_publicado()) < config.INTERVALO_POSTS
+    ts, n = max(db.ultimo_evento(), ultimo_evento())
+    return config.INTERVALO_POSTS * n - (time.time() - ts) if ts else 0.0
+
+
+def _cedo_demais() -> bool:
+    """Ritmo único do perfil (notícias + parceiros + Stories)."""
+    return espera_ritmo() > 0
 
 
 def ja_postado(card: dict) -> str:
@@ -1106,6 +1128,11 @@ def _rodada_imagens(p: dict, est: dict, modo: str, limite: int, so_ids: set = No
                 mid = _publicar(card, video, capa_jpg)
                 _marcar(est, m["id"], "publicado", mid)
                 est["vistos"][m["id"]]["categoria"] = categoria_do_card(card)
+                _guardar_estado(est)
+                import publish
+                sid = publish.story_se_paraiba(est["vistos"][m["id"]]["categoria"], video)
+                if sid:
+                    est["vistos"][m["id"]]["story"] = sid
                 print(f"[parceiro] publicado {mid}")
             except Exception as e:
                 _marcar(est, m["id"], "falha_publicacao", str(e))
@@ -1268,6 +1295,11 @@ def _rodada_parceiro(p: dict, est: dict, modo: str, limite: int, so_ids: set = N
                 mid = _publicar(card, video, capa_jpg)
                 _marcar(est, m["id"], "publicado", mid)
                 est["vistos"][m["id"]]["categoria"] = categoria_do_card(card)
+                _guardar_estado(est)
+                import publish
+                sid = publish.story_se_paraiba(est["vistos"][m["id"]]["categoria"], video)
+                if sid:
+                    est["vistos"][m["id"]]["story"] = sid
                 print(f"[parceiro] publicado {mid}")
             except Exception as e:
                 _marcar(est, m["id"], "falha_publicacao", str(e))

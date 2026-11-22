@@ -372,7 +372,7 @@ def cmd_run(args):
 
     if mode == "auto":
         import parceiro
-        done_today = db.published_today() + parceiro.publicados_24h()  # notícias + vídeos de parceiro
+        done_today = db.publicacoes_24h() + parceiro.publicados_24h()  # notícias + parceiros + Stories
         if done_today >= config.MAX_POSTS_PER_DAY:
             print(f"[run] limite diário atingido ({done_today}/{config.MAX_POSTS_PER_DAY}). Nada a fazer.")
             return
@@ -384,11 +384,10 @@ def cmd_run(args):
         # que enchem o limite de 24h do Instagram e deixam horas sem post
         pauta_pedida = (getattr(args, "pauta", None) or os.environ.get("PAUTA") or "").strip()
         if not args.count and not pauta_pedida:
-            ultimo = max(db.ultimo_publicado(), parceiro.ultimo_publicado())
-            espera = config.INTERVALO_POSTS - (time.time() - ultimo)
+            espera = parceiro.espera_ritmo()   # conta notícias, vídeos de parceiro e Stories
             if espera > 0:
-                print(f"[run] ritmo: último post há {(time.time() - ultimo) / 60:.0f} min; "
-                      f"o próximo sai em ~{espera / 60:.0f} min (1 a cada ~{config.INTERVALO_POSTS / 60:.0f} min)")
+                print(f"[run] ritmo: o próximo post sai em ~{espera / 60:.0f} min "
+                      f"(1 publicação a cada ~{config.INTERVALO_POSTS / 60:.0f} min; post com Story conta 2)")
                 return
             if parceiro.vez_do_video():   # notícia e vídeo de parceiro alternam quando os dois têm o que postar
                 print("[run] vez do vídeo de parceiro (há vídeo esperando e o último post foi notícia)")
@@ -484,6 +483,9 @@ def cmd_run(args):
             db.marcar_regiao(fp, card.get("categoria") or card.get("regiao", "paraiba"))
             db.registrar_publicada(card, mid)  # entra no banco de notícias já postadas
             print(f"[publicado] {mid}  {card['titulo']}")
+            sid = publish.story_se_paraiba(card.get("categoria"), card.get("_video"))   # regra dos Stories
+            if sid:
+                db.record(fp, set(card.get("stems", [])), card["titulo"], "", "story", ig_id=sid)
         made += 1
     print(f"[run] fim: {made} post(s) {'gerados' if mode != 'auto' else 'publicados'}")
     if pub_fail:  # faz a execução ficar vermelha no GitHub, que manda e-mail de alerta

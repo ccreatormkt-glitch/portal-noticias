@@ -69,7 +69,11 @@ BRASIL_RESERVA = env_bool("BRASIL_RESERVA", True)  # sem novidade da Paraíba: n
 # Mix de publicações (pedido do Arthur, 22/11/2026): parte de cada categoria nos últimos posts.
 # cg = Campina Grande (+ interior), jp = João Pessoa (+ litoral e Grande JP). Ex.: MIX="cg:30,jp:20,brasil:30,mundo:20"
 MIX = {k: int(v) / 100 for k, v in (p.split(":") for p in env("MIX", "cg:30,jp:20,brasil:30,mundo:20").split(","))}
-MIX_JANELA = int(env("MIX_JANELA", "20"))   # conta a parte de cada categoria nos últimos 20 posts
+MIX_JANELA = int(env("MIX_JANELA", "20"))
+# Stories (pedido do Arthur, 22/11/2026): o vídeo de todo post da Paraíba (Campina Grande, João Pessoa e
+# interior/estado) também sai nos Stories; Brasil e Mundo só no feed. "todos" | "paraiba" | "nenhum".
+# Cada Story conta no limite de 100 publicações/24h da API, por isso o ritmo conta os Stories.
+STORIES = env("STORIES", "paraiba").lower()   # conta a parte de cada categoria nos últimos 20 posts
 BRASIL_A_CADA = int(env("BRASIL_A_CADA", "3"))  # 1 a cada 3 posts é notícia relevante do Brasil (0 = só reserva)
 CANDIDATOS = int(env("CANDIDATOS", "1"))  # 1 = mais rápido (uma notícia por rodada de 10 min)
 CAROUSEL = env_bool("CAROUSEL", False)  # padrão: só a capa; detalhes vão na legenda
