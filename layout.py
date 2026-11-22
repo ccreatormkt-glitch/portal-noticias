@@ -185,11 +185,18 @@ def barra(fmt: dict) -> dict:
                 borda=max(2, K))  # filete da cor secundária no pé da barra
 
 
-def barra_video() -> dict:
+def barra_video(fim: int = None) -> dict:
     """Barra do vídeo: a mesma da capa (do topo até y 388, logo de 96 centrada em y 314). No iPhone a
     ilha da câmera, o relógio e o cabeçalho "Reels" do Instagram cobrem os ~250 px de cima; a logo
     fica logo abaixo deles, inteira à vista (antes ficava em y 74, embaixo da câmera)."""
-    return barra(FORMATOS["reels"])
+    if fim is None:
+        return barra(FORMATOS["reels"])
+    # barra mais baixa (parceiro com logo dele no alto do vídeo, ex.: @blognewspb): a logo continua
+    # com 96 px, centrada na parte da barra que fica abaixo da interface do Instagram (de y 240 a fim)
+    fmt = FORMATOS["reels"]
+    b = barra(fmt)
+    fim = max(int(fim), fmt["barra"])
+    return dict(b, fim=fim, centro=fmt["grade"][0] + (fim - fmt["grade"][0]) // 2)
 
 
 # Degradê preto da capa (destaque do g1), mais leve para a foto aparecer: começa logo acima do texto,

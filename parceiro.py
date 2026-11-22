@@ -45,7 +45,9 @@ LISTA_PADRAO = ("jornaldapb|2026-11-20T03:00:00+0000; "
                 "paraibabussines_|2026-11-20T03:00:00+0000; "
                 "portalresumopb|2026-11-20T03:00:00+0000|grade; "
                 "noticiacertapb|2026-11-20T03:00:00+0000; "
-                "blognewspb|2026-11-20T03:00:00+0000|grade; "
+                # 22/11/2026 (pedido do Arthur): a marca BLOG NEWS PB aparecia no alto do vídeo; a nossa
+                # barra desce até y 480 (de 1920) nos posts deles e cobre a marca
+                "blognewspb|2026-11-20T03:00:00+0000|grade|barra=480; "
                 # 22/11/2026: só as postagens de IMAGEM (nada de Reels/Stories); a foto central sai da
                 # moldura e vira a foto do nosso Reels; o texto é reescrito pela regra das notícias
                 "bombaparaiba_|2026-11-22T03:00:00+0000|imagem; "
@@ -93,7 +95,11 @@ def parceiros(texto: str = None) -> list:
                       # @destaques.dodia, roxa): o robô corta o post acima dela
                       "faixa": any(x.lower() == "faixa" for x in partes[2:]),
                       # "marca": logo translúcido fixo do parceiro no meio do vídeo: some com removelogo
-                      "marca": any(x.lower() == "marca" for x in partes[2:])})
+                      "marca": any(x.lower() == "marca" for x in partes[2:]),
+                      # "barra=NNN": a barra vermelha desce até y NNN (de 1920) e cobre a marca do
+                      # parceiro no alto do vídeo; sem a opção, a barra padrão (layout.barra_video)
+                      "barra": next((int(x.split("=", 1)[1]) for x in partes[2:]
+                                     if x.lower().startswith("barra=") and x.split("=", 1)[1].strip().isdigit()), None)})
     return lista
 
 
@@ -401,7 +407,8 @@ def _testar_um(p: dict, k: int, limite: int) -> bool:
             print(f"[parceiro] teste @{usuario}: a IA pularia este vídeo ({card.get('motivo', '')}); "
                   "montando assim mesmo só para ver o layout")
         print(f"[parceiro] teste @{usuario}: {card.get('chapeu')} | {card.get('titulo')} | {card.get('cidade')}")
-        montar(destino, card, final, grade=p["grade"])
+        montar(destino, card, final, grade=p["grade"], faixa=p.get("faixa", False),
+               marca=p.get("marca", False), barra=p.get("barra"))
         print(f"[parceiro] teste @{usuario}: vídeo montado -> {final.name}")
     except Exception as e:
         print(f"[parceiro] teste @{usuario}: baixou, mas falhou a montagem: {str(e)[:400]}")
@@ -569,7 +576,7 @@ def _degrade_parceiro(camada: Image.Image):
         dd.line((0, y, W, y), fill=L.MARCA["preto"] + (round(255 * t * t * (3 - 2 * t)),))
 
 
-def etiqueta(card: dict, out_png: Path) -> Path:
+def etiqueta(card: dict, out_png: Path, barra: int = None) -> Path:
     """Camada transparente do tamanho do vídeo, toda medida por layout.py (só Inter): barra vermelha
     com a logo (barra_video), degradê preto que cobre a manchete antiga (PARCEIRO["degrade"]) e a
     etiqueta nova alinhada à esquerda, como o destaque da capa: editoria na caixa com a cor fixa do
@@ -586,7 +593,7 @@ def etiqueta(card: dict, out_png: Path) -> Path:
     _degrade_parceiro(camada)
 
     # 2) barra do topo com a logo
-    b = L.barra_video()
+    b = L.barra_video(barra)
     camada.alpha_composite(_logo.barra(W, z(b["fim"]), z(b["logo"]), z(b["centro"]), z(b["borda"])), (0, 0))
 
     # 3) manchete: maior tamanho da lista que cabe em max_linhas
@@ -952,10 +959,10 @@ def tirar_marca_fixa(origem: Path) -> Path:
 
 
 def montar(origem: Path, card: dict, out_mp4: Path, grade: bool = False, faixa: bool = False,
-           marca: bool = False) -> Path:
+           marca: bool = False, barra: int = None) -> Path:
     import audiograma as A
     import layout as L
-    png = etiqueta(card, out_mp4.with_suffix(".etiqueta.png"))
+    png = etiqueta(card, out_mp4.with_suffix(".etiqueta.png"), barra=barra)
     if faixa:            # primeiro corta a faixa (ela também é fixa e entraria na máscara do logo)
         origem = cortar_faixa(origem)
     if marca:
@@ -966,7 +973,7 @@ def montar(origem: Path, card: dict, out_mp4: Path, grade: bool = False, faixa: 
     cobrir = caixas(COBRIR)
     w0, h0 = _tamanho(origem)
     if w0 / h0 > 0.8:     # largo demais para encher a tela 9:16 sem cortar a cena
-        filtro = _filtro_encaixe(A.VW, A.VH, A.z(L.barra_video()["fim"]))
+        filtro = _filtro_encaixe(A.VW, A.VH, A.z(L.barra_video(barra)["fim"]))
         _quadro_limpo(origem, filtro, out_mp4)
         return _rodar_ffmpeg(origem, png, filtro, out_mp4)
     if AUTO_MARCA and not (topo or base):
@@ -1498,7 +1505,8 @@ def _rodada_parceiro(p: dict, est: dict, modo: str, limite: int, so_ids: set = N
                 _marcar(est, m["id"], "pulado", ja)
                 continue
             video = montar(origem, card, pasta / f"{stamp}.mp4", grade=p["grade"],
-                           faixa=p.get("faixa", False), marca=p.get("marca", False))
+                           faixa=p.get("faixa", False), marca=p.get("marca", False),
+                           barra=p.get("barra"))
             capa_jpg = capa(video, pasta / f"{stamp}_capa.jpg", card=card)
         except Exception as e:
             print(f"[parceiro] falhou {m.get('permalink')}: {str(e)[:300]}")
