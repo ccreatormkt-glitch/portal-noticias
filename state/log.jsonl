@@ -486,3 +486,6 @@
 {"ts": "2026-11-22T07:04:57", "event": "published", "headline": "IA detecta falha grave na linguagem Java", "source": "g1", "ig_id": "17929474557441658", "note": ""}
 {"ts": "2026-11-22T07:19:52", "event": "gerado", "headline": "Caravana Iluminada da Coca-Cola passa por João Pessoa nesta semana", "source": "REDE BRASIL DE TELEVISÃO, Turismo em foco", "ig_id": "", "note": ""}
 {"ts": "2026-11-22T07:20:35", "event": "published", "headline": "Caravana Iluminada da Coca-Cola passa por João Pessoa nesta semana", "source": "REDE BRASIL DE TELEVISÃO, Turismo em foco", "ig_id": "17933157555424801", "note": ""}
+{"ts": "2026-11-22T07:38:05", "event": "pulado", "headline": "Sete filhos, dez netos e uma história de amor: festa de 70 anos de Dona Margarida emociona familiares em Sousa", "source": "", "ig_id": "", "note": "Matéria sobre comemoração de aniversário familiar privada, sem relevância jornalística ou interesse público geral."}
+{"ts": "2026-11-22T07:43:18", "event": "gerado", "headline": "PM detém mulher por suspeita de agredir mãe e ferir criança em Patos", "source": "Folha Patoense, Patos Online", "ig_id": "", "note": ""}
+{"ts": "2026-11-22T07:44:03", "event": "published", "headline": "PM detém mulher por suspeita de agredir mãe e ferir criança em Patos", "source": "Folha Patoense, Patos Online", "ig_id": "18131879176925839", "note": ""}
