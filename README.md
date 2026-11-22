@@ -1,25 +1,28 @@
 # PB Minuto — portal de notícias automático no Instagram
 
-Bot que roda sozinho no GitHub Actions, 24 horas por dia, 7 dias por semana (confere notícia nova a cada ~5 minutos e vídeos dos parceiros a cada ~20; publica 1 post a cada ~14 min):
+Bot que roda sozinho no GitHub Actions, 24 horas por dia, 7 dias por semana. Confere notícia nova a
+cada ~5 minutos e vídeos/posts dos parceiros a cada ~20; publica 1 Reels a cada ~14 min (até 95
+publicações em 24h, Stories incluídos; a API do Instagram aceita 100):
 
 ```
-Google News (CG, JP, PB) + RSS dos portais e prefeituras
+Google News + 55 RSS da Paraíba (portais, órgãos, prefeituras) + Brasil + Mundo
   -> agrupa as manchetes por assunto e exige 2 fontes (ou 1 fonte grande/oficial)
-  -> só notícia local (Campina Grande, João Pessoa, Paraíba)
+  -> mix de audiência: Campina Grande 30%, João Pessoa 20%, Brasil 30%, Mundo 20%
+     (interior conta para CG, litoral para JP; no máximo 2 seguidas da mesma categoria)
   -> IA editora escreve no padrão dos grandes portais (chapéu, título no presente, linha fina,
-     lide, formatos "O que se sabe" / "Entenda" / "Veja como fazer", legenda)
-  -> agente reescritor compara com as manchetes originais e reescreve até não sobrar
-     nenhuma sequência de 4 palavras igual (se não conseguir, a notícia é descartada)
+     lide, legenda) e o reescritor tira qualquer sequência de 4 palavras igual às fontes
   -> filtro de temas sensíveis (suicídio, crime sexual, menores, acusação sem prova = não publica)
-  -> a IA avalia as 3 melhores notícias da rodada pelo potencial de compartilhamento
-     (utilidade, identificação, emoção, debate, status) e escolhe a mais forte
-  -> desenha a capa 1080x1350 (foto do tema + manchete); os detalhes vão na legenda
-  -> publica pela API oficial do Instagram
+  -> Reels 2K: capa (foto + manchete) e vídeo com narração em voz de IA, onda de áudio e legenda
+     palavra por palavra; a narração termina sempre com "Siga o PB Minuto."
+  -> publica pela API oficial do Instagram; posts da Paraíba também vão para os Stories
+  -> alterna com os parceiros: sem vídeo de parceiro na vez dele, sai notícia (nunca fica parado)
   -> grava no histórico para nunca repetir a notícia
      (por palavras e também por SENTIDO: embeddings do Gemini barram o mesmo fato escrito de outro jeito)
-  -> 24h depois lê alcance, salvamentos e compartilhamentos de cada post e passa a
-     priorizar as editorias e gatilhos que mais engajam (aprende sozinho)
+  -> 24h depois lê alcance, salvamentos e compartilhamentos e prioriza o que mais engaja
 ```
+
+As regras de conteúdo e publicação estão em `REGRAS.md` (hashtags minúsculas, mix, Stories,
+parceiros, encerramento "Siga o PB Minuto" etc.).
 
 Nada é copiado: o texto é reescrito e a arte é própria. As fontes não aparecem no post,
 mas ficam gravadas em `state/log.jsonl` (cada notícia publicada e de onde veio), para conferência.
@@ -43,8 +46,10 @@ No repositório: **Settings > Secrets and variables > Actions**.
 | Nome | Padrão | Para que serve |
 |---|---|---|
 | `POST_MODE` | `auto` | `auto` publica sozinho; `review` deixa na fila |
-| `POSTS_PER_RUN` | `1` | posts por execução (1 por hora) |
-| `MAX_POSTS_PER_DAY` | `14` | teto diário |
+| `MAX_POSTS_PER_DAY` | `95` | teto de publicações em 24h (Stories contam) |
+| `INTERVALO_POSTS_MIN` | ~14 | minutos entre publicações (calculado do teto) |
+| `MIX` | `cg:30,jp:20,brasil:30,mundo:20` | divisão das publicações por categoria |
+| `STORIES` | `paraiba` | `paraiba`, `todos` ou `nenhum` |
 | `SENSITIVE_MODE` | `careful` | `careful` publica polícia com cuidado; `skip` não publica |
 | `IMAGE_MODE` | `none` | `gemini` gera ilustração de fundo por IA quando não há foto |
 | `CAROUSEL` | `false` | `true` adiciona a lâmina de detalhes (carrossel) |
@@ -58,35 +63,48 @@ No repositório: **Settings > Secrets and variables > Actions**.
 1. Aba **Actions > checar-configuracao > Run workflow**: testa IA, Instagram, hospedagem e fontes.
 2. **Actions > publicar-noticias > Run workflow** com modo `dry`: gera 3 cards de teste
    (baixe em "Artifacts > cards") sem publicar nada.
-3. Pronto: a partir daí ele publica sozinho de hora em hora.
+3. Pronto: a partir daí ele publica sozinho, 24h por dia.
 
 Se uma publicação falhar (ex.: token vencido), a execução fica vermelha e o GitHub
 manda e-mail.
 
-## Vídeos do parceiro (@jornaldapb)
+## Parceiros (vídeos e posts de imagem)
 
-Com a autorização do @jornaldapb, os vídeos dele que **não são collab** entram no PB Minuto com a
-nossa marca (`parceiro.py`, workflow **parceiro-jornaldapb**, a cada 30 min, 24 horas por dia):
+Perfis que autorizaram o uso do conteúdo (`LISTA_PADRAO` em `parceiro.py`, workflow
+**parceiro-jornaldapb**, a cada 20 min). Hoje: @jornaldapb, @paraibabussines_, @portalresumopb,
+@noticiacertapb, @blognewspb, @bombaparaiba_ (só imagens) e @destaques.dodia (vídeos e imagens).
+Só entram posts publicados depois da data de cada parceiro, e nunca collab/publi.
 
 - lê os posts pela API oficial (Business Discovery, mesmo token do portal);
-- pula imagem, carrossel, post cujo dono é outra conta (collab) e legenda com sinal de collab/publi
-  (`PARCEIRO_SINAIS_COLLAB`); na dúvida, pula;
-- transcreve a fala; a IA escreve editoria, manchete e legenda com outras palavras, seguindo a
-  regra de escrita (skill STE80 Humanizer, ver `REGRAS.md`);
-- desfoca a marca d'água dele (`PARCEIRO_COBRIR`), cobre a manchete antiga com o degradê preto
-  e põe a barra vermelha com a logo + a etiqueta nova (medidas em `layout.PARCEIRO`, só Inter,
-  editoria na caixa com a cor do tema); o áudio original fica;
-- vai para `queue/parceiro` e só publica com **Run workflow → aprovar** (ou `PARCEIRO_MODO=auto`).
+- vídeo: baixa, transcreve a fala, tira a marca d'água do próprio parceiro (flags `faixa`, `marca`,
+  `grade`), escolhe o melhor quadro para a capa e põe a nossa barra com logo e editoria;
+- imagem (flag `imagem`): recorta a foto central da moldura e monta um Reels do PB Minuto;
+- a IA reescreve editoria, manchete e legenda pela regra das notícias e confere a fidelidade;
+  dúvida vai para a fila (Run workflow → aprovar);
+- publica direto (`PARCEIRO_MODO=auto`) e, se for da Paraíba, também nos Stories;
+- marca de terceiros (agência, fotógrafo, outro perfil) nunca é removida.
+
+Para incluir um parceiro: skill `pb-minuto-novo-parceiro` (ações `amostra`, `calibrar-marca`,
+`teste-parceiro`, `teste-imagem`). Para ver/aprovar a fila: skill `pb-minuto-aprovar-parceiro`.
 
 | Variável | Padrão | Para que serve |
 |---|---|---|
-| `PARCEIRO_MODO` | `review` | `auto` publica sem esperar aprovação |
-| `PARCEIRO_COBRIR` | vazio | áreas a desfocar, em % da tela: `x,y,largura,altura; ...` (meça com **calibrar**) |
-| `PARCEIRO_DEGRADE` | `760,1100` | onde o preto começa e onde fica 100% (em px de 1920) |
-| `PARCEIRO_CORTE` | `0,0` | % de cima e de baixo do vídeo original a cortar fora |
-| `PARCEIRO_JANELA_HORAS` | `48` | ignora vídeos mais velhos que isso |
+| `PARCEIRO_MODO` | `auto` | `review` deixa tudo na fila de aprovação |
+| `PARCEIRO_LISTA` | lista do código | `perfil|desde|flags; ...` para trocar a lista sem mexer no código |
+| `PARCEIRO_JANELA_HORAS` | `48` | ignora posts mais velhos que isso |
 
-Prévias (quadros e vídeos) ficam no ramo `previa-parceiro`.
+Prévias (quadros, capas e vídeos de teste) ficam no ramo `previa-parceiro`.
+
+## Outros workflows
+
+| Workflow | Para que serve |
+|---|---|
+| `boletim-bom-dia` | Reels "Bom dia, Paraíba" às 6h40 (tempo e destaques) |
+| `apagar-post` | apaga um post pelo texto ou id (só com `confirmar`) |
+| `corrigir-noticia` | correção pública de uma notícia publicada |
+| `aprovar-fila` | publica o que está na fila de revisão |
+| `testar-fontes` | testa se os sites/RSS de notícia respondem |
+| `testes` | roda os testes automáticos |
 
 ## Comandos locais
 

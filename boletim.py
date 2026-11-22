@@ -150,7 +150,7 @@ def roteiro(hoje, tempos, titulos):
     falas.append(("tempo", t))
     if titulos:
         falas.append(("destaques", "Os destaques: " + " ".join(f"{t.rstrip('.')}." for t in titulos)))
-    falas.append(("fim", f"Siga o {render.PORTAL_NAME} e bom dia!"))
+    falas.append(("fim", "Siga o PB Minuto."))
     return falas
 
 
@@ -218,7 +218,7 @@ def legenda(hoje, tempos, titulos) -> str:
         linhas += ["", "📌 Destaques das últimas 24h:"] + [f"• {t}" for t in titulos]
     linhas += ["", "Salve e mande para quem está começando o dia.", "",
                "🎙️ Narração com voz gerada por IA.",
-               f"👉 Siga {config.PORTAL_HANDLE} para acompanhar Campina Grande, João Pessoa e toda a Paraíba.",
+               f"👉 Siga o PB Minuto: {config.PORTAL_HANDLE}",
                "", "#bomdia #campinagrande #joaopessoa #paraiba #previsaodotempo"]
     return "\n".join(linhas)
 

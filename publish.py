@@ -353,7 +353,7 @@ def build_caption(card: dict, source_line: str = "") -> str:
                       + "\n".join(f"• {p}" for p in pontos))
     if chamada:
         partes.append(chamada)
-    partes.append(f"👉 Siga {PORTAL_HANDLE} para acompanhar Campina Grande, João Pessoa e toda a Paraíba.")
+    partes.append(f"👉 Siga o PB Minuto: {PORTAL_HANDLE}")  # encerramento fixo (pedido do Arthur, 22/11)
     if card.get("_credito_legenda"):  # foto do Pexels: crédito e link pedidos pela API
         partes.append(card["_credito_legenda"])
     tags = []

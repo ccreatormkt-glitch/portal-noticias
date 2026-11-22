@@ -33,7 +33,7 @@ def test_roteiro_de_narracao_le_a_noticia_inteira():
     c = card(linha_fina="Prazo vai até sexta.", resumo="São 500 vagas. Inscrição gratuita.",
              pontos=["Vagas para todo o estado", "Inscrição pela internet"])
     frases = video.roteiro(c)
-    assert frases[0].endswith(".") and frases[-1] == "Siga o Paraíba Minuto para mais notícias."
+    assert frases[0].endswith(".") and frases[-1] == "Siga o PB Minuto."
     texto = " ".join(frases)
     assert "Prazo vai até sexta." in texto and "Inscrição pela internet." in texto
     assert len(texto.split()) <= 150  # cabe em ~55 s

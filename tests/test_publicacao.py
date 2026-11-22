@@ -79,7 +79,7 @@ def test_legenda_completa_sem_fonte(monkeypatch):
     txt = publish.build_caption(c)
     assert txt.startswith("🎓 Qualificação sem custo em CG")
     assert "📌 Veja como fazer:\n• Capacitação sem custo\n• Cadastro até sexta" in txt
-    assert "Narração com voz gerada por IA" not in txt and "Siga @pbminuto" in txt  # aviso retirado a pedido do Arthur
+    assert "Narração com voz gerada por IA" not in txt and "👉 Siga o PB Minuto: @pbminuto" in txt  # aviso retirado a pedido do Arthur
     assert "Fonte" not in txt
     assert txt.rstrip().endswith("#campinagrande #paraiba #cursosgratuitos")
     assert len(txt) <= 2200
@@ -190,3 +190,12 @@ def test_voz_padrao_e_a_da_primeira_postagem():
     import config
     assert config.TTS_MODEL.split(",")[0] == "gemini-3.1-flash-tts-preview" or "TTS_MODEL" in __import__("os").environ
     assert config.TTS_VOICE == "Charon" or "TTS_VOICE" in __import__("os").environ
+
+
+def test_encerramento_siga_o_pb_minuto():
+    """Regra 11: narração e legenda terminam com "Siga o PB Minuto" (pedido do Arthur, 22/11)."""
+    import video
+    card = {"titulo": "Teste de manchete", "linha_fina": "Linha fina.", "legenda": "Fato.\n\nContexto."}
+    assert video.roteiro(card)[-1] == "Siga o PB Minuto."
+    legenda = publish.build_caption(dict(card, hashtags=["#paraiba"]))
+    assert "👉 Siga o PB Minuto: @pbminuto" in legenda and "para acompanhar" not in legenda

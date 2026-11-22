@@ -102,3 +102,9 @@ Valem para tudo o que o sistema produz. Cada regra tem um teste que falha se ela
 - Texto e manchete sempre reescritos pelas regras do PB Minuto; fontes não aparecem no post.
 - Para outros parceiros: skill `pb-minuto-novo-parceiro` (ações amostra, calibrar-marca e teste-parceiro).
 
+
+## 11. Encerramento "Siga o PB Minuto" (pedido do Arthur, 22/11/2026)
+- Toda narração (notícia, vídeo de parceiro e boletim) termina com a frase fixa "Siga o PB Minuto."
+- Toda legenda termina com "👉 Siga o PB Minuto: @pbminuto" (antes das hashtags).
+- A IA não escreve "siga" nos textos: o sistema acrescenta o encerramento.
+- Onde: `video.roteiro`, `boletim.py`, `publish.build_caption`. Teste: `tests/test_publicacao.py`.
