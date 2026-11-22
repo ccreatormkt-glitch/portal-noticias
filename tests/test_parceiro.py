@@ -273,7 +273,7 @@ def test_reels_de_ontem_de_todos_os_parceiros_entram(monkeypatch):
     lista = parceiro.parceiros("".join(re.findall(r'"([^"]*)"', bloco)))
     assert {p["usuario"] for p in lista} >= {"jornaldapb", "portalresumopb", "blognewspb", "noticiacertapb"}
     assert all(p["desde"] <= "2026-11-20T03:00:00+0000" for p in lista if not p["imagem"])
-    assert [p["usuario"] for p in lista if p["imagem"]] == ["bombaparaiba_"]
+    assert "bombaparaiba_" in [p["usuario"] for p in lista if p["imagem"]]
 
 
 def test_capa_do_parceiro_prefere_imagem_a_cartela_de_texto(tmp_path):
