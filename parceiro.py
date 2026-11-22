@@ -56,7 +56,7 @@ LISTA_PADRAO = ("jornaldapb|2026-11-20T03:00:00+0000; "
                 "destaques.dodia|2026-11-22T16:40:00+0000|imagem|faixa; "
                 # 22/11/2026: também os posts de IMAGEM, desde ontem; corta a faixa vermelha dele
                 # (editoria, manchete e patrocinadores) e o logo Notícia Certa no alto da foto
-                "noticiacertapb|2026-11-21T03:00:00+0000|imagem|faixa=vermelha|topo=15")
+                "noticiacertapb|2026-11-21T03:00:00+0000|imagem|carrossel|faixa=vermelha|topo=15")
 MODO = config.env("PARCEIRO_MODO", "auto")            # auto = publica direto (pedido do Arthur); review = fila
 JANELA_HORAS = int(config.env("PARCEIRO_JANELA_HORAS", "48"))   # vídeo mais velho que isso é ignorado
 # Só Reels NOVOS (pedido do Arthur): nada publicado antes deste momento entra, mesmo dentro da janela.
@@ -102,6 +102,8 @@ def parceiros(texto: str = None) -> list:
                                     False),
                       # "marca": logo translúcido fixo do parceiro no meio do vídeo: some com removelogo
                       "marca": any(x.lower() == "marca" for x in partes[2:]),
+                      # "carrossel" (com "imagem"): usa a 1ª foto dos carrosséis e ignora imagens soltas
+                      "carrossel": any(x.lower() == "carrossel" for x in partes[2:]),
                       # "barra=NNN": a barra vermelha desce até y NNN (de 1920) e cobre a marca do
                       # parceiro no alto do vídeo; sem a opção, vale layout.PARCEIRO["barra"] (480)
                       "barra": next((int(x.split("=", 1)[1]) for x in partes[2:]
@@ -124,7 +126,8 @@ BAIXAR_PAGINA = config.env("PARCEIRO_BAIXAR_PAGINA", "1") not in ("0", "false", 
 # Opcional: cookies de uma conta do Instagram (formato Netscape, um "cookies.txt" exportado do
 # navegador) para quando o Instagram exigir login. Use uma conta secundária, não a do PB Minuto.
 COOKIES = config.env("PARCEIRO_IG_COOKIES", "")
-CAMPOS = "id,media_type,media_product_type,media_url,caption,permalink,timestamp,username"
+CAMPOS = ("id,media_type,media_product_type,media_url,caption,permalink,timestamp,username,"
+          "children{media_type,media_url}")
 
 
 # ------------------------------------------------------------------ estado (o que já foi usado)
@@ -275,7 +278,13 @@ def buscar(limite: int = 25, usuario: str = None) -> list:
     url = f"https://{config.GRAPH_HOST}/{config.GRAPH_VERSION}/{config.IG_USER_ID}"
     campos = f"business_discovery.username({usuario or USUARIO}){{media.limit({limite}){{{CAMPOS}}}}}"
     r = publish._ig().get(url, params={"fields": campos}, timeout=40)
-    dados = publish._check(r)
+    try:
+        dados = publish._check(r)
+    except Exception:
+        # reserva: se a API recusar o campo dos carrosséis (children), lê sem ele
+        simples = CAMPOS.split(",children")[0]
+        campos = f"business_discovery.username({usuario or USUARIO}){{media.limit({limite}){{{simples}}}}}"
+        dados = publish._check(publish._ig().get(url, params={"fields": campos}, timeout=40))
     return dados.get("business_discovery", {}).get("media", {}).get("data", [])
 
 
@@ -287,7 +296,16 @@ def motivo_para_pular(m: dict, vistos: dict, agora: float = None, usuario: str =
     desde = DESDE if desde is None else desde
     if m.get("id") in vistos:
         return "já usado"
-    if tipo == "imagem":
+    if tipo == "carrossel":
+        # @noticiacertapb: a notícia vem em carrossel (1ª foto com a faixa vermelha); as imagens soltas
+        # dele são anúncios de clientes e nunca entram
+        if m.get("media_type") != "CAROUSEL_ALBUM":
+            return "não é carrossel"
+        m["media_url"] = m.get("media_url") or next(
+            (c.get("media_url") for c in (m.get("children") or {}).get("data", [])
+             if c.get("media_type") == "IMAGE" and c.get("media_url")), "")
+        tipo = "imagem"
+    elif tipo == "imagem":
         if m.get("media_type") != "IMAGE":
             return "não é imagem"      # só postagens estáticas: nada de Reels, carrossel ou Stories
     elif m.get("media_type") != "VIDEO":
@@ -1285,9 +1303,10 @@ def _rodada_imagens(p: dict, est: dict, modo: str, limite: int, so_ids: set = No
     for m in sorted(posts, key=lambda x: x.get("timestamp", "")):   # do mais antigo ao mais novo
         if feitos >= limite:
             break
-        motivo = motivo_para_pular(m, est["vistos"], usuario=usuario, desde=p["desde"], tipo="imagem")
+        motivo = motivo_para_pular(m, est["vistos"], usuario=usuario, desde=p["desde"],
+                                   tipo="carrossel" if p.get("carrossel") else "imagem")
         if motivo:
-            if motivo not in ("já usado", "antigo", "não é imagem") and modo != "dry":
+            if motivo not in ("já usado", "antigo", "não é imagem", "não é carrossel") and modo != "dry":
                 _marcar(est, m["id"], "pulado", motivo)
             continue
         legenda = (m.get("caption") or "").strip()

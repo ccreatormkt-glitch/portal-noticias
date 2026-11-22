@@ -474,3 +474,20 @@ def test_alterna_video_e_imagem():
     assert nomes(parceiro.ordem_alternada(lista, "video")) == ["b", "e", "a", "c"]
     assert nomes(parceiro.ordem_alternada(lista, "imagem")) == ["a", "c", "b", "e"]
     assert nomes(parceiro.ordem_alternada(lista, "")) == ["a", "b", "c", "e"]
+
+
+def test_carrossel_do_noticiacertapb_usa_a_primeira_foto_e_pula_anuncio():
+    import time
+    agora = time.time()
+    iso = time.strftime("%Y-%m-%dT%H:%M:%S+0000", time.gmtime(agora - 600))
+    car = {"id": "1", "media_type": "CAROUSEL_ALBUM", "caption": "Caminhonete capota", "timestamp": iso,
+           "username": "noticiacertapb",
+           "children": {"data": [{"media_type": "IMAGE", "media_url": "http://x/1.jpg"},
+                                 {"media_type": "IMAGE", "media_url": "http://x/2.jpg"}]}}
+    assert parceiro.motivo_para_pular(car, {}, agora, "noticiacertapb", "", tipo="carrossel") == ""
+    assert car["media_url"] == "http://x/1.jpg"
+    anuncio = {"id": "2", "media_type": "IMAGE", "media_url": "http://x/a.jpg", "caption": "cliente | promo",
+               "timestamp": iso, "username": "noticiacertapb"}
+    assert parceiro.motivo_para_pular(anuncio, {}, agora, "noticiacertapb", "", tipo="carrossel") == "não é carrossel"
+    p = parceiro.parceiros("noticiacertapb|d|imagem|carrossel|faixa=vermelha")[0]
+    assert p["carrossel"] and p["imagem"]
