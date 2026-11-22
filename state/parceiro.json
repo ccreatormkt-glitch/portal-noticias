@@ -204,9 +204,19 @@
    "ts": 1795306863.3200576,
    "status": "publicado",
    "nota": "18092907500254778"
+  },
+  "18123157171971140": {
+   "ts": 1795309042.7497635,
+   "status": "pulado",
+   "nota": "mesmo fato já postado: Suspeitos executam homem de 41 anos a tiros no bairro Tibiri"
+  },
+  "18110816141204916": {
+   "ts": 1795309335.5774949,
+   "status": "publicado",
+   "nota": "18101786336533839"
   }
  },
  "tentativas": {},
  "refazer": {},
- "aguardando": 1795308184.2754562
+ "aguardando": 0
 }
