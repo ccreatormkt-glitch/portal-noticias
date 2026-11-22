@@ -544,6 +544,13 @@ def cmd_approve(args):
             print(f"[aprovar] falhou {p.stem}: {e}")
             continue
         db.update_status(card["fp"], "published", ig_id=mid)
+        # mesmo caminho da publicação automática: mix (regra 7), banco de já postadas e Stories (regra 8)
+        db.marcar_regiao(card["fp"], card.get("categoria") or card.get("regiao", "paraiba"))
+        db.registrar_publicada(card, mid)
+        import publish
+        sid = publish.story_se_paraiba(card.get("categoria"), card.get("_video"))
+        if sid:
+            db.record(card["fp"], set(card.get("stems", [])), card["titulo"], "", "story", ig_id=sid)
         for f in imgs + [p]:
             shutil.move(str(f), config.QUEUE_PUBLISHED / f.name)
         print(f"[publicado] {mid}  {card['titulo']}")

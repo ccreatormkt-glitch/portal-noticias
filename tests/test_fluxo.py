@@ -427,3 +427,22 @@ def test_mix_nao_faz_rajada_da_mesma_categoria(ambiente, monkeypatch):
     monkeypatch.setattr(config, "MIX", {"cg": .3, "jp": .2, "brasil": .3, "mundo": .2})
     ordem = main._ordem_do_mix()
     assert ordem[0] != "mundo" and ordem[1] == "mundo"
+
+
+def test_aprovar_da_fila_segue_mix_e_stories(monkeypatch):
+    """Notícia aprovada da fila (modo review) segue o mesmo caminho da automática: mix e Stories."""
+    import argparse
+    import db
+    import main
+    import publish
+    (config.QUEUE_PENDING / "a.jpg").write_bytes(b"x")
+    (config.QUEUE_PENDING / "n1.json").write_text(json.dumps({
+        "fp": "fp1", "titulo": "Feira em CG", "images": ["a.jpg"], "categoria": "cg", "stems": []}),
+        encoding="utf-8")
+    db.record("fp1", set(), "Feira em CG", "", "pending")
+    monkeypatch.setattr(main, "_publish", lambda card, imgs: "IG1")
+    stories = []
+    monkeypatch.setattr(publish, "story_se_paraiba", lambda cat, v: stories.append(cat) or "ST1")
+    main.cmd_approve(argparse.Namespace(all=True, id=""))
+    assert stories == ["cg"]
+    assert [c for _, c in db.categorias_recentes(5)] == ["cg"]

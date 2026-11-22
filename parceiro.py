@@ -1559,7 +1559,15 @@ def aprovar(todos: bool = False, ident: str = "") -> int:
         except Exception as e:
             print(f"[parceiro] falhou {js.stem}: {str(e)[:300]}")
             continue
-        _marcar(est, card["_origem"]["id"], "publicado", mid)
+        oid = card["_origem"]["id"]
+        _marcar(est, oid, "publicado", mid)
+        # mesmo caminho do modo auto: conta no mix (regra 7) e, se for da Paraíba, vai aos Stories (regra 8)
+        est["vistos"][oid]["categoria"] = categoria_do_card(card)
+        _guardar_estado(est)
+        import publish
+        sid = publish.story_se_paraiba(est["vistos"][oid]["categoria"], video)
+        if sid:
+            est["vistos"][oid]["story"] = sid
         for f in (js, video, capa_jpg):
             f.unlink(missing_ok=True)
         print(f"[parceiro] publicado {mid}: {card['titulo']}")

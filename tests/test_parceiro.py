@@ -138,10 +138,17 @@ def test_aprovar_publica_e_limpa_a_fila(monkeypatch):
         "titulo": "T", "chapeu": "CIDADE", "_video": "v.mp4", "_capa": "c.jpg",
         "_origem": {"id": "111"}}), encoding="utf-8")
     monkeypatch.setattr(parceiro, "_publicar", lambda card, v, c: "IG999")
+    import publish
+    stories = []
+    monkeypatch.setattr(publish, "story_se_paraiba", lambda cat, v: stories.append(cat) or "ST1")
+    monkeypatch.setattr(parceiro, "categoria_do_card", lambda card: "cg")
     assert parceiro.aprovar(todos=True) == 1
     assert not list(parceiro.FILA.iterdir())
     est = json.loads(parceiro.ESTADO.read_text(encoding="utf-8"))
     assert est["vistos"]["111"]["status"] == "publicado" and est["vistos"]["111"]["nota"] == "IG999"
+    # aprovado da fila segue as regras 7 e 8 como o modo auto: conta no mix e vai aos Stories
+    assert est["vistos"]["111"]["categoria"] == "cg" and est["vistos"]["111"]["story"] == "ST1"
+    assert stories == ["cg"]
 
 
 def test_falha_tenta_de_novo_e_desiste_na_terceira(monkeypatch):
