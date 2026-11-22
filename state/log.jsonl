@@ -484,3 +484,5 @@
 {"ts": "2026-11-22T06:54:25", "event": "falha_publicacao", "headline": "Coritiba vence Bahia por 1 a 0 na Arena Fonte Nova e chega aos 45 pontos", "source": "Patos Online, CNN Brasil", "ig_id": "", "note": "voz padrão indisponível agora (limite do Gemini); a notícia volta na próxima rodada"}
 {"ts": "2026-11-22T07:02:17", "event": "gerado", "headline": "IA detecta falha grave na linguagem Java", "source": "g1", "ig_id": "", "note": ""}
 {"ts": "2026-11-22T07:04:57", "event": "published", "headline": "IA detecta falha grave na linguagem Java", "source": "g1", "ig_id": "17929474557441658", "note": ""}
+{"ts": "2026-11-22T07:19:52", "event": "gerado", "headline": "Caravana Iluminada da Coca-Cola passa por João Pessoa nesta semana", "source": "REDE BRASIL DE TELEVISÃO, Turismo em foco", "ig_id": "", "note": ""}
+{"ts": "2026-11-22T07:20:35", "event": "published", "headline": "Caravana Iluminada da Coca-Cola passa por João Pessoa nesta semana", "source": "REDE BRASIL DE TELEVISÃO, Turismo em foco", "ig_id": "17933157555424801", "note": ""}
