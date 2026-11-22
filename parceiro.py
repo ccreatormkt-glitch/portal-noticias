@@ -891,18 +891,49 @@ def mascara_marca_fixa(origem: Path, amostras: int = 16):
     borda = np.zeros_like(q)
     borda[:, :, 1:] += np.abs(np.diff(q, axis=2))
     borda[:, 1:, :] += np.abs(np.diff(q, axis=1))
-    fixa = np.median(borda, axis=0) > 22
+    fixa = np.median(borda, axis=0) > 16
     fixa[: int(H * .05)] = False                 # bordas do quadro e barras pretas não são logo
     fixa[int(H * .95):] = False
     if not (0.001 < fixa.mean() < 0.06):
         return None
     m = fixa.copy()
-    for dy in (-1, 0, 1):
-        for dx in (-1, 0, 1):
+    for dy in (-2, -1, 0, 1, 2):                 # fecha falhas pequenas do contorno
+        for dx in (-2, -1, 0, 1, 2):
             m |= np.roll(np.roll(fixa, dy, axis=0), dx, axis=1)
+    m = _preencher_buracos_pequenos(m, int(H * W * 0.012))   # miolo de formas pequenas (o "play")
     png = origem.with_name(origem.stem + "_mascara.png")
     Image.fromarray((m * 255).astype(np.uint8)).resize((w0, h0), Image.NEAREST).save(png)
     return png
+
+
+def _preencher_buracos_pequenos(m, limite: int):
+    """Preenche os buracos (áreas fora da máscara sem ligação com a borda) menores que `limite` px:
+    o miolo do triângulo do logo some junto; o miolo do quadrado grande (a cena) fica intacto."""
+    import numpy as np
+    from collections import deque
+    H, W = m.shape
+    rot = np.zeros((H, W), np.int32)
+    n = 0
+    for y0 in range(H):
+        for x0 in range(W):
+            if m[y0, x0] or rot[y0, x0]:
+                continue
+            n += 1
+            fila, pts, borda = deque([(y0, x0)]), [], False
+            rot[y0, x0] = n
+            while fila:
+                y, x = fila.popleft()
+                pts.append((y, x))
+                if y in (0, H - 1) or x in (0, W - 1):
+                    borda = True
+                for yy, xx in ((y + 1, x), (y - 1, x), (y, x + 1), (y, x - 1)):
+                    if 0 <= yy < H and 0 <= xx < W and not m[yy, xx] and not rot[yy, xx]:
+                        rot[yy, xx] = n
+                        fila.append((yy, xx))
+            if not borda and len(pts) < limite:
+                ys, xs = zip(*pts)
+                m[list(ys), list(xs)] = True
+    return m
 
 
 def tirar_marca_fixa(origem: Path) -> Path:
