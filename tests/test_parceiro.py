@@ -280,7 +280,10 @@ def test_reels_de_ontem_de_todos_os_parceiros_entram(monkeypatch):
     lista = parceiro.parceiros("".join(re.findall(r'"([^"]*)"', bloco)))
     assert {p["usuario"] for p in lista} >= {"jornaldapb", "portalresumopb", "blognewspb", "noticiacertapb"}
     ontem = {"jornaldapb", "portalresumopb", "blognewspb", "noticiacertapb"}   # os de 21/11 (com os de ontem)
-    assert all(p["desde"] <= "2026-11-20T03:00:00+0000" for p in lista if p["usuario"] in ontem)
+    assert all(p["desde"] <= "2026-11-20T03:00:00+0000" for p in lista if p["usuario"] in ontem and not p["imagem"])
+    # 22/11/2026: posts de IMAGEM do @noticiacertapb desde 21/11 00h de Fortaleza, com a faixa vermelha
+    nc = [p for p in lista if p["usuario"] == "noticiacertapb" and p["imagem"]]
+    assert nc and nc[0]["desde"] == "2026-11-21T03:00:00+0000" and nc[0]["faixa"] == "vermelha"
     assert "bombaparaiba_" in [p["usuario"] for p in lista if p["imagem"]]
 
 
@@ -438,3 +441,36 @@ def test_cortar_topo_tira_a_parte_de_cima(tmp_path):
     out = parceiro.cortar_topo(src, 18)
     assert parceiro._tamanho(out) == (720, 882 - int(882 * 0.18) // 2 * 2)
     assert parceiro.cortar_topo(src, 0) == src
+
+
+def test_faixa_vermelha_do_noticiacertapb(tmp_path):
+    """@noticiacertapb: post de imagem com faixa vermelha (editoria, manchete, patrocinadores) embaixo e
+    logo no alto; fica só a foto entre os dois."""
+    from pathlib import Path
+    from PIL import Image
+    post = Path(__file__).parent / "dados" / "noticiacertapb_post.jpg"
+    out = parceiro.cortar_faixa_imagem(post, tmp_path / "foto.jpg", "vermelha", 15)
+    foto = Image.open(out)
+    H = Image.open(post).height
+    assert 0.53 * H < foto.height < 0.58 * H          # de 15% até o topo da faixa (~71%)
+
+
+def test_carro_vermelho_nao_vira_faixa():
+    import numpy as np
+    a = np.full((480, 270, 3), 90, np.uint8)
+    a[300:315, 60:220] = (220, 30, 30)                  # mancha vermelha fina: não é faixa
+    assert parceiro._linhas_da_faixa([a], "vermelha") is None
+
+
+def test_flag_faixa_com_cor_e_noticiacertapb_na_lista():
+    p = parceiro.parceiros("x|d|imagem|faixa=vermelha|topo=15; y|d|faixa")
+    assert p[0]["faixa"] == "vermelha" and p[0]["topo"] == 15 and p[1]["faixa"] == "roxa"
+
+
+def test_alterna_video_e_imagem():
+    """22/11/2026: depois de um vídeo, as linhas de imagem pegam a vaga primeiro, e vice-versa."""
+    lista = parceiro.parceiros("a|d; b|d|imagem; c|d|grade; e|d|imagem|faixa")
+    nomes = lambda l: [p["usuario"] for p in l]
+    assert nomes(parceiro.ordem_alternada(lista, "video")) == ["b", "e", "a", "c"]
+    assert nomes(parceiro.ordem_alternada(lista, "imagem")) == ["a", "c", "b", "e"]
+    assert nomes(parceiro.ordem_alternada(lista, "")) == ["a", "b", "c", "e"]

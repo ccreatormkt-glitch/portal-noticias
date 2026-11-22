@@ -53,7 +53,10 @@ LISTA_PADRAO = ("jornaldapb|2026-11-20T03:00:00+0000; "
                 "bombaparaiba_|2026-11-22T03:00:00+0000|imagem; "
                 # 22/11/2026: Reels e posts de imagem, só os novos; sem a faixa roxa e o logo deles
                 "destaques.dodia|2026-11-22T16:40:00+0000|faixa|marca; "
-                "destaques.dodia|2026-11-22T16:40:00+0000|imagem|faixa")
+                "destaques.dodia|2026-11-22T16:40:00+0000|imagem|faixa; "
+                # 22/11/2026: também os posts de IMAGEM, desde ontem; corta a faixa vermelha dele
+                # (editoria, manchete e patrocinadores) e o logo Notícia Certa no alto da foto
+                "noticiacertapb|2026-11-21T03:00:00+0000|imagem|faixa=vermelha|topo=15")
 MODO = config.env("PARCEIRO_MODO", "auto")            # auto = publica direto (pedido do Arthur); review = fila
 JANELA_HORAS = int(config.env("PARCEIRO_JANELA_HORAS", "48"))   # vídeo mais velho que isso é ignorado
 # Só Reels NOVOS (pedido do Arthur): nada publicado antes deste momento entra, mesmo dentro da janela.
@@ -93,7 +96,10 @@ def parceiros(texto: str = None) -> list:
                       "pausado": any(x.lower() == "pausado" for x in partes[2:]),
                       # "faixa": o parceiro põe uma faixa colorida fixa com a manchete dele (ex.:
                       # @destaques.dodia, roxa): o robô corta o post acima dela
-                      "faixa": any(x.lower() == "faixa" for x in partes[2:]),
+                      # "faixa=vermelha": faixa vermelha (@noticiacertapb); sem cor = roxa
+                      "faixa": next((("roxa" if x.lower() == "faixa" else x.split("=", 1)[1].strip().lower())
+                                     for x in partes[2:] if x.lower() == "faixa" or x.lower().startswith("faixa=")),
+                                    False),
                       # "marca": logo translúcido fixo do parceiro no meio do vídeo: some com removelogo
                       "marca": any(x.lower() == "marca" for x in partes[2:]),
                       # "barra=NNN": a barra vermelha desce até y NNN (de 1920) e cobre a marca do
@@ -140,7 +146,8 @@ def _guardar_estado(est: dict):
     tent = {k: v for k, v in est.get("tentativas", {}).items() if k not in vistos}
     ESTADO.parent.mkdir(parents=True, exist_ok=True)
     ESTADO.write_text(json.dumps({"vistos": vistos, "tentativas": tent, "refazer": est.get("refazer", {}),
-                                  "aguardando": est.get("aguardando", 0)}, ensure_ascii=False, indent=1),
+                                  "aguardando": est.get("aguardando", 0),
+                                  "ultimo_tipo": est.get("ultimo_tipo", "")}, ensure_ascii=False, indent=1),
                       encoding="utf-8")
 
 
@@ -835,7 +842,37 @@ def cortar_topo(origem: Path, pct: float) -> Path:
 
 
 # ------------------------------------------------------------------ faixa e logo fixos do parceiro
-def _linhas_da_faixa(quadros) -> tuple:
+def _linhas_da_faixa(quadros, cor: str = "roxa") -> tuple:
+    if cor == "vermelha":
+        return _linhas_da_faixa_vermelha(quadros)
+    return _linhas_da_faixa_roxa(quadros)
+
+
+def _linhas_da_faixa_vermelha(quadros) -> tuple:
+    """(topo do conteúdo, topo da faixa) para a faixa vermelha do @noticiacertapb (editoria, manchete e
+    patrocinadores embaixo do post). Pede um bloco contínuo de linhas vermelhas de pelo menos 6% da
+    altura na metade de baixo, para um carro vermelho na foto não virar faixa."""
+    import numpy as np
+    linhas = []
+    for a in quadros:
+        hsv = np.asarray(Image.fromarray(a).convert("HSV")).astype(np.int16)
+        H, W = hsv.shape[:2]
+        miolo = hsv[:, int(W * .2):int(W * .8)]
+        m = ((miolo[..., 0] <= 14) | (miolo[..., 0] >= 245)) & (miolo[..., 1] > 150) & (miolo[..., 2] > 110)
+        linhas.append(m.mean(axis=1))
+    f = np.median(np.stack(linhas), axis=0)
+    H = len(f)
+    blocos = [b for b in _blocos(f > 0.3, juntar=max(3, H // 40))
+              if b[0] > H * 0.3 and b[1] - b[0] >= H * 0.06]
+    if not blocos:
+        return None
+    topo_faixa = blocos[0][0] / H
+    if topo_faixa < 0.3:
+        return None
+    return 0.0, topo_faixa
+
+
+def _linhas_da_faixa_roxa(quadros) -> tuple:
     """(topo do conteúdo, topo da faixa) em fração da altura, a partir de quadros RGB (numpy HxWx3).
     Faixa = linhas onde boa parte do miolo é da cor forte e saturada da faixa do parceiro (roxo do
     @destaques.dodia: matiz ~197/255 no HSV do PIL). Conteúdo começa na primeira linha que não é preta."""
@@ -887,16 +924,22 @@ def cortar_faixa(origem: Path) -> Path:
     return saida
 
 
-def cortar_faixa_imagem(post_jpg: Path, out_jpg: Path) -> Path:
-    """Foto: fica só a parte acima da faixa fixa do parceiro (sem a manchete e o telefone dele)."""
+def cortar_faixa_imagem(post_jpg: Path, out_jpg: Path, cor: str = "roxa", topo: float = 0.0) -> Path:
+    """Foto: fica só a parte acima da faixa fixa do parceiro (sem a manchete e o telefone dele).
+    `topo` (em %): corta também de cima, onde fica o logo do parceiro por cima da foto."""
     import numpy as np
     img = Image.open(post_jpg).convert("RGB")
-    achou = _linhas_da_faixa([np.asarray(img.resize((270, int(270 * img.height / img.width))))])
+    cor = cor if isinstance(cor, str) else "roxa"
+    achou = _linhas_da_faixa([np.asarray(img.resize((270, int(270 * img.height / img.width))))], cor)
     if not achou:
         raise ValueError("não achei a faixa do parceiro na foto")
-    foto = img.crop((0, int(achou[0] * img.height), img.width, int(achou[1] * img.height)))
+    y0 = max(achou[0], (topo or 0) / 100)
+    if achou[1] - y0 < 0.25:
+        raise ValueError("sobrou pouca foto entre o logo e a faixa do parceiro")
+    foto = img.crop((0, int(y0 * img.height), img.width, int(achou[1] * img.height)))
     foto.save(out_jpg, quality=95)
-    print(f"[parceiro] foto cortada acima da faixa do parceiro: {foto.width}x{foto.height}")
+    print(f"[parceiro] foto cortada acima da faixa do parceiro: {foto.width}x{foto.height}"
+          + (f" (tirei {topo:g}% de cima, onde fica o logo)" if topo else ""))
     return out_jpg
 
 
@@ -1267,7 +1310,8 @@ def _rodada_imagens(p: dict, est: dict, modo: str, limite: int, so_ids: set = No
         try:
             post_jpg = pasta / f"{stamp}_post.jpg"
             post_jpg.write_bytes(requests.get(m["media_url"], timeout=60).content)
-            foto = (cortar_faixa_imagem(post_jpg, pasta / f"{stamp}_foto.jpg") if p.get("faixa")
+            foto = (cortar_faixa_imagem(post_jpg, pasta / f"{stamp}_foto.jpg", p["faixa"], p.get("topo", 0.0))
+                    if p.get("faixa")
                     else recortar_foto(post_jpg, pasta / f"{stamp}_foto.jpg"))
             card = editor.make_card(_cluster_do_post(m, usuario))
             if card.get("skip"):
@@ -1315,6 +1359,7 @@ def _rodada_imagens(p: dict, est: dict, modo: str, limite: int, so_ids: set = No
                 mid = _publicar(card, video, capa_jpg)
                 _marcar(est, m["id"], "publicado", mid)
                 est["vistos"][m["id"]]["categoria"] = categoria_do_card(card)
+                est["ultimo_tipo"] = "imagem"
                 _guardar_estado(est)
                 import publish
                 sid = publish.story_se_paraiba(est["vistos"][m["id"]]["categoria"], video)
@@ -1340,12 +1385,23 @@ def _rodada_imagens(p: dict, est: dict, modo: str, limite: int, so_ids: set = No
     return feitos
 
 
+def ordem_alternada(lista: list, ultimo_tipo: str) -> list:
+    """22/11/2026 (pedido do Arthur): alternar vídeo e post de imagem dos parceiros. Como o ritmo do
+    perfil deixa sair um post por vez, quem vem primeiro na rodada pega a vaga: depois de um vídeo, as
+    linhas de imagem vão na frente; depois de uma imagem, as de vídeo. Se o tipo da vez não tiver nada
+    novo, o outro tipo usa a vaga (nada fica parado)."""
+    if ultimo_tipo not in ("video", "imagem"):
+        return list(lista)
+    quer_imagem = ultimo_tipo == "video"
+    return sorted(lista, key=lambda p: 0 if bool(p.get("imagem")) == quer_imagem else 1)
+
+
 def rodada(modo: str = None, limite: int = 1) -> int:
     """Uma rodada em todos os parceiros: até `limite` vídeos novos de cada um. Devolve quantos fez."""
     est = _estado()
     est["aguardando"] = 0   # volta a marcar só se nesta rodada algum vídeo ficar esperando vaga
     total = _processar_refazer(est, modo or MODO) if est["refazer"] else 0   # pedidos do Arthur primeiro
-    for p in parceiros():
+    for p in ordem_alternada(parceiros(), est.get("ultimo_tipo", "")):
         if p.get("pausado"):
             continue
         total += _rodada_parceiro(p, est, modo or MODO, limite)
@@ -1548,6 +1604,7 @@ def _rodada_parceiro(p: dict, est: dict, modo: str, limite: int, so_ids: set = N
                 mid = _publicar(card, video, capa_jpg)
                 _marcar(est, m["id"], "publicado", mid)
                 est["vistos"][m["id"]]["categoria"] = categoria_do_card(card)
+                est["ultimo_tipo"] = "video"
                 _guardar_estado(est)
                 import publish
                 sid = publish.story_se_paraiba(est["vistos"][m["id"]]["categoria"], video)
