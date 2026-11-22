@@ -45,9 +45,7 @@ LISTA_PADRAO = ("jornaldapb|2026-11-20T03:00:00+0000; "
                 "paraibabussines_|2026-11-20T03:00:00+0000; "
                 "portalresumopb|2026-11-20T03:00:00+0000|grade; "
                 "noticiacertapb|2026-11-20T03:00:00+0000; "
-                # 22/11/2026 (pedido do Arthur): a marca BLOG NEWS PB aparecia no alto do vídeo; a nossa
-                # barra desce até y 480 (de 1920) nos posts deles e cobre a marca
-                "blognewspb|2026-11-20T03:00:00+0000|grade|barra=480; "
+                "blognewspb|2026-11-20T03:00:00+0000|grade; "
                 # 22/11/2026: só as postagens de IMAGEM (nada de Reels/Stories); a foto central sai da
                 # moldura e vira a foto do nosso Reels; o texto é reescrito pela regra das notícias
                 "bombaparaiba_|2026-11-22T03:00:00+0000|imagem; "
@@ -97,7 +95,7 @@ def parceiros(texto: str = None) -> list:
                       # "marca": logo translúcido fixo do parceiro no meio do vídeo: some com removelogo
                       "marca": any(x.lower() == "marca" for x in partes[2:]),
                       # "barra=NNN": a barra vermelha desce até y NNN (de 1920) e cobre a marca do
-                      # parceiro no alto do vídeo; sem a opção, a barra padrão (layout.barra_video)
+                      # parceiro no alto do vídeo; sem a opção, vale layout.PARCEIRO["barra"] (480)
                       "barra": next((int(x.split("=", 1)[1]) for x in partes[2:]
                                      if x.lower().startswith("barra=") and x.split("=", 1)[1].strip().isdigit()), None)})
     return lista
@@ -593,7 +591,7 @@ def etiqueta(card: dict, out_png: Path, barra: int = None) -> Path:
     _degrade_parceiro(camada)
 
     # 2) barra do topo com a logo
-    b = L.barra_video(barra)
+    b = L.barra_video(barra or L.PARCEIRO["barra"])
     camada.alpha_composite(_logo.barra(W, z(b["fim"]), z(b["logo"]), z(b["centro"]), z(b["borda"])), (0, 0))
 
     # 3) manchete: maior tamanho da lista que cabe em max_linhas
@@ -973,7 +971,7 @@ def montar(origem: Path, card: dict, out_mp4: Path, grade: bool = False, faixa: 
     cobrir = caixas(COBRIR)
     w0, h0 = _tamanho(origem)
     if w0 / h0 > 0.8:     # largo demais para encher a tela 9:16 sem cortar a cena
-        filtro = _filtro_encaixe(A.VW, A.VH, A.z(L.barra_video(barra)["fim"]))
+        filtro = _filtro_encaixe(A.VW, A.VH, A.z(L.barra_video(barra or L.PARCEIRO["barra"])["fim"]))
         _quadro_limpo(origem, filtro, out_mp4)
         return _rodar_ffmpeg(origem, png, filtro, out_mp4)
     if AUTO_MARCA and not (topo or base):

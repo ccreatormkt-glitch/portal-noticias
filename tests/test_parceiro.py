@@ -398,16 +398,13 @@ def test_flags_faixa_e_marca():
     assert p[1]["imagem"] and p[1]["faixa"] and not p[1]["marca"]
 
 
-def test_barra_mais_baixa_por_parceiro():
-    """@blognewspb: a barra desce até y 480 para cobrir a marca deles no alto do vídeo."""
+def test_barra_480_em_todos_os_parceiros():
+    """Todos os vídeos de parceiro: a barra desce até y 480 (cobre a marca deles no alto do vídeo)."""
     import layout as L
-    from pathlib import Path
-    fonte = (Path(parceiro.__file__)).read_text(encoding="utf-8")
-    assert '"blognewspb|2026-11-20T03:00:00+0000|grade|barra=480; "' in fonte
-    lista = {p["usuario"]: p for p in parceiro.parceiros("jornaldapb|x; blognewspb|x|grade|barra=480")}
-    assert lista["blognewspb"]["barra"] == 480 and lista["blognewspb"]["grade"]
-    assert lista["jornaldapb"]["barra"] is None
-    padrao, baixa = L.barra_video(), L.barra_video(480)
+    assert L.PARCEIRO["barra"] == 480
+    lista = {p["usuario"]: p for p in parceiro.parceiros("jornaldapb|x; blognewspb|x|grade; fulano|x|barra=520")}
+    assert lista["jornaldapb"]["barra"] is None and lista["fulano"]["barra"] == 520
+    padrao, baixa = L.barra_video(), L.barra_video(L.PARCEIRO["barra"])
     assert padrao["fim"] == 388 and baixa["fim"] == 480 and baixa["logo"] == padrao["logo"]
     # a logo fica inteira abaixo da câmera e do cabeçalho do Instagram (~250) e dentro da barra
     assert baixa["centro"] - baixa["logo"] // 2 > 250 and baixa["centro"] + baixa["logo"] // 2 < 480

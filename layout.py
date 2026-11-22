@@ -224,6 +224,9 @@ PARCEIRO = {
     # degradê preto: começa em [0] e fica 100% preto de [1] até o pé da tela, cobrindo a manchete
     # antiga do parceiro (terço de baixo do vídeo)
     "degrade": (760, 1100),
+    # barra vermelha dos vídeos de parceiro: desce até y 480 em todos (pedido do Arthur, 22/11/2026),
+    # cobrindo a marca que os parceiros põem no alto do vídeo; "barra=NNN" na lista muda por parceiro
+    "barra": 480,
     "pe": FORMATOS["reels"]["base_segura"] - esp(3),   # pé da data (última linha), acima da legenda do IG
     "largura": FORMATOS["reels"]["direita_segura"] - FORMATOS["reels"]["margem"],  # longe dos botões
     "max_linhas": 4,                                   # da manchete; se não couber, a letra diminui
