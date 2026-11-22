@@ -1167,6 +1167,55 @@ def rodada(modo: str = None, limite: int = 1) -> int:
     return total
 
 
+def calibrar_marca(usuario: str, n_videos: int = 10, n_imagens: int = 12) -> dict:
+    """Aprende a marca d'água fixa de um parceiro (autorizado) comparando vários posts: o que é igual
+    em vídeos e fotos diferentes é a marca. Grava, para conferir, a mediana dos quadros e um retrato
+    das bordas em out/calibrar_marca_<usuario>_*.jpg. Não publica nada."""
+    import numpy as np
+    usuario = usuario.lstrip("@").lower()
+    posts = buscar(usuario=usuario, limite=40)
+    config.OUT_DIR.mkdir(parents=True, exist_ok=True)
+    quadros, fotos = [], []
+    for m in posts:
+        if m.get("media_type") == "VIDEO" and len([q for q in quadros]) < n_videos * 5:
+            try:
+                v = baixar(m, config.OUT_DIR / f"marca_{m['id']}.mp4")
+                dur = _duracao(v) or 10.0
+                for f in (0.15, 0.3, 0.5, 0.7, 0.85):
+                    r = subprocess.run(["ffmpeg", "-v", "error", "-ss", f"{dur * f:.2f}", "-i", str(v), "-frames:v", "1",
+                                        "-vf", "scale=540:960:force_original_aspect_ratio=increase,crop=540:960,format=gray",
+                                        "-f", "rawvideo", "-"], capture_output=True, timeout=120)
+                    if len(r.stdout) == 540 * 960:
+                        quadros.append(np.frombuffer(r.stdout, np.uint8).reshape(960, 540))
+            except Exception as e:
+                print(f"[marca] vídeo {m.get('permalink')} não baixou ({str(e)[:80]})")
+        elif m.get("media_type") == "IMAGE" and m.get("media_url") and len(fotos) < n_imagens:
+            try:
+                from io import BytesIO
+                img = Image.open(BytesIO(requests.get(m["media_url"], timeout=60).content)).convert("L")
+                fotos.append(np.asarray(img.resize((540, 675))))
+            except Exception as e:
+                print(f"[marca] imagem {m.get('permalink')} não baixou ({str(e)[:80]})")
+    out = {}
+    for nome, pilha in (("video", quadros), ("foto", fotos)):
+        if len(pilha) < 6:
+            print(f"[marca] poucos {nome}s para calibrar ({len(pilha)})")
+            continue
+        a = np.stack(pilha).astype(np.float32)
+        med = np.median(a, axis=0)
+        bx = np.abs(np.diff(a, axis=2))[:, :-1, :]
+        by = np.abs(np.diff(a, axis=1))[:, :, :-1]
+        # borda que aparece em quase todos os posts = desenho da marca (o conteúdo muda de post para post)
+        borda_fixa = np.median(bx + by, axis=0)
+        Image.fromarray(med.astype(np.uint8)).save(config.OUT_DIR / f"calibrar_marca_{usuario}_{nome}_mediana.jpg")
+        Image.fromarray(np.clip(borda_fixa * 4, 0, 255).astype(np.uint8)).save(
+            config.OUT_DIR / f"calibrar_marca_{usuario}_{nome}_bordas.jpg")
+        np.save(config.OUT_DIR / f"calibrar_marca_{usuario}_{nome}_bordas.npy", borda_fixa)
+        out[nome] = len(pilha)
+        print(f"[marca] {nome}: {len(pilha)} quadros de @{usuario}")
+    return out
+
+
 def teste_parceiro(spec: str, quantos: int = 2) -> int:
     """Teste de um parceiro (novo ou da lista) sem publicar e sem gravar estado: monta os próximos
     `quantos` posts das últimas 48h (vídeo ou imagem, conforme as flags) e deixa em out/ para a prévia.

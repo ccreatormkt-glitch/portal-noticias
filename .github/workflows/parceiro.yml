@@ -10,7 +10,7 @@ on:
       acao:
         description: "rodada (busca vídeos novos), aprovar (publica a fila), descartar (tira um da fila), calibrar (quadros com grade) ou testar (só baixa o Reel mais recente)"
         type: choice
-        options: [rodada, aprovar, descartar, calibrar, testar, refazer, amostra, teste-imagem, teste-parceiro]
+        options: [rodada, aprovar, descartar, calibrar, testar, refazer, amostra, teste-imagem, teste-parceiro, calibrar-marca]
         default: rodada
       modo:
         description: "na rodada: review (fila), auto (publica) ou dry (só prévia)"
@@ -91,6 +91,7 @@ jobs:
             amostra)   python main.py parceiro-amostra "$ID" ;;
             teste-imagem) python main.py parceiro-teste-imagem "$ID" ;;
             teste-parceiro) python main.py parceiro-teste "$ID" ;;
+            calibrar-marca) python main.py parceiro-calibrar-marca "$ID" ;;
             *)         if [ -n "$MODO" ] && [ "$MODO" != "padrao" ]; then python main.py parceiro --modo "$MODO"; else python main.py parceiro; fi
                        python main.py parceiro-fila ;;
           esac
@@ -106,7 +107,7 @@ jobs:
             for s in 1 4; do ffmpeg -loglevel error -y -ss $s -i "$v" -frames:v 1 -vf scale=540:-1 "/tmp/previa/${b}_${s}s.jpg" || true; done
             cp "$v" /tmp/previa/
           done
-          cp out/calibrar_*.jpg out/calibrar_*.json /tmp/previa/ 2>/dev/null || true
+          cp out/calibrar_*.jpg out/calibrar_*.json out/calibrar_*.npy /tmp/previa/ 2>/dev/null || true
           cp out/parceiro_*_capa_reels.jpg out/parceiro_*_capa.jpg out/parceiro_*_foto.jpg out/parceiro_*_post.jpg out/parceiro_*[0-9].json /tmp/previa/ 2>/dev/null || true
           cd /tmp/previa
           git add -A

@@ -715,6 +715,11 @@ def cmd_parceiro_fila(_):
         print("fila do parceiro vazia")
 
 
+def cmd_parceiro_calibrar_marca(args):
+    import parceiro
+    parceiro.calibrar_marca(args.usuario)
+
+
 def cmd_parceiro_teste(args):
     import parceiro
     print(f"[parceiro] {parceiro.teste_parceiro(args.spec)} post(s) de teste montados (nada publicado)")
@@ -806,6 +811,9 @@ def main():
     pc.add_argument("--limite", type=int, default=1, help="vídeos por rodada")
     pc.set_defaults(fn=cmd_parceiro)
     sub.add_parser("parceiro-fila").set_defaults(fn=cmd_parceiro_fila)
+    pcm = sub.add_parser("parceiro-calibrar-marca", help="aprende a marca d'água fixa de um parceiro (sem publicar)")
+    pcm.add_argument("usuario")
+    pcm.set_defaults(fn=cmd_parceiro_calibrar_marca)
     pte = sub.add_parser("parceiro-teste", help="monta (sem publicar) os próximos posts de um parceiro: 'usuario' ou 'usuario|desde|flags'")
     pte.add_argument("spec")
     pte.set_defaults(fn=cmd_parceiro_teste)
