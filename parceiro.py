@@ -50,8 +50,8 @@ LISTA_PADRAO = ("jornaldapb|2026-11-20T03:00:00+0000; "
                 # moldura e vira a foto do nosso Reels; o texto é reescrito pela regra das notícias
                 "bombaparaiba_|2026-11-22T03:00:00+0000|imagem; "
                 # 22/11/2026: Reels e posts de imagem, só os novos; sem a faixa roxa e o logo deles
-                "destaques.dodia|2026-11-22T16:40:00+0000|faixa|marca|pausado; "
-                "destaques.dodia|2026-11-22T16:40:00+0000|imagem|faixa|pausado")
+                "destaques.dodia|2026-11-22T16:40:00+0000|faixa|marca; "
+                "destaques.dodia|2026-11-22T16:40:00+0000|imagem|faixa")
 MODO = config.env("PARCEIRO_MODO", "auto")            # auto = publica direto (pedido do Arthur); review = fila
 JANELA_HORAS = int(config.env("PARCEIRO_JANELA_HORAS", "48"))   # vídeo mais velho que isso é ignorado
 # Só Reels NOVOS (pedido do Arthur): nada publicado antes deste momento entra, mesmo dentro da janela.

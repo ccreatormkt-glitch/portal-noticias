@@ -93,3 +93,12 @@ Valem para tudo o que o sistema produz. Cada regra tem um teste que falha se ela
 - Polícia e temas sensíveis: foto ilustrativa, nunca a foto do caso (regra de credibilidade).
 - As fontes não aparecem no post (regra do PB Minuto), como nos outros parceiros.
 
+## 10. Parceiro @destaques.dodia (pedido do Arthur, 22/11/2026)
+- Autorizado; usa Reels e posts de imagem, só os publicados a partir de 22/11/2026 13h40 (Fortaleza); nunca collab.
+- Remove as marcas d'água DELE (autorizado): a faixa roxa fixa com a manchete, "DESTAQUES DO DIA" e o
+  telefone (flag `faixa`: o post é cortado acima dela) e o logo translúcido do "play" no meio de alguns
+  vídeos (flag `marca`: máscara do logo fixo + removelogo).
+- Marca de terceiros (agência, fotógrafo, outro perfil) não é removida.
+- Texto e manchete sempre reescritos pelas regras do PB Minuto; fontes não aparecem no post.
+- Para outros parceiros: skill `pb-minuto-novo-parceiro` (ações amostra, calibrar-marca e teste-parceiro).
+
