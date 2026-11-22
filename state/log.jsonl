@@ -472,3 +472,6 @@
 {"ts": "2026-11-22T05:37:15", "event": "published", "headline": "Casal de Tanguá escala biotecnologia e entrega 9 milhões de mudas anuais", "source": "g1", "ig_id": "18131930140861633", "note": ""}
 {"ts": "2026-11-22T05:57:08", "event": "gerado", "headline": "Sebrae apresenta balanço do Pacto Cariri em Monteiro", "source": "ParaibaOnline, 83 Agora", "ig_id": "", "note": ""}
 {"ts": "2026-11-22T05:58:10", "event": "published", "headline": "Sebrae apresenta balanço do Pacto Cariri em Monteiro", "source": "ParaibaOnline, 83 Agora", "ig_id": "18427397275155003", "note": ""}
+{"ts": "2026-11-22T06:15:49", "event": "pulado", "headline": "Campina Grande registra redução de 19,2% nas notificações de dengue", "source": "", "ig_id": "", "note": "repetida: Campina Grande tem queda de 19,2% nos casos de dengue em 2026"}
+{"ts": "2026-11-22T06:19:50", "event": "gerado", "headline": "Prefeitura de João Pessoa oferece aulas de música para 4 mil estudantes da rede", "source": "ParaibaOnline, 83 Agora", "ig_id": "", "note": ""}
+{"ts": "2026-11-22T06:19:50", "event": "falha_publicacao", "headline": "Prefeitura de João Pessoa oferece aulas de música para 4 mil estudantes da rede", "source": "ParaibaOnline, 83 Agora", "ig_id": "", "note": "voz padrão indisponível agora (limite do Gemini); a notícia volta na próxima rodada"}
