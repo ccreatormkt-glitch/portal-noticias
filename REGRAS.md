@@ -109,7 +109,7 @@ Valem para tudo o que o sistema produz. Cada regra tem um teste que falha se ela
 - A IA não escreve "siga" nos textos: o sistema acrescenta o encerramento.
 - Onde: `video.roteiro`, `boletim.py`, `publish.build_caption`. Teste: `tests/test_publicacao.py`.
 
-## 11. Posts de imagem do @noticiacertapb e alternância (pedido do Arthur, 22/11/2026)
+## 12. Posts de imagem do @noticiacertapb e alternância (pedido do Arthur, 22/11/2026)
 - Além dos Reels, entram as notícias em carrossel do @noticiacertapb desde 21/11/2026 00h de Fortaleza
   (linha `noticiacertapb|...|imagem|carrossel|faixa=vermelha|topo=15`).
 - Usa só a 1ª foto do carrossel: corta a faixa vermelha dele (editoria, manchete, telefone e patrocinadores)
