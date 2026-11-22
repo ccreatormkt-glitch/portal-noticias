@@ -510,3 +510,6 @@
 {"ts": "2026-11-22T09:41:41", "event": "published", "headline": "Justiça decreta prisão de suspeito de matar mulher em Praia Grande", "source": "g1", "ig_id": "18119712218043925", "note": ""}
 {"ts": "2026-11-22T10:01:55", "event": "gerado", "headline": "China reduz uso de carvão e gera maioria da eletricidade com fontes limpas", "source": "g1", "ig_id": "", "note": ""}
 {"ts": "2026-11-22T10:02:58", "event": "published", "headline": "China reduz uso de carvão e gera maioria da eletricidade com fontes limpas", "source": "g1", "ig_id": "18099928331654068", "note": ""}
+{"ts": "2026-11-22T10:20:42", "event": "pulado", "headline": "Sine inicia semana com mais de 800 vagas de trabalho em 11 municípios da Paraíba", "source": "", "ig_id": "", "note": "mesmo fato já postado: Governo do Estado abre 825 vagas de emprego em 11 cidades da"}
+{"ts": "2026-11-22T10:23:09", "event": "gerado", "headline": "Aluno de física usa bateria de 12 volts para acender cigarro e viraliza", "source": "g1", "ig_id": "", "note": ""}
+{"ts": "2026-11-22T10:25:42", "event": "published", "headline": "Aluno de física usa bateria de 12 volts para acender cigarro e viraliza", "source": "g1", "ig_id": "17958051492299351", "note": ""}
