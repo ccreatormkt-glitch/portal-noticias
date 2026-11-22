@@ -299,9 +299,16 @@
    "ts": 1795361659.3268638,
    "status": "pulado",
    "nota": "tema proibido (filtro fixo)"
+  },
+  "18183436678447845": {
+   "ts": 1795362821.0487275,
+   "status": "publicado",
+   "nota": "18148116007519265",
+   "categoria": "jp",
+   "story": "18144729586715756"
   }
  },
  "tentativas": {},
  "refazer": {},
- "aguardando": 1795361659.3278682
+ "aguardando": 1795362914.5815258
 }
