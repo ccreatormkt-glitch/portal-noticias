@@ -420,7 +420,8 @@ def test_mix_nao_faz_rajada_da_mesma_categoria(ambiente, monkeypatch):
     """Mundo muito atrasado não sai 4 vezes seguidas: depois de 2 seguidas, intercala outra categoria."""
     import parceiro
     agora = time.time()
-    ev = [(agora - 3000 + i, "cg") for i in range(10)] + [(agora - 100, "mundo"), (agora - 50, "mundo")]
+    base = ["cg"] * 6 + ["jp"] * 4 + ["brasil"] * 6
+    ev = [(agora - 3000 + i, c) for i, c in enumerate(base)] + [(agora - 100, "mundo"), (agora - 50, "mundo")]
     monkeypatch.setattr(db, "categorias_recentes", lambda n=20: ev)
     monkeypatch.setattr(parceiro, "categorias_recentes", lambda n=20, caminho=None: [])
     monkeypatch.setattr(config, "MIX", {"cg": .3, "jp": .2, "brasil": .3, "mundo": .2})
