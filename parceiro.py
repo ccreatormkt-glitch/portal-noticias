@@ -1476,7 +1476,9 @@ def teste_parceiro(spec: str, quantos: int = 2) -> int:
 def teste_imagem(usuario: str, quantos: int = 2) -> int:
     """Teste do parceiro de imagem sem publicar: monta os próximos `quantos` posts (recorte, texto,
     vídeo e capa) e deixa em out/ para a prévia. Não grava estado."""
-    p = next((x for x in parceiros() if x["usuario"] == usuario.lstrip("@").lower()), None) or \
+    mesmos = [x for x in parceiros() if x["usuario"] == usuario.lstrip("@").lower()]
+    # perfil com linha de vídeo e linha de imagem: vale a de imagem (com as flags dela)
+    p = next((x for x in mesmos if x.get("imagem")), None) or next(iter(mesmos), None) or \
         {"usuario": usuario.lstrip("@").lower(), "desde": "", "grade": False, "imagem": True}
     return _rodada_imagens(dict(p, imagem=True), _estado(), "dry", quantos)
 
