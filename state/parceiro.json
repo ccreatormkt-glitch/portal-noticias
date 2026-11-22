@@ -344,10 +344,27 @@
    "status": "publicado",
    "nota": "18158148445480968",
    "categoria": "brasil"
+  },
+  "18650391949036967": {
+   "ts": 1795384633.1720138,
+   "status": "pulado",
+   "nota": "IA: O material é apenas uma propaganda comercial de uma pizzaria no evento Natal Iluminado, sem conteúdo de interesse jornalístico."
+  },
+  "18010824164787110": {
+   "ts": 1795384744.8466733,
+   "status": "publicado",
+   "nota": "18079454144727383",
+   "categoria": "cg",
+   "story": "18142310212766111"
+  },
+  "18154998256529752": {
+   "ts": 1795384784.5125184,
+   "status": "pulado",
+   "nota": "possível collab/publi (\"em parceria com\" na legenda)"
   }
  },
  "tentativas": {},
  "refazer": {},
- "aguardando": 1795381686.8988605,
- "ultimo_tipo": ""
+ "aguardando": 1795384784.5133135,
+ "ultimo_tipo": "video"
 }
