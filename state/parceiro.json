@@ -264,11 +264,39 @@
    "ts": 1795357828.0174818,
    "status": "publicado",
    "nota": "18127854818472923"
+  },
+  "18134576138484680": {
+   "ts": 1795359545.5606647,
+   "status": "pulado",
+   "nota": "mesmo fato já postado: Governo Lula prepara repasse de cargos na Caixa para o grupo"
+  },
+  "18404076487164155": {
+   "ts": 1795359648.4459968,
+   "status": "pulado",
+   "nota": "mesmo fato já postado: Flamengo joga por empate contra Palmeiras para selar título "
+  },
+  "18129483100914017": {
+   "ts": 1795359668.3053393,
+   "status": "pulado",
+   "nota": "mesmo fato já postado: Caravana Iluminada da Coca-Cola passa por João Pessoa nesta "
+  },
+  "17978171799176149": {
+   "ts": 1795359693.666876,
+   "status": "pulado",
+   "nota": "mesmo fato já postado: Briga entre condutores termina com motociclista baleado em C"
+  },
+  "18090612800321894": {
+   "ts": 1795359741.297568,
+   "status": "pulado",
+   "nota": "mesmo fato já postado: Boca Juniors vence o Atlético Mineiro e conquista a Sul-Amer"
+  },
+  "18511897726098864": {
+   "ts": 1795359875.9746063,
+   "status": "publicado",
+   "nota": "18138970121508126"
   }
  },
- "tentativas": {
-  "18134576138484680": 1
- },
+ "tentativas": {},
  "refazer": {},
- "aguardando": 1795358397.2511349
+ "aguardando": 0
 }
