@@ -272,7 +272,8 @@ def test_reels_de_ontem_de_todos_os_parceiros_entram(monkeypatch):
     bloco = re.search(r"LISTA_PADRAO = \((.*?)\)\n", fonte, re.S).group(1)
     lista = parceiro.parceiros("".join(re.findall(r'"([^"]*)"', bloco)))
     assert {p["usuario"] for p in lista} >= {"jornaldapb", "portalresumopb", "blognewspb", "noticiacertapb"}
-    assert all(p["desde"] <= "2026-11-20T03:00:00+0000" for p in lista)
+    assert all(p["desde"] <= "2026-11-20T03:00:00+0000" for p in lista if not p["imagem"])
+    assert [p["usuario"] for p in lista if p["imagem"]] == ["bombaparaiba_"]
 
 
 def test_capa_do_parceiro_prefere_imagem_a_cartela_de_texto(tmp_path):
@@ -334,3 +335,41 @@ def test_copia_do_parceiro_tolera_nomes_e_barra_frase_copiada():
              "legenda": "O ex-presidente Jair Bolsonaro passou a noite em observação e deve fazer novos exames "
                         "nesta sexta-feira pela manhã no hospital."}
     assert parceiro.copiado(copia, legenda, fala)                   # manchete e frase copiadas
+
+
+def test_recorte_tira_a_moldura_do_post(tmp_path):
+    """Moldura do @bombaparaiba_: fundo vermelho, cartão branco com manchete e a foto no meio."""
+    from PIL import Image, ImageDraw
+    import parceiro
+    post = Image.new("RGB", (1440, 1800), (200, 20, 20))
+    d = ImageDraw.Draw(post)
+    d.rounded_rectangle((71, 380, 1402, 1658), 30, fill="white")          # cartão
+    for i in range(2):
+        d.rectangle((150, 470 + i * 50, 1100, 500 + i * 50), fill=(20, 20, 20))   # manchete
+    for y in range(642, 1612, 10):                                          # foto
+        d.rectangle((138, y, 1333, y + 10), fill=((y * 3) % 255, 120, 60))
+    post.save(tmp_path / "post.jpg")
+    caixa = parceiro.achar_foto(Image.open(tmp_path / "post.jpg"))
+    assert caixa and 138 <= caixa[0] <= 170 and 642 <= caixa[1] <= 670 and 1300 <= caixa[2] <= 1333 and 1580 <= caixa[3] <= 1612
+    parceiro.recortar_foto(tmp_path / "post.jpg", tmp_path / "foto.jpg")
+    assert parceiro.achar_foto(Image.new("RGB", (1440, 1800), (90, 90, 90))) is None   # sem moldura
+
+
+def test_so_postagens_de_imagem_do_parceiro_de_imagem():
+    import parceiro
+    base = {"id": "1", "media_url": "https://x/y.jpg", "username": "bombaparaiba_",
+            "timestamp": "2099-01-01T00:00:00+0000", "caption": "Notícia"}
+    agora = parceiro._epoca("2099-01-01T01:00:00+0000")
+    assert parceiro.motivo_para_pular(dict(base, media_type="IMAGE"), {}, agora, "bombaparaiba_", "", tipo="imagem") == ""
+    assert parceiro.motivo_para_pular(dict(base, media_type="VIDEO"), {}, agora, "bombaparaiba_", "", tipo="imagem") == "não é imagem"
+    assert parceiro.motivo_para_pular(dict(base, media_type="CAROUSEL_ALBUM"), {}, agora, "bombaparaiba_", "", tipo="imagem") == "não é imagem"
+    assert "collab" in parceiro.motivo_para_pular(dict(base, media_type="IMAGE", username="outro"), {}, agora, "bombaparaiba_", "", tipo="imagem")
+    lista = parceiro.parceiros("bombaparaiba_|2026-11-22T03:00:00+0000|imagem; jornaldapb|x")
+    assert lista[0]["imagem"] and not lista[1]["imagem"]
+
+
+def test_conferir_fatos_aponta_numero_que_nao_esta_no_post():
+    import parceiro
+    legenda = "O Sine-PB oferta 825 vagas a partir desta segunda-feira (23)."
+    assert parceiro.conferir_fatos({"titulo": "Sine-PB abre 825 vagas", "legenda": "A partir do dia 23."}, legenda) == []
+    assert parceiro.conferir_fatos({"titulo": "Sine-PB abre 900 vagas", "legenda": ""}, legenda)

@@ -709,6 +709,11 @@ def cmd_parceiro_fila(_):
         print("fila do parceiro vazia")
 
 
+def cmd_parceiro_teste_imagem(args):
+    import parceiro
+    print(f"[parceiro] {parceiro.teste_imagem(args.usuario)} post(s) de teste montados (nada publicado)")
+
+
 def cmd_parceiro_amostra(args):
     import parceiro
     parceiro.amostra(args.usuario.lstrip("@"))
@@ -790,6 +795,9 @@ def main():
     pc.add_argument("--limite", type=int, default=1, help="vídeos por rodada")
     pc.set_defaults(fn=cmd_parceiro)
     sub.add_parser("parceiro-fila").set_defaults(fn=cmd_parceiro_fila)
+    pti = sub.add_parser("parceiro-teste-imagem", help="monta (sem publicar) os próximos posts de um parceiro de imagem")
+    pti.add_argument("usuario")
+    pti.set_defaults(fn=cmd_parceiro_teste_imagem)
     pam = sub.add_parser("parceiro-amostra", help="baixa as últimas imagens de um perfil para estudar a moldura")
     pam.add_argument("usuario")
     pam.set_defaults(fn=cmd_parceiro_amostra)

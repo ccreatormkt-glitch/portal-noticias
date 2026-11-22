@@ -10,7 +10,7 @@ on:
       acao:
         description: "rodada (busca vídeos novos), aprovar (publica a fila), descartar (tira um da fila), calibrar (quadros com grade) ou testar (só baixa o Reel mais recente)"
         type: choice
-        options: [rodada, aprovar, descartar, calibrar, testar, refazer, amostra]
+        options: [rodada, aprovar, descartar, calibrar, testar, refazer, amostra, teste-imagem]
         default: rodada
       modo:
         description: "na rodada: review (fila), auto (publica) ou dry (só prévia)"
@@ -89,6 +89,7 @@ jobs:
             testar)    python main.py parceiro-testar ;;
             refazer)   python main.py parceiro-refazer $ID ;;
             amostra)   python main.py parceiro-amostra "$ID" ;;
+            teste-imagem) python main.py parceiro-teste-imagem "$ID" ;;
             *)         if [ -n "$MODO" ] && [ "$MODO" != "padrao" ]; then python main.py parceiro --modo "$MODO"; else python main.py parceiro; fi
                        python main.py parceiro-fila ;;
           esac
@@ -105,6 +106,7 @@ jobs:
             cp "$v" /tmp/previa/
           done
           cp out/calibrar_*.jpg out/calibrar_*.json /tmp/previa/ 2>/dev/null || true
+          cp out/parceiro_*_capa_reels.jpg out/parceiro_*_foto.jpg out/parceiro_*_post.jpg out/parceiro_*[0-9].json /tmp/previa/ 2>/dev/null || true
           cd /tmp/previa
           git add -A
           git -c user.name="pbminuto-bot" -c user.email="pbminuto-bot@users.noreply.github.com" commit -qm "prévia parceiro $(date -u +%F_%H%M)" || exit 0
