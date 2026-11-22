@@ -715,6 +715,11 @@ def cmd_parceiro_fila(_):
         print("fila do parceiro vazia")
 
 
+def cmd_parceiro_teste(args):
+    import parceiro
+    print(f"[parceiro] {parceiro.teste_parceiro(args.spec)} post(s) de teste montados (nada publicado)")
+
+
 def cmd_parceiro_teste_imagem(args):
     import parceiro
     print(f"[parceiro] {parceiro.teste_imagem(args.usuario)} post(s) de teste montados (nada publicado)")
@@ -801,6 +806,9 @@ def main():
     pc.add_argument("--limite", type=int, default=1, help="vídeos por rodada")
     pc.set_defaults(fn=cmd_parceiro)
     sub.add_parser("parceiro-fila").set_defaults(fn=cmd_parceiro_fila)
+    pte = sub.add_parser("parceiro-teste", help="monta (sem publicar) os próximos posts de um parceiro: 'usuario' ou 'usuario|desde|flags'")
+    pte.add_argument("spec")
+    pte.set_defaults(fn=cmd_parceiro_teste)
     pti = sub.add_parser("parceiro-teste-imagem", help="monta (sem publicar) os próximos posts de um parceiro de imagem")
     pti.add_argument("usuario")
     pti.set_defaults(fn=cmd_parceiro_teste_imagem)

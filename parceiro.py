@@ -1167,6 +1167,20 @@ def rodada(modo: str = None, limite: int = 1) -> int:
     return total
 
 
+def teste_parceiro(spec: str, quantos: int = 2) -> int:
+    """Teste de um parceiro (novo ou da lista) sem publicar e sem gravar estado: monta os próximos
+    `quantos` posts das últimas 48h (vídeo ou imagem, conforme as flags) e deixa em out/ para a prévia.
+    spec: "usuario" (usa a lista, se estiver nela) ou "usuario|desde|flags" (ex.: "fulano||grade")."""
+    usuario = spec.split("|")[0].strip().lstrip("@").lower()
+    p = (parceiros(spec)[0] if "|" in spec else
+         next((x for x in parceiros() if x["usuario"] == usuario), None)) or parceiros(usuario)[0]
+    p = dict(p, desde="", pausado=False)
+    est = _estado()
+    est["vistos"] = {k: v for k, v in est["vistos"].items() if v.get("status") in ("publicado", "na_fila")}
+    fluxo = _rodada_imagens if p["imagem"] else _rodada_parceiro
+    return fluxo(p, est, "dry", quantos)
+
+
 def teste_imagem(usuario: str, quantos: int = 2) -> int:
     """Teste do parceiro de imagem sem publicar: monta os próximos `quantos` posts (recorte, texto,
     vídeo e capa) e deixa em out/ para a prévia. Não grava estado."""
@@ -1288,6 +1302,7 @@ def _rodada_parceiro(p: dict, est: dict, modo: str, limite: int, so_ids: set = N
             continue
         print(f"[parceiro] pronto: {card['chapeu']} | {card['titulo']}")
         if modo == "dry":
+            (pasta / f"{stamp}.json").write_text(json.dumps(card, ensure_ascii=False, indent=1), encoding="utf-8")
             feitos += 1
             continue
         if modo == "auto":
