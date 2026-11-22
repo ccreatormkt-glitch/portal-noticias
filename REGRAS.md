@@ -61,3 +61,15 @@ Valem para tudo o que o sistema produz. Cada regra tem um teste que falha se ela
 - Onde: `main.cmd_run` (ritmo e limite contam notícias + `parceiro.publicados_24h()`), `parceiro._cedo_demais`.
 - Teste: `tests/test_fluxo.py::test_sem_video_de_parceiro_sai_noticia`.
 
+## 7. Mix de publicações (pedido do Arthur, 22/11/2026)
+- Meta nos últimos 20 posts (notícias + vídeos de parceiro): **Campina Grande 30%, João Pessoa 20%,
+  Brasil 30%, Mundo 20%**. Muda pela variável `MIX` (ex.: `cg:30,jp:20,brasil:30,mundo:20`).
+- O público que importa é o de Campina Grande e João Pessoa: notícia que cita a cidade vem antes. O
+  interior (Agreste, Brejo, Cariri, Curimataú, Sertão) entra na cota de Campina; litoral e Grande João
+  Pessoa, na de João Pessoa; notícia do estado todo completa a que estiver mais atrasada.
+- Cada rodada escolhe a categoria mais atrasada; sem notícia nova confirmada nela, passa para a
+  próxima (regra 6: o perfil nunca fica parado).
+- Vídeos de parceiro contam pela cidade do fato (a IA marca a abrangência: Paraíba, Brasil ou Mundo).
+- Fontes de Mundo: g1 Mundo, Agência Brasil Internacional e BBC News Brasil.
+- Onde: `sources.categoria`, `main._ordem_do_mix`, `parceiro.categoria_do_card`. Testes em `tests/test_fluxo.py`.
+

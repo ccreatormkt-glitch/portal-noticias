@@ -135,6 +135,30 @@ def publicados_24h(caminho: Path = None) -> int:
     return sum(1 for v in vistos.values() if v.get("status") == "publicado" and v.get("ts", 0) > desde)
 
 
+def categoria_do_card(card: dict) -> str:
+    """Categoria do mix para um vídeo de parceiro: pela abrangência que a IA marcou e pela cidade."""
+    import sources
+    abr = str(card.get("abrangencia", "")).lower()
+    texto = " ".join(str(card.get(k, "")) for k in ("cidade", "titulo", "legenda"))
+    if abr == "mundo":
+        return "mundo"
+    if abr == "brasil" and not any(x in " " + sources.fold(texto) + " " for x in sources.LOCAL_TERMS):
+        return "brasil"
+    return sources.categoria_texto(texto)[0]
+
+
+def categorias_recentes(n: int = 20, caminho: Path = None) -> list:
+    """[(ts, categoria)] dos últimos vídeos de parceiro publicados (os antigos, sem categoria, ficam fora)."""
+    try:
+        arq = caminho or (config.STATE_DIR / "parceiro.json")
+        vistos = json.loads(arq.read_text(encoding="utf-8")).get("vistos", {})
+    except Exception:
+        return []
+    ev = [(v.get("ts", 0), v["categoria"]) for v in vistos.values()
+          if v.get("status") == "publicado" and v.get("categoria")]
+    return sorted(ev)[-n:]
+
+
 def ultimo_publicado(caminho: Path = None) -> float:
     """Hora (epoch) do último vídeo de parceiro publicado; 0 se nenhum."""
     try:
@@ -381,14 +405,16 @@ Regras:
 - legenda: 3 blocos separados por linha em branco: 1) o fato com 1 emoji no início;
   2) contexto em 2 a 4 frases simples; 3) uma chamada curta para comentar ou compartilhar.
   Sem hashtags e sem "siga" (o sistema acrescenta).
-- cidade: "Campina Grande", "João Pessoa", "Paraíba" ou "Brasil".
+- cidade: a cidade do fato ("Campina Grande", "João Pessoa" ou outra cidade da Paraíba); "Paraíba" se
+  for o estado todo; "Brasil" se for nacional; o país, se for fora do Brasil.
+- abrangencia: onde o fato aconteceu: "paraiba", "brasil" ou "mundo".
 - hashtags: 5 a 7, sem '#', só letras minúsculas, locais primeiro.
 - risco: "skip" para suicídio, crime sexual, menor identificável, acusação sem confirmação contra
   pessoa identificada ou boato; "cuidado" para polícia/acidente/morte (sem nomes de vítimas ou
   suspeitos, atribuindo à autoridade); "ok" para o resto.
 - skip = true se o material não tiver fato claro (só propaganda, sorteio, vídeo sem notícia).
 {regra_escrita}
-Responda APENAS com JSON: skip, motivo, risco, chapeu, titulo, legenda, cidade, hashtags."""
+Responda APENAS com JSON: skip, motivo, risco, chapeu, titulo, legenda, cidade, abrangencia, hashtags."""
 
 
 def _regra_escrita() -> str:
@@ -982,6 +1008,7 @@ def _rodada_parceiro(p: dict, est: dict, modo: str, limite: int, so_ids: set = N
             try:
                 mid = _publicar(card, video, capa_jpg)
                 _marcar(est, m["id"], "publicado", mid)
+                est["vistos"][m["id"]]["categoria"] = categoria_do_card(card)
                 print(f"[parceiro] publicado {mid}")
             except Exception as e:
                 _marcar(est, m["id"], "falha_publicacao", str(e))

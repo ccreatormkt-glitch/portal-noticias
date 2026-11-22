@@ -20,7 +20,7 @@ FORMATOS = {"noticia": "Principais pontos", "o_que_se_sabe": "O que se sabe",
 GATILHOS = ["utilidade", "identificacao", "emocao", "debate", "status"]
 
 EDITORIAS = ["CIDADE", "POLÍCIA", "POLÍTICA", "SAÚDE", "EMPREGO", "CONCURSO", "TRÂNSITO",
-             "CLIMA", "ESPORTE", "CULTURA", "ECONOMIA", "EDUCAÇÃO", "SERVIÇO", "BRASIL"]
+             "CLIMA", "ESPORTE", "CULTURA", "ECONOMIA", "EDUCAÇÃO", "SERVIÇO", "BRASIL", "MUNDO"]
 
 SYSTEM = f"""Você é o editor de plantão do {PORTAL_NAME} ({PORTAL_HANDLE}), portal de notícias
 no Instagram focado em Campina Grande, João Pessoa e Paraíba, que também traz as notícias mais

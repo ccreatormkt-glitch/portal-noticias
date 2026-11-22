@@ -158,8 +158,9 @@ def test_sem_novidade_da_paraiba_publica_noticia_do_brasil(ambiente, monkeypatch
     assert ambiente == ["BRASIL"]
 
 
-def test_um_a_cada_tres_posts_e_do_brasil(ambiente, monkeypatch):
-    """Fluxo misto: depois de 2 posts da Paraíba, o próximo é notícia relevante do Brasil (G1)."""
+def test_mix_de_publicacoes_alterna_pela_categoria_mais_atrasada(ambiente, monkeypatch):
+    """Mix CG 30%, JP 20%, Brasil 30%, Mundo 20%: depois de um post da Paraíba (cota de Campina),
+    a categoria mais atrasada é o Brasil, e a notícia nacional sai em seguida."""
     nacional = "Governo federal anuncia novo calendário de pagamento do Bolsa Família em dezembro"
     locais = sources.build_clusters
 
@@ -175,12 +176,21 @@ def test_um_a_cada_tres_posts_e_do_brasil(ambiente, monkeypatch):
         return gerar(prompt, system)
     monkeypatch.setattr(editor, "generate", fake)
     monkeypatch.setattr(config, "CANDIDATOS", 1)
-    monkeypatch.setattr(config, "BRASIL_A_CADA", 3)
+    monkeypatch.setattr(config, "MIX", {"cg": .3, "jp": .2, "brasil": .3, "mundo": .2})
     rodar()
     rodar()
-    rodar()
-    assert len(ambiente) == 3 and ambiente[2] == "POLÍTICA" and "POLÍTICA" not in ambiente[:2]
-    assert db.vez_do_brasil(3) is False
+    assert len(ambiente) == 2 and ambiente[1] == "POLÍTICA" and ambiente[0] != "POLÍTICA"
+    assert [c for _, c in sorted(db.categorias_recentes(5))][-1] == "brasil"
+
+
+def test_categoria_pela_cidade_e_regiao():
+    assert sources.categoria_texto("Prefeitura de Campina Grande abre vagas") == ("cg", 2)
+    assert sources.categoria_texto("Alagamento no bairro de Mangabeira") == ("jp", 2)
+    assert sources.categoria_texto("Feira de artesanato em Patos") == ("cg", 1)
+    assert sources.categoria_texto("Maré alta em Cabedelo") == ("jp", 1)
+    assert sources.categoria_texto("Governo da Paraíba anuncia concurso") == ("pb", 0)
+    mundo = item("Terremoto atinge o Japão", "g1", feed="g1_brasil", link="https://g1.globo.com/mundo/noticia/2026/11/22/x.ghtml")
+    assert sources.eh_mundo(mundo)
 
 
 def test_brasil_so_editorias_nacionais_do_g1():

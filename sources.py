@@ -62,6 +62,10 @@ FEEDS = {
     # filtrada pelo site; Agência Brasil (EBC) tem RSS oficial
     "gn_cnnbrasil": gnews("site:cnnbrasil.com.br"),
     "agenciabrasil": "https://agenciabrasil.ebc.com.br/rss/ultimasnoticias/feed.xml",
+    # Mundo (cota de 20% do mix de publicações, pedido do Arthur em 22/11/2026)
+    "g1_mundo": "https://g1.globo.com/rss/g1/mundo/",
+    "agenciabrasil_mundo": "https://agenciabrasil.ebc.com.br/rss/internacional/feed.xml",
+    "bbc_brasil": "https://feeds.bbci.co.uk/portuguese/rss.xml",
     "portalcorreio": "https://portalcorreio.com.br/feed/",
     "clickpb": "https://www.clickpb.com.br/feed/",
     "jornaldaparaiba": "https://jornaldaparaiba.com.br/feed",
@@ -132,6 +136,7 @@ FEEDS = {
 
 # nome amigável usado no crédito interno quando o item vem de RSS direto
 FEED_SOURCE_NAME = {
+    "g1_mundo": "g1", "agenciabrasil_mundo": "Agência Brasil", "bbc_brasil": "BBC News Brasil",
     "g1_pb": "g1 Paraíba", "g1_brasil": "g1", "agenciabrasil": "Agência Brasil", "paraibaonline": "ParaibaOnline", "portalcorreio": "Portal Correio",
     "clickpb": "ClickPB", "pbagora": "PB Agora", "jornaldaparaiba": "Jornal da Paraíba",
     "maispb": "MaisPB", "polemicaparaiba": "Polêmica Paraíba", "fonte83": "Fonte 83",
@@ -159,7 +164,7 @@ TRUSTED = ["g1", "jornal da paraiba", "portal correio", "clickpb", "paraibaonlin
            "paraiba online", "maispb", "pb agora", "tv cabo branco", "tv paraiba",
            "prefeitura", "governo da paraiba", "agencia brasil", "cbn", "camara municipal",
            "policia civil", "policia militar", "tribunal", "ministerio publico", "detran",
-           "prf", "a uniao", "diario do sertao", "uepb", "cbn paraiba"]
+           "prf", "a uniao", "diario do sertao", "uepb", "cbn paraiba", "bbc news brasil"]
 
 # palavras que indicam notícia local (dão prioridade)
 LOCAL_TERMS = [
@@ -531,3 +536,59 @@ def g1_nacional(item) -> bool:
 def nacional(item) -> bool:
     """Notícia de portal nacional que pode entrar na cota do Brasil (G1, CNN Brasil, Agência Brasil)."""
     return g1_nacional(item) or item.feed in FEEDS_NACIONAIS
+
+
+# ------------------------------------------------------------ mix de publicações (22/11/2026)
+# Cada post é de uma categoria: Campina Grande, João Pessoa, Brasil ou Mundo. O público que o Arthur
+# quer é o de Campina Grande e João Pessoa: a cidade vem antes da região. O interior (Agreste, Brejo,
+# Cariri, Curimataú, Sertão) entra na cota de Campina; litoral e Grande João Pessoa, na de João Pessoa;
+# notícia do estado todo ("pb") completa a que estiver mais atrasada.
+FEEDS_MUNDO = {"g1_mundo", "agenciabrasil_mundo", "bbc_brasil"}
+CG_CIDADE = ["campina grande", "campinense", "rainha da borborema", " cg ", "ufcg", "uepb", "treze",
+             "malvinas", "bodocongo", "jose pinheiro", "acude velho", "parque do povo", "alto branco",
+             "catole", "galante", "sao jose da mata"]
+JP_CIDADE = ["joao pessoa", "pessoense", "jampa", " jp ", "ufpb", "botafogo-pb", "mangabeira", "manaira",
+             "tambau", "cabo branco", "bancarios", "valentina", "cristo redentor", "jose americo",
+             "epitacio", "altiplano", "bessa", "geisel", "oitizeiro", "cruz das armas", "jaguaribe"]
+JP_REGIAO = ["cabedelo", "bayeux", "santa rita", "conde", "lucena", "mamanguape", "rio tinto", "pitimbu",
+             "alhandra", "caapora", "cruz do espirito santo", "sape", "pedras de fogo", "baia da traicao",
+             "litoral sul", "litoral norte", "praia", "jacuma"]
+CG_REGIAO = ["queimadas", "lagoa seca", "puxinana", "massaranduba", "boa vista", "fagundes", "esperanca",
+             "areia", "guarabira", "patos", "sousa", "cajazeiras", "monteiro", "borborema", "brejo", "cariri",
+             "sertao", "curimatau", "agreste", "pombal", "itaporanga", "picui", "cuite", "solanea", "bananeiras",
+             "alagoa grande", "sume", "serra branca", "princesa isabel", "pianco", "catole do rocha", "itabaiana",
+             "remigio", "aroeiras", "alagoa nova", "juazeirinho", "soledade", "taperoa"]
+CATEGORIAS = ("cg", "jp", "brasil", "mundo")
+
+
+def categoria_texto(texto: str) -> tuple:
+    """(categoria, prioridade) de um texto da Paraíba: cidade citada = 2, região = 1, estado = 0."""
+    t = " " + fold(texto) + " "
+    cg = sum(t.count(x) for x in CG_CIDADE)
+    jp = sum(t.count(x) for x in JP_CIDADE)
+    if cg or jp:
+        return ("cg", 2) if cg >= jp else ("jp", 2)
+    if any(x in t for x in JP_REGIAO):
+        return ("jp", 1)
+    if any(x in t for x in CG_REGIAO):
+        return ("cg", 1)
+    return ("pb", 0)
+
+
+def eh_mundo(item) -> bool:
+    from urllib.parse import urlsplit
+    if item.feed in FEEDS_MUNDO:
+        return True
+    partes = [x for x in urlsplit(item.link or "").path.split("/") if x]
+    return item.feed == "g1_brasil" and bool(partes) and partes[0] == "mundo"
+
+
+def categoria(cluster) -> tuple:
+    """(categoria, prioridade) de um grupo de notícias para o mix; categoria None = fora do mix."""
+    if cluster.is_local:
+        return categoria_texto(" ".join(f"{i.title} {i.summary}" for i in cluster.items))
+    if any(eh_mundo(i) for i in cluster.items):
+        return ("mundo", 0)
+    if any(nacional(i) for i in cluster.items):
+        return ("brasil", 0)
+    return (None, 0)

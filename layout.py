@@ -134,6 +134,7 @@ COR_EDITORIA = {
     "SERVIÇO":  ("#5D4037", "#FFFFFF"),  # marrom: utilidade pública, guia prático
     "CIDADE":   ("#37474F", "#FFFFFF"),  # grafite: o urbano, assunto geral da cidade
     "BRASIL":   ("#006B28", "#FFDF00"),  # verde e amarelo da bandeira
+    "MUNDO":    ("#1B3A6B", "#FFFFFF"),  # azul-marinho do globo (internacional)
 }
 COR_EDITORIA_PADRAO = COR_EDITORIA["CIDADE"]
 # REGRA (pedido do Arthur, 21/11/2026): na capa e nos Reels a editoria vai SÓ como texto (branco,

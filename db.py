@@ -149,6 +149,22 @@ def marcar_regiao(fp: str, regiao: str):
         c.execute("INSERT OR REPLACE INTO regiao VALUES (?,?)", (fp, regiao))
 
 
+def categorias_recentes(n: int = 20) -> list:
+    """[(ts, categoria)] das últimas n notícias publicadas. Posts de antes do mix (regiao 'paraiba'
+    ou sem registro) são classificados pela manchete; 'brasil' antigo continua 'brasil'."""
+    import sources
+    with _conn() as c:
+        rows = c.execute("SELECT p.ts, r.regiao, p.headline FROM posts p LEFT JOIN regiao r ON r.fp = p.fp "
+                         "WHERE p.status='published' ORDER BY p.ts DESC LIMIT ?", (n,)).fetchall()
+    out = []
+    for ts, reg, titulo in rows:
+        if reg in ("cg", "jp", "brasil", "mundo", "pb"):
+            out.append((ts, reg))
+        else:
+            out.append((ts, sources.categoria_texto(titulo or "")[0]))
+    return out
+
+
 def vez_do_brasil(cada: int) -> bool:
     """True quando os últimos (cada-1) posts publicados foram todos da Paraíba:
     assim 1 a cada `cada` posts é notícia do Brasil."""

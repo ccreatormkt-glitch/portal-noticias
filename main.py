@@ -185,21 +185,34 @@ def _candidatos(clusters, quantos, mode) -> list:
     ja = {c["fp"] for c in cards}
     tentativas = fails = 0
     prazo = time.monotonic() + 7 * 60  # rodada a cada 10 min: escrever rápido e publicar
-    locais = [c for c in clusters if c.is_local]
-    # notícias relevantes do Brasil (G1, CNN Brasil, Agência Brasil): 1 a cada BRASIL_A_CADA posts e, de reserva, quando
-    # não houver nada novo da Paraíba
-    brasil = [c for c in clusters if not c.is_local and any(sources.nacional(i) for i in c.items)]
-    # mais relevante primeiro: o mesmo fato em mais veículos e nas manchetes principais do país
-    brasil.sort(key=lambda c: (any(i.feed == "gn_brasil_top" for i in c.items), c.n_sources), reverse=True)
-    vez_brasil = config.BRASIL_A_CADA > 0 and db.vez_do_brasil(config.BRASIL_A_CADA) and not _PAUTA.get("ativa")
+    # mix de publicações (CG 30%, JP 20%, Brasil 30%, Mundo 20%): a categoria mais atrasada vem primeiro;
+    # se ela não tiver notícia nova confirmada, passa para a próxima (o perfil nunca fica parado)
+    ordem = _ordem_do_mix()
+    cats = {}
+    grupos = {k: [] for k in ordem}
+    for c in clusters:
+        cat, prio = sources.categoria(c)
+        if cat is None:
+            continue
+        cats[id(c)] = (cat, prio)
+        for k in (("cg", "jp") if cat == "pb" else (cat,)):   # notícia do estado todo completa CG ou JP
+            if k in grupos:
+                grupos[k].append(c)
+    for k, lista in grupos.items():
+        # cidade antes da região; mais veículos primeiro; no Brasil/Mundo, as manchetes principais
+        lista.sort(key=lambda c: (cats[id(c)][1], any(i.feed == "gn_brasil_top" for i in c.items),
+                                  c.n_sources, c.score), reverse=True)
     if _PAUTA.get("ativa"):  # pauta pedida: os grupos já são só do assunto (locais ou não)
-        fila = sorted(clusters, key=lambda c: c.n_sources, reverse=True)
-    elif vez_brasil and brasil:
-        print("[run] vez de uma notícia do Brasil (G1)")
-        fila = brasil + locais
+        fila = [(sources.categoria(c)[0] or "brasil", c) for c in sorted(clusters, key=lambda c: c.n_sources, reverse=True)]
     else:
-        fila = locais + (brasil if config.BRASIL_RESERVA else [])
-    for c in fila:
+        fila, ja_na_fila = [], set()
+        for k in ordem:
+            for c in grupos[k]:
+                if id(c) not in ja_na_fila:
+                    fila.append((k, c))
+                    ja_na_fila.add(id(c))
+    vez_brasil = True   # compatibilidade: Brasil e Mundo agora entram pelo mix
+    for bucket, c in fila:
         if len(cards) >= quantos or tentativas >= quantos + 3:
             break
         if time.monotonic() > prazo and cards:
@@ -212,8 +225,6 @@ def _candidatos(clusters, quantos, mode) -> list:
                  db.ja_postado(c.fingerprint, c.stems) if _PAUTA.get("ativa") else db.seen(c.fingerprint, c.stems))
         if not confirmed or c.fingerprint in ja or visto:
             continue
-        if not c.is_local and not vez_brasil:
-            print(f"[run] sem novidade da Paraíba; notícia do Brasil (G1): {c.rep.title[:60]}")
         repetida = "" if _PAUTA.get("refazer") else db.manchete_repetida(c.rep.title) or next(
             (k["titulo"] for k in cards if sources.mesma_historia(c.rep.title, k["titulo"])
              or sources.mesma_historia(c.rep.title, k.get("titulo_fonte", ""))), "")
@@ -259,15 +270,54 @@ def _candidatos(clusters, quantos, mode) -> list:
             continue
         if config.HUMANIZAR:  # skill STE80 Humanizer: tira cara de texto de IA (legenda e narração)
             card = editor.humanizar(card, c)
+        if bucket == "pb":
+            bucket = "cg"
         card.update(fp=c.fingerprint, stems=sorted(c.stems), source_line=source_line(c.sources),
-                    titulo_fonte=c.rep.title, regiao="paraiba" if c.is_local else "brasil",
-                    **({} if c.is_local else {"cidade": "Brasil"}),
+                    titulo_fonte=c.rep.title, regiao=bucket, categoria=bucket,
+                    **({} if c.is_local else {"cidade": "Mundo" if bucket == "mundo" else "Brasil"}),
                     links=[i.link for i in c.items[:4]], cluster_score=c.score, _ts=time.time())
         cards.append(card)
     for card in cards:
         card["_nota"] = round(_nota(card, card.get("cluster_score", 0)), 2)
-    cards.sort(key=lambda x: x["_nota"], reverse=True)
+        card.setdefault("categoria", _categoria_do_cache(card))
+    # a categoria mais atrasada no mix ganha; dentro dela, a melhor nota
+    rank = {k: i for i, k in enumerate(ordem)}
+    cards.sort(key=lambda x: (rank.get(x["categoria"], len(rank)), -x["_nota"]))
     return cards
+
+
+def _categoria_do_cache(card: dict) -> str:
+    """Categoria de um candidato guardado antes do mix existir."""
+    import sources
+    if card.get("regiao") in ("cg", "jp", "brasil", "mundo"):
+        return card["regiao"]
+    if card.get("regiao") == "brasil" or card.get("cidade") == "Brasil":
+        return "brasil"
+    cat = sources.categoria_texto(" ".join([card.get("titulo", ""), card.get("titulo_fonte", ""),
+                                            card.get("cidade", "")]))[0]
+    return "cg" if cat == "pb" else cat
+
+
+def _ordem_do_mix() -> list:
+    """Categorias da mais atrasada para a mais adiantada em relação à meta (config.MIX), contando
+    notícias e vídeos de parceiro dos últimos config.MIX_JANELA posts. 'pb' (estado todo) vale meio
+    para Campina Grande e meio para João Pessoa."""
+    import parceiro
+    ev = sorted(db.categorias_recentes(config.MIX_JANELA) + parceiro.categorias_recentes(config.MIX_JANELA))
+    ev = ev[-config.MIX_JANELA:]
+    cont = {k: 0.0 for k in config.MIX}
+    for _, cat in ev:
+        if cat == "pb":
+            cont["cg"] = cont.get("cg", 0) + 0.5
+            cont["jp"] = cont.get("jp", 0) + 0.5
+        elif cat in cont:
+            cont[cat] += 1
+    n = len(ev)
+    falta = {k: config.MIX[k] * (n + 1) - cont[k] for k in config.MIX}
+    ordem = sorted(config.MIX, key=lambda k: (falta[k], config.MIX[k]), reverse=True)
+    print("[run] mix (últimos %d): " % n + ", ".join(f"{k} {cont[k]:.0f}/{config.MIX[k]:.0%}" for k in config.MIX)
+          + f" -> vez de {ordem[0]}")
+    return ordem
 
 
 def cmd_mesclar(args):
@@ -431,7 +481,7 @@ def cmd_run(args):
                     pub_fail += 1  # erro de verdade (token, permissão...): rodada vermelha + e-mail
                 continue
             db.update_status(fp, "published", ig_id=mid)
-            db.marcar_regiao(fp, card.get("regiao", "paraiba"))
+            db.marcar_regiao(fp, card.get("categoria") or card.get("regiao", "paraiba"))
             db.registrar_publicada(card, mid)  # entra no banco de notícias já postadas
             print(f"[publicado] {mid}  {card['titulo']}")
         made += 1
