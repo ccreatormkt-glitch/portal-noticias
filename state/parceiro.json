@@ -306,9 +306,19 @@
    "nota": "18148116007519265",
    "categoria": "jp",
    "story": "18144729586715756"
+  },
+  "17894391351458385": {
+   "ts": 1795367639.2452152,
+   "status": "pulado",
+   "nota": "IA: O conteúdo trata de exposição de menor de idade em situação de vulnerabilidade e conflito familiar, sem fato jornalístico de interesse público ou desdobramento institucional."
+  },
+  "18171937573415848": {
+   "ts": 1795367695.1173468,
+   "status": "pulado",
+   "nota": "mesmo fato já postado: Inmet coloca 124 cidades da Paraíba em alerta por tempo seco"
   }
  },
  "tentativas": {},
  "refazer": {},
- "aguardando": 1795366733.6503518
+ "aguardando": 0
 }
