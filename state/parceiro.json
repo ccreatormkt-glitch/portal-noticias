@@ -254,9 +254,21 @@
    "ts": 1795355482.42135,
    "status": "publicado",
    "nota": "17928887376202314"
+  },
+  "18475477144186307": {
+   "ts": 1795356987.549205,
+   "status": "pulado",
+   "nota": "IA: O vídeo enviado contém apenas repetições sem sentido e não apresenta conteúdo informativo ou notícia."
+  },
+  "18135989986826080": {
+   "ts": 1795357828.0174818,
+   "status": "publicado",
+   "nota": "18127854818472923"
   }
  },
- "tentativas": {},
+ "tentativas": {
+  "18134576138484680": 1
+ },
  "refazer": {},
- "aguardando": 1795355951.0463073
+ "aguardando": 1795357829.1456382
 }
