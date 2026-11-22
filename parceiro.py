@@ -48,7 +48,7 @@ LISTA_PADRAO = ("jornaldapb|2026-11-20T03:00:00+0000; "
                 "blognewspb|2026-11-20T03:00:00+0000|grade; "
                 # 22/11/2026: só as postagens de IMAGEM (nada de Reels/Stories); a foto central sai da
                 # moldura e vira a foto do nosso Reels; o texto é reescrito pela regra das notícias
-                "bombaparaiba_|2026-11-22T03:00:00+0000|imagem")
+                "bombaparaiba_|2026-11-22T03:00:00+0000|imagem|pausado")
 MODO = config.env("PARCEIRO_MODO", "auto")            # auto = publica direto (pedido do Arthur); review = fila
 JANELA_HORAS = int(config.env("PARCEIRO_JANELA_HORAS", "48"))   # vídeo mais velho que isso é ignorado
 # Só Reels NOVOS (pedido do Arthur): nada publicado antes deste momento entra, mesmo dentro da janela.
@@ -83,7 +83,9 @@ def parceiros(texto: str = None) -> list:
         lista.append({"usuario": partes[0].lstrip("@").lower(),
                       "desde": DESDE or (partes[1] if len(partes) > 1 else ""),
                       "grade": any(x.lower() == "grade" for x in partes[2:]),
-                      "imagem": any(x.lower() == "imagem" for x in partes[2:])})
+                      "imagem": any(x.lower() == "imagem" for x in partes[2:]),
+                      # "pausado": fica fora das rodadas (o teste-imagem continua funcionando)
+                      "pausado": any(x.lower() == "pausado" for x in partes[2:])})
     return lista
 
 
@@ -1130,6 +1132,8 @@ def rodada(modo: str = None, limite: int = 1) -> int:
     est["aguardando"] = 0   # volta a marcar só se nesta rodada algum vídeo ficar esperando vaga
     total = _processar_refazer(est, modo or MODO) if est["refazer"] else 0   # pedidos do Arthur primeiro
     for p in parceiros():
+        if p.get("pausado"):
+            continue
         total += _rodada_parceiro(p, est, modo or MODO, limite)
     if (modo or MODO) != "dry":
         _guardar_estado(est)
