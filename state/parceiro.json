@@ -316,9 +316,21 @@
    "ts": 1795367695.1173468,
    "status": "pulado",
    "nota": "mesmo fato já postado: Inmet coloca 124 cidades da Paraíba em alerta por tempo seco"
+  },
+  "18080172968723390": {
+   "ts": 1795372316.402407,
+   "status": "pulado",
+   "nota": "mesmo fato já postado: PM recupera 38 medidores da Cagepa descartados em área abert"
+  },
+  "17957131449312245": {
+   "ts": 1795372338.6201649,
+   "status": "pulado",
+   "nota": "mesmo fato já postado: Suspeitos executam homem de 41 anos a tiros no bairro Tibiri"
   }
  },
- "tentativas": {},
+ "tentativas": {
+  "18097256120507235": 1
+ },
  "refazer": {},
- "aguardando": 1795371923.0765474
+ "aguardando": 0
 }
