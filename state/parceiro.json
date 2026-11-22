@@ -294,9 +294,14 @@
    "ts": 1795359875.9746063,
    "status": "publicado",
    "nota": "18138970121508126"
+  },
+  "18381269884242306": {
+   "ts": 1795361659.3268638,
+   "status": "pulado",
+   "nota": "tema proibido (filtro fixo)"
   }
  },
  "tentativas": {},
  "refazer": {},
- "aguardando": 0
+ "aguardando": 1795361659.3278682
 }
