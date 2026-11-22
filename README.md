@@ -72,7 +72,7 @@ manda e-mail.
 
 Perfis que autorizaram o uso do conteúdo (`LISTA_PADRAO` em `parceiro.py`, workflow
 **parceiro-jornaldapb**, a cada 20 min). Hoje: @jornaldapb, @paraibabussines_, @portalresumopb,
-@noticiacertapb, @blognewspb, @bombaparaiba_ (só imagens) e @destaques.dodia (vídeos e imagens).
+@noticiacertapb (vídeos e carrosséis de notícia), @blognewspb, @bombaparaiba_ (só imagens) e @destaques.dodia (vídeos e imagens).
 Só entram posts publicados depois da data de cada parceiro, e nunca collab/publi.
 
 - lê os posts pela API oficial (Business Discovery, mesmo token do portal);

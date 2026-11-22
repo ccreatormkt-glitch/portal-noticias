@@ -108,3 +108,12 @@ Valem para tudo o que o sistema produz. Cada regra tem um teste que falha se ela
 - Toda legenda termina com "👉 Siga o PB Minuto: @pbminuto" (antes das hashtags).
 - A IA não escreve "siga" nos textos: o sistema acrescenta o encerramento.
 - Onde: `video.roteiro`, `boletim.py`, `publish.build_caption`. Teste: `tests/test_publicacao.py`.
+
+## 11. Posts de imagem do @noticiacertapb e alternância (pedido do Arthur, 22/11/2026)
+- Além dos Reels, entram as notícias em carrossel do @noticiacertapb desde 21/11/2026 00h de Fortaleza
+  (linha `noticiacertapb|...|imagem|carrossel|faixa=vermelha|topo=15`).
+- Usa só a 1ª foto do carrossel: corta a faixa vermelha dele (editoria, manchete, telefone e patrocinadores)
+  e 15% do alto (logo Notícia Certa). As imagens soltas dele são anúncios de clientes e nunca entram.
+- A foto vira Reels do PB Minuto com locução e o texto é reescrito pelas regras das notícias.
+- Vídeo e post de imagem dos parceiros se alternam: depois de um vídeo, as linhas de imagem pegam a vaga
+  primeiro, e vice-versa (`est["ultimo_tipo"]`). Se o tipo da vez não tiver nada novo, o outro usa a vaga.
