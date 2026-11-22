@@ -361,10 +361,43 @@
    "ts": 1795384784.5125184,
    "status": "pulado",
    "nota": "possível collab/publi (\"em parceria com\" na legenda)"
+  },
+  "18039804692849704": {
+   "ts": 1795388478.2202182,
+   "status": "pulado",
+   "nota": "mesmo fato já postado: PM detém mulher por suspeita de agredir mãe e ferir criança "
+  },
+  "17920677300537200": {
+   "ts": 1795388513.1331267,
+   "status": "pulado",
+   "nota": "mesmo fato já postado: Bebê de sete meses atingido por tiro em Congo segue na UTI e"
+  },
+  "18101759840391406": {
+   "ts": 1795388528.0147758,
+   "status": "pulado",
+   "nota": "mesmo fato já postado: Jovem é achado morto com marcas de tiros em terreno em Bayeu"
+  },
+  "18109555607300499": {
+   "ts": 1795388551.913658,
+   "status": "pulado",
+   "nota": "texto ainda parecido com a fonte"
+  },
+  "18348681061287667": {
+   "ts": 1795388625.6911998,
+   "status": "na_fila",
+   "nota": ""
+  },
+  "18110006539976688": {
+   "ts": 1795388655.5838857,
+   "status": "pulado",
+   "nota": "IA: O conteúdo trata-se de desinformação e teorias da conspiração sem fundamento, violando as diretrizes de veracidade do PB Minuto."
   }
  },
- "tentativas": {},
+ "tentativas": {
+  "18103755947392994": 1,
+  "18043841588892437": 1
+ },
  "refazer": {},
- "aguardando": 1795387470.532966,
+ "aguardando": 0,
  "ultimo_tipo": "video"
 }
