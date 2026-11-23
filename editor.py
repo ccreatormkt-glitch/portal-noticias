@@ -719,7 +719,7 @@ def escolher_foto(card: dict, imagens: list, cena: str = "", sistema: str = None
                 resp = _extract_json(r.json()["candidates"][0]["content"]["parts"][0]["text"])
                 return _escolha(resp, len(imagens), defeitos)
             except Exception as ex:
-                erros.append(f"gemini {model}: {type(ex).__name__}")
+                erros.append(f"gemini {model}: {_motivo(ex)}")
     if OPENAI_API_KEY:
         conteudo = [{"type": "text", "text": noticia}]
         for i, (dados, mime) in enumerate(imagens):
@@ -735,8 +735,14 @@ def escolher_foto(card: dict, imagens: list, cena: str = "", sistema: str = None
             r.raise_for_status()
             return _escolha(_extract_json(r.json()["choices"][0]["message"]["content"]), len(imagens), defeitos)
         except Exception as ex:
-            erros.append(f"openai: {type(ex).__name__}")
+            erros.append(f"openai: {_motivo(ex)}")
     raise RuntimeError("; ".join(erros) or "nenhuma IA configurada")
+
+
+def _motivo(ex) -> str:
+    """Nome do erro com o código HTTP (429 = cota, 400 = pedido inválido), para o log dizer a causa."""
+    cod = getattr(getattr(ex, "response", None), "status_code", None)
+    return f"{type(ex).__name__} {cod}" if cod else type(ex).__name__
 
 
 def _escolha(resp: dict, n: int, defeitos_considerados=None):
