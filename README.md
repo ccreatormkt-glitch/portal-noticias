@@ -6,7 +6,7 @@ publicações em 24h, Stories incluídos; a API do Instagram aceita 100):
 
 ```
 Google News + 55 RSS da Paraíba (portais, órgãos, prefeituras) + Brasil + Mundo
-  -> agrupa as manchetes por assunto e exige 2 fontes (ou 1 fonte grande/oficial)
+  -> agrupa as manchetes por assunto; 1 fonte basta (crime/acusação de site pequeno pede 2)
   -> mix de audiência: Campina Grande 30%, João Pessoa 20%, Brasil 30%, Mundo 20%
      (interior conta para CG, litoral para JP; no máximo 2 seguidas da mesma categoria)
   -> IA editora escreve no padrão dos grandes portais (chapéu, título no presente, linha fina,

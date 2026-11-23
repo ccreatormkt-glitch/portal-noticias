@@ -117,3 +117,12 @@ Valem para tudo o que o sistema produz. Cada regra tem um teste que falha se ela
 - A foto vira Reels do PB Minuto com locução e o texto é reescrito pelas regras das notícias.
 - Vídeo e post de imagem dos parceiros se alternam: depois de um vídeo, as linhas de imagem pegam a vaga
   primeiro, e vice-versa (`est["ultimo_tipo"]`). Se o tipo da vez não tiver nada novo, o outro usa a vaga.
+
+## 12. Uma fonte basta (pedido do Arthur, 23/11/2026)
+- Antes: a notícia só entrava se 2 veículos diferentes dessem o mesmo fato (ou 1 grande/oficial).
+- Agora: basta 1 veículo da nossa lista de fontes (`MIN_SOURCES=1`).
+- Exceção de segurança: crime, prisão ou acusação vinda de um só site pequeno ainda pede 2 veículos
+  ou 1 grande/oficial (g1, Jornal da Paraíba, Portal Correio, polícia, prefeitura etc.)
+  (`MIN_SOURCES_POLICIA=2`), para não publicar acusação sem confirmação.
+- Continuam valendo: filtro de temas sensíveis, trava contra repetição e reescrita sem cópia.
+- Onde: `main._confirmada`, `sources.Cluster.policial`. Teste: `tests/test_fluxo.py`.
