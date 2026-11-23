@@ -1,0 +1,36 @@
+name: google-mac
+# Busca no Google Imagens feita NO MAC do Arthur (runner próprio com o rótulo "pbminuto-mac"), com o
+# Chrome e a internet dele, para o Google não pedir captcha. Quem dispara é o robô (illustrate.pedir_ao_mac);
+# a foto volta pelo ramo "google-fotos". Mac desligado: o robô cancela o pedido e segue sem foto do Google.
+on:
+  workflow_dispatch:
+    inputs:
+      pedido:
+        description: "pedido do robô (base64)"
+        required: true
+permissions:
+  contents: write
+concurrency:
+  group: google-mac
+  cancel-in-progress: false
+
+jobs:
+  print:
+    runs-on: [self-hosted, macOS, pbminuto-mac]
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ambiente Python (fica guardado no Mac)
+        run: |
+          test -x ~/.pbminuto-venv/bin/python || python3 -m venv ~/.pbminuto-venv
+          ~/.pbminuto-venv/bin/pip install -q --upgrade requests Pillow playwright
+      - name: Busca e print no Google
+        env:
+          PEDIDO: ${{ inputs.pedido }}
+          GITHUB_TOKEN: ${{ github.token }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_MODEL: ${{ vars.GEMINI_MODEL }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: ~/.pbminuto-venv/bin/python google_mac.py

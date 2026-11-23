@@ -46,7 +46,7 @@ jobs:
           cache: pip
       - run: pip install -r requirements.txt
       - name: Navegador para o print do Google Imagens
-        if: vars.GOOGLE_IMAGENS != 'false'
+        if: vars.GOOGLE_IMAGENS != 'false' && vars.GOOGLE_VIA == 'aqui'
         run: python -m playwright install --with-deps chromium
       - name: Instalar FFmpeg
         run: which ffmpeg || (sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends ffmpeg)
@@ -82,6 +82,8 @@ jobs:
           IG_USER_ID: ${{ secrets.IG_USER_ID }}
           IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
           GOOGLE_IMAGENS: ${{ vars.GOOGLE_IMAGENS }}
+          GOOGLE_VIA: ${{ vars.GOOGLE_VIA }}
+          GITHUB_TOKEN: ${{ github.token }}
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
           PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
           IMGBB_API_KEY: ${{ secrets.IMGBB_API_KEY }}

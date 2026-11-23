@@ -126,3 +126,29 @@ Na aba **Actions** do repositório:
 - **A legenda nunca leva links nem @ de terceiros.** O texto vem de IA lendo notícias, então isso é removido antes de publicar.
 - **O repositório é privado.** Deixe a verificação em duas etapas ligada no GitHub, no Facebook e no Instagram.
 - **Se uma chave vazar:** gere outra no site de origem e troque o Secret. Para o token da Meta, remova o app em Configurações › Integrações comerciais do Facebook e gere um novo.
+
+
+## Google Imagens pelo Mac (pedido do Arthur, 23/11/2026)
+A busca da foto no Google roda no Mac do Arthur, com o Chrome e a internet dele (quase sem captcha).
+O Mac precisa estar ligado, sem repouso e com internet; se estiver desligado, o post sai com a foto de reserva.
+
+1. **Segurança (repositório público)**: GitHub → Settings → Actions → General → "Approval for running fork
+   pull request workflows from contributors" → **Require approval for all external contributors**.
+   Assim ninguém de fora roda código no seu Mac.
+2. **Runner no Mac**: GitHub → Settings → Actions → Runners → **New self-hosted runner** → macOS
+   (ARM64 se o Mac for M1/M2/M3/M4; x64 se for Intel). Rode no Terminal os comandos que aparecem lá.
+   No `./config.sh`, quando perguntar os rótulos (labels), digite **pbminuto-mac**; o resto, Enter.
+   Depois, para ligar sozinho com o Mac: `./svc.sh install` e `./svc.sh start`.
+3. **Python**: no Terminal, `python3 --version` (se pedir, aceite instalar as ferramentas do Xcode).
+   O Google Chrome precisa estar instalado em /Applications.
+4. **(Opcional) Conta Google no Chrome do robô** (menos captcha ainda):
+   `git clone https://github.com/ccreatormkt-glitch/portal-noticias ~/pbminuto-google && cd ~/pbminuto-google`
+   `python3 -m venv ~/.pbminuto-venv && ~/.pbminuto-venv/bin/pip install requests Pillow playwright`
+   `~/.pbminuto-venv/bin/python google_mac.py --entrar` (abre o Chrome: entre na conta e aceite os cookies).
+   Teste: `~/.pbminuto-venv/bin/python google_mac.py --testar "Praia de Tambaú João Pessoa"`
+   (o teste precisa de GEMINI_API_KEY ou OPENAI_API_KEY no Terminal para a IA escolher a foto).
+5. **Energia**: Ajustes do Sistema → Bateria/Energia → impedir repouso automático com a tela desligada.
+
+Variáveis (Settings → Secrets and variables → Actions → Variables): `GOOGLE_VIA` (`mac` padrão, ou `aqui`),
+`GOOGLE_IMAGENS=false` desliga.
+

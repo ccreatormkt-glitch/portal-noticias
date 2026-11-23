@@ -124,12 +124,16 @@ Valem para tudo o que o sistema produz. Cada regra tem um teste que falha se ela
 - As imagens de banco/IA saíam diferentes do assunto. A foto de fundo passa a vir primeiro do próprio
   Google Imagens, sem filtro de licença, inclusive em polícia (escolha do Arthur, ciente do risco de
   direito autoral e de foto do caso).
-- Como: um navegador sem tela (Playwright/Chromium) abre a busca pelo assunto (manchete + cidade; depois o
-  lugar real ou os destaques), a IA olha as miniaturas e só aprova a que corresponde ao fato (nota >= 7),
-  recusando texto, marca d'água, logo e rosto reconhecível; o navegador abre a foto e tira um print dela.
-  Sem chave de API. Até 2 buscas por notícia.
-- Sem foto aprovada (ou se o Google pedir captcha), segue a ordem antiga (vídeo/banco de fotos/IA/cidade).
+- Como: o Chrome abre a busca pelo assunto (manchete + cidade; depois o lugar real ou os destaques), a IA
+  olha as miniaturas e só aprova a que corresponde ao fato (nota >= 7), recusando texto, marca d'água, logo
+  e rosto reconhecível; o Chrome abre a foto e tira um print dela. Sem chave de API. Até 2 buscas por notícia.
+- Onde roda (`GOOGLE_VIA`): `mac` (padrão) = no Mac do Arthur, com o Chrome e a internet dele, para o
+  Google não pedir captcha. O robô dispara `google-mac.yml` (runner próprio com o rótulo `pbminuto-mac`),
+  espera até 3 min e baixa a foto do ramo `google-fotos`. Mac desligado: cancela o pedido, segue sem foto do
+  Google e fica 20 min sem pedir. `aqui` = Chromium do servidor do GitHub (o Google costuma pedir captcha).
+- Sem foto aprovada, segue a ordem antiga (vídeo/banco de fotos/IA/cidade).
 - Crédito na arte e na legenda: "Foto: Reprodução / <site de origem>".
-- Desliga com a variável `GOOGLE_IMAGENS=false` (também pula a instalação do navegador nos workflows).
-- Onde: `illustrate.foto_google`, chamada no começo de `illustrate.imagem_de_fundo` (notícias e parceiros).
-  Teste: `tests/test_google_imagens.py` (página falsa do Google, local).
+- Desliga com a variável `GOOGLE_IMAGENS=false`.
+- Onde: `illustrate.foto_google` (começo de `illustrate.imagem_de_fundo`, notícias e parceiros),
+  `google_mac.py`, `.github/workflows/google-mac.yml`. Instalação no Mac: SETUP.md, "Google Imagens pelo Mac".
+  Teste: `tests/test_google_imagens.py`.

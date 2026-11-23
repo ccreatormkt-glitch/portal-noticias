@@ -517,7 +517,8 @@ foto_pexels = foto_banco  # nome antigo
 # busca pelo assunto da notícia, a IA olha as miniaturas e escolhe a do fato (sem texto, marca
 # d'água, logo ou rosto reconhecível), o navegador abre essa foto e tira um print dela.
 # Crédito: "Foto: Reprodução / <site de onde veio>". Se o Google pedir captcha ou nada servir,
-# segue a ordem antiga (vídeo/banco/IA/cidade). GOOGLE_IMAGENS=false desliga.
+# segue a ordem antiga (vídeo/banco/IA/cidade). GOOGLE_IMAGENS=false desliga. GOOGLE_VIA=mac: a busca
+# roda no Mac do Arthur (veja google_mac.py e .github/workflows/google-mac.yml).
 GOOGLE_URL = "https://www.google.com/search?tbm=isch&hl=pt-BR&gl=br&safe=active&q="
 GOOGLE_MAX_BUSCAS = 2          # buscas por notícia
 GOOGLE_MAX_MINIATURAS = 8      # miniaturas mostradas para a IA
@@ -625,6 +626,10 @@ def _print_google(page, busca: str, card: dict, destino: Path):
     if not grande:
         print(f"[google] '{busca}': a foto grande não abriu")
         return None
+    gid = "google:" + grande["src"][:300]
+    if gid in _usadas():
+        print(f"[google] '{busca}': essa foto já foi usada em outro post")
+        return None
     page.locator("img").nth(grande["i"]).screenshot(path=str(destino), timeout=8000)
     from PIL import Image
     with Image.open(destino) as im:
@@ -633,26 +638,47 @@ def _print_google(page, busca: str, card: dict, destino: Path):
             print(f"[google] '{busca}': print pequeno demais ({tam[0]}x{tam[1]})")
             return None
         im.convert("RGB").save(destino.with_suffix(".jpg"), quality=92)
-    _marcar("google:" + grande["src"][:300])
+    _marcar(gid)
+    card["_google_id"] = gid
     return _site(grande.get("href") or grande["src"]) or "Google", tam
 
 
 def foto_google(card: dict, base: Path):
-    """Busca o assunto no Google Imagens e tira print da foto que a IA aprovou. Devolve (arquivo, crédito)."""
-    from config import GOOGLE_IMAGENS
+    """Busca o assunto no Google Imagens e tira print da foto que a IA aprovou. Devolve (arquivo, crédito).
+    GOOGLE_VIA=mac pede ao Mac do Arthur; GOOGLE_VIA=aqui usa o navegador desta máquina."""
+    from config import GOOGLE_IMAGENS, GOOGLE_VIA
     if not GOOGLE_IMAGENS:
         return None
+    if GOOGLE_VIA == "mac":
+        return pedir_ao_mac(card, base)
+    return print_google_aqui(card, base)
+
+
+def print_google_aqui(card: dict, base: Path):
+    """Abre o navegador nesta máquina (no Mac: o Chrome com o perfil já logado no Google)."""
+    from config import GOOGLE_CHROME, GOOGLE_COM_TELA, GOOGLE_PERFIL
     try:
         from playwright.sync_api import sync_playwright
     except ImportError:
         print("[google] Playwright não instalado: outras fontes")
         return None
     destino = Path(f"{base}_google.png")
+    opcoes = {"headless": not GOOGLE_COM_TELA, "locale": "pt-BR", "device_scale_factor": 2,
+              "viewport": {"width": 1280, "height": 1400}}
+    if GOOGLE_CHROME:
+        opcoes["channel"] = "chrome"   # o Chrome de verdade (user agent dele, sem disfarce)
+    else:
+        opcoes["user_agent"] = UA_NAVEGADOR
     with sync_playwright() as pw:
-        nav = pw.chromium.launch()
+        if GOOGLE_PERFIL:   # perfil próprio do robô, logado na conta Google uma vez (google_mac.py --entrar)
+            Path(GOOGLE_PERFIL).expanduser().mkdir(parents=True, exist_ok=True)
+            ctx = pw.chromium.launch_persistent_context(str(Path(GOOGLE_PERFIL).expanduser()), **opcoes)
+        else:
+            nav = pw.chromium.launch(headless=opcoes.pop("headless"), **({"channel": opcoes.pop("channel")}
+                                                                       if "channel" in opcoes else {}))
+            ctx = nav.new_context(**opcoes)
         try:
-            page = nav.new_page(locale="pt-BR", user_agent=UA_NAVEGADOR, device_scale_factor=2,
-                                viewport={"width": 1280, "height": 1400})
+            page = ctx.pages[0] if ctx.pages else ctx.new_page()
             for busca in buscas_google(card)[:GOOGLE_MAX_BUSCAS]:
                 try:
                     achou = _print_google(page, busca, card, destino)
@@ -667,7 +693,110 @@ def foto_google(card: dict, base: Path):
                     card["_credito_legenda"] = f"📷 Foto: Reprodução / {site}"
                     return destino.with_suffix(".jpg"), f"Foto: Reprodução / {site}"
         finally:
-            nav.close()
+            ctx.close()
+    return None
+
+
+# ---- pedido ao Mac: o servidor do GitHub dispara o workflow google-mac.yml (runner no Mac do Arthur),
+# o Mac faz a busca no Chrome dele e grava a foto no ramo "google-fotos"; aqui só espera e baixa.
+RAMO_GOOGLE = "google-fotos"
+WORKFLOW_MAC = "google-mac.yml"
+CAMPOS_PEDIDO = ("titulo", "linha_fina", "resumo", "pontos", "legenda", "cidade", "chapeu", "destaques",
+                 "foto_local", "risco")
+
+
+def _gh(metodo: str, caminho: str, **kw):
+    import os
+    repo, token = os.environ.get("GITHUB_REPOSITORY", ""), os.environ.get("GITHUB_TOKEN", "")
+    if not (repo and token):
+        raise RuntimeError("sem GITHUB_REPOSITORY/GITHUB_TOKEN")
+    cab = {"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json",
+           **kw.pop("headers", {})}
+    return requests.request(metodo, f"https://api.github.com/repos/{repo}/{caminho}", headers=cab,
+                            timeout=(5, 30), **kw)
+
+
+MAC_PAUSA = 20 * 60   # depois de um pedido sem resposta, fica esse tempo sem pedir ao Mac
+
+
+def _mac_parado() -> bool:
+    """O Mac está desligado se tem pedido na fila há mais de 1 minuto (cancela esses pedidos) ou se o
+    último pedido foi cancelado por falta de resposta há menos de MAC_PAUSA (não espera de novo)."""
+    import datetime as dt
+    r = _gh("GET", f"actions/workflows/{WORKFLOW_MAC}/runs", params={"per_page": 20})
+    if r.status_code == 404:
+        raise RuntimeError("workflow google-mac.yml não existe no main")
+    r.raise_for_status()
+    agora, parado = dt.datetime.now(dt.timezone.utc), False
+    runs = r.json().get("workflow_runs", [])
+    if runs and runs[0].get("conclusion") == "cancelled":
+        quando = dt.datetime.fromisoformat((runs[0].get("updated_at") or runs[0]["created_at"]).replace("Z", "+00:00"))
+        if (agora - quando).total_seconds() < MAC_PAUSA:
+            return True
+    for run in runs:
+        if run.get("status") != "queued":
+            continue
+        criado = dt.datetime.fromisoformat(run["created_at"].replace("Z", "+00:00"))
+        if (agora - criado).total_seconds() > 60:
+            parado = True
+            _gh("POST", f"actions/runs/{run['id']}/cancel")
+    return parado
+
+
+def pedir_ao_mac(card: dict, base: Path):
+    import base64 as b64
+    import json
+    import time
+    import uuid
+    from config import GOOGLE_MAC_ESPERA
+    try:
+        if _mac_parado():
+            print("[google] o Mac não pegou o pedido anterior (desligado?): sigo sem foto do Google")
+            return None
+        pid = time.strftime("%Y%m%d%H%M%S") + "-" + uuid.uuid4().hex[:6]
+        usadas = sorted(u for u in _usadas() if u.startswith("google:"))[-80:]   # para não repetir foto
+        pedido = {"id": pid, "t": time.time(), "usadas": usadas,
+                  "card": {k: card.get(k) for k in CAMPOS_PEDIDO if card.get(k)}}
+        txt = b64.b64encode(json.dumps(pedido, ensure_ascii=False).encode()).decode()
+        r = _gh("POST", f"actions/workflows/{WORKFLOW_MAC}/dispatches",
+                json={"ref": "main", "inputs": {"pedido": txt}})
+        r.raise_for_status()
+    except Exception as e:
+        print(f"[google] não consegui pedir ao Mac ({str(e)[:100]})")
+        return None
+    print(f"[google] pedido {pid} enviado ao Mac; esperando até {GOOGLE_MAC_ESPERA}s")
+    fim = time.time() + GOOGLE_MAC_ESPERA
+    while time.time() < fim:
+        time.sleep(6)
+        try:
+            r = _gh("GET", f"contents/{pid}.json", params={"ref": RAMO_GOOGLE},
+                    headers={"Accept": "application/vnd.github.raw"})
+        except Exception:
+            continue
+        if r.status_code != 200:
+            continue
+        res = r.json()
+        if not res.get("site"):
+            print(f"[google] o Mac não achou foto: {str(res.get('erro') or '')[:120]}")
+            return None
+        img = _gh("GET", f"contents/{pid}.jpg", params={"ref": RAMO_GOOGLE},
+                  headers={"Accept": "application/vnd.github.raw"})
+        if img.status_code != 200:
+            print(f"[google] não consegui baixar a foto do Mac (HTTP {img.status_code})")
+            return None
+        destino = Path(f"{base}_google.jpg")
+        destino.write_bytes(img.content)
+        site = res["site"]
+        if res.get("foto_id"):
+            _marcar(res["foto_id"])
+        print(f"[google] foto do Mac: print de {site}")
+        card["_credito_legenda"] = f"📷 Foto: Reprodução / {site}"
+        return destino, f"Foto: Reprodução / {site}"
+    print("[google] o Mac não respondeu a tempo: sigo sem foto do Google")
+    try:
+        _mac_parado()   # cancela o pedido se ficou na fila
+    except Exception:
+        pass
     return None
 
 

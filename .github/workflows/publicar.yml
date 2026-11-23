@@ -63,7 +63,7 @@ jobs:
           cache: pip
       - run: pip install -r requirements.txt
       - name: Navegador para o print do Google Imagens
-        if: vars.GOOGLE_IMAGENS != 'false'
+        if: vars.GOOGLE_IMAGENS != 'false' && vars.GOOGLE_VIA == 'aqui'
         run: python -m playwright install --with-deps chromium
       - name: Guardar as buscas de fotos por 24 h (exigência da API do Pixabay)
         uses: actions/cache@v4
@@ -117,6 +117,8 @@ jobs:
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
           PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
           GOOGLE_IMAGENS: ${{ vars.GOOGLE_IMAGENS }}
+          GOOGLE_VIA: ${{ vars.GOOGLE_VIA }}
+          GITHUB_TOKEN: ${{ github.token }}
           CANDIDATOS: ${{ vars.CANDIDATOS }}
           FORMATO: ${{ vars.FORMATO }}
           PIPER_VOICE: ${{ vars.PIPER_VOICE }}

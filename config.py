@@ -93,9 +93,16 @@ LLM_PROVIDER = env("LLM_PROVIDER") or ("openai" if OPENAI_API_KEY else "gemini" 
 PEXELS_API_KEY = env("PEXELS_API_KEY")
 PIXABAY_API_KEY = env("PIXABAY_API_KEY")  # chave grátis em pixabay.com/api/docs (com login)
 # ---- Foto do Google Imagens (pedido do Arthur, 23/11/2026) ----------------------
-# Navegador sem tela abre o Google Imagens, a IA escolhe a foto do fato e o robô tira um print dela.
-# Sem chave de API. GOOGLE_IMAGENS=false desliga.
+# O Chrome abre o Google Imagens, a IA escolhe a foto do fato e o robô tira um print dela. Sem chave.
+# GOOGLE_VIA=mac: a busca roda no Mac do Arthur (runner do GitHub "pbminuto-mac", Chrome e internet
+# dele: quase sem captcha); Mac desligado = segue sem foto do Google. GOOGLE_VIA=aqui: Chromium do
+# próprio servidor (o Google costuma pedir captcha). GOOGLE_IMAGENS=false desliga tudo.
 GOOGLE_IMAGENS = env_bool("GOOGLE_IMAGENS", True)
+GOOGLE_VIA = (env("GOOGLE_VIA", "mac") or "mac").lower()
+GOOGLE_MAC_ESPERA = int(env("GOOGLE_MAC_ESPERA", "180"))   # segundos esperando a foto do Mac
+GOOGLE_PERFIL = env("GOOGLE_PERFIL")      # pasta do perfil do Chrome usado na busca (no Mac)
+GOOGLE_CHROME = env_bool("GOOGLE_CHROME", False)            # usa o Google Chrome instalado
+GOOGLE_COM_TELA = env_bool("GOOGLE_COM_TELA", False)        # abre a janela (para entrar na conta)
 
 # ---- Formato do post ----------------------------------------------------------
 # reels  = vídeo animado com narração (Piper + FFmpeg); se falhar, publica a imagem
