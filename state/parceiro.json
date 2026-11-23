@@ -413,6 +413,13 @@
    "nota": "18126311914937262",
    "categoria": "cg",
    "story": "18147938128582843"
+  },
+  "18186332782376367": {
+   "ts": 1795397562.0335522,
+   "status": "publicado",
+   "nota": "18036808220854781",
+   "categoria": "pb",
+   "story": "18214381987363814"
   }
  },
  "tentativas": {
@@ -420,6 +427,6 @@
   "18043841588892437": 2
  },
  "refazer": {},
- "aguardando": 1795397081.1683934,
- "ultimo_tipo": "imagem"
+ "aguardando": 1795397610.6784148,
+ "ultimo_tipo": "video"
 }
