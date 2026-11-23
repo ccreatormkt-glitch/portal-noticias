@@ -8,3 +8,6 @@ piper-tts>=1.3
 faster-whisper>=1.1  # tempo de cada palavra da legenda dinâmica (Whisper na CPU)
 yt-dlp>=2025.1  # baixa o Reel do parceiro pela página quando a API não manda o arquivo
 playwright>=1.45  # print da foto no Google Imagens (navegador sem tela)
+onnxruntime>=1.17  # LaMa (apaga a marca d'água do parceiro nas fotos) e OCR
+rapidocr-onnxruntime>=1.3  # lê a marca d'água (nome do parceiro / outro veículo) nas fotos
+opencv-python-headless>=4.8  # reserva do LaMa (inpaint) e OCR

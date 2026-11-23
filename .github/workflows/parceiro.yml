@@ -50,6 +50,13 @@ jobs:
         run: python -m playwright install --with-deps chromium
       - name: Instalar FFmpeg
         run: which ffmpeg || (sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends ffmpeg)
+      - name: LaMa (apaga a marca d'água do parceiro nas fotos)
+        run: pip install --index-url https://download.pytorch.org/whl/cpu torch
+      - name: Guardar o modelo LaMa
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/lama
+          key: lama-big-v1
       - name: Guardar o modelo do Whisper
         uses: actions/cache@v4
         with:

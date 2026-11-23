@@ -1329,9 +1329,18 @@ def _rodada_imagens(p: dict, est: dict, modo: str, limite: int, so_ids: set = No
         try:
             post_jpg = pasta / f"{stamp}_post.jpg"
             post_jpg.write_bytes(requests.get(m["media_url"], timeout=60).content)
-            foto = (cortar_faixa_imagem(post_jpg, pasta / f"{stamp}_foto.jpg", p["faixa"], p.get("topo", 0.0))
-                    if p.get("faixa")
-                    else recortar_foto(post_jpg, pasta / f"{stamp}_foto.jpg"))
+            try:
+                foto = (cortar_faixa_imagem(post_jpg, pasta / f"{stamp}_foto.jpg", p["faixa"], p.get("topo", 0.0))
+                        if p.get("faixa")
+                        else recortar_foto(post_jpg, pasta / f"{stamp}_foto.jpg"))
+            except ValueError as e:
+                # 23/11/2026 (pedido do Arthur): post que é só a foto (sem moldura/faixa): usa a imagem
+                # inteira; a marca d'água do parceiro sai no passo seguinte
+                print(f"[parceiro] {e}: uso a imagem inteira")
+                foto = post_jpg
+            # 23/11/2026 (pedido do Arthur): apaga a marca d'água do parceiro de dentro da foto
+            import marca_dagua
+            foto_limpa = marca_dagua.limpar(foto, usuario, pasta / f"{stamp}_foto_limpa.jpg")
             card = editor.make_card(_cluster_do_post(m, usuario))
             if card.get("skip"):
                 print(f"[parceiro] pulei {m.get('permalink')}: {card.get('motivo', 'a IA pulou')}")
@@ -1348,11 +1357,13 @@ def _rodada_imagens(p: dict, est: dict, modo: str, limite: int, so_ids: set = No
                 _marcar(est, m["id"], "pulado", ja)
                 continue
             duvidas = conferir_fatos(card, legenda) + revisar_fidelidade(card, legenda)
-            # polícia e temas sensíveis: sem foto de gente do caso (regra de credibilidade): foto ilustrativa
-            if card.get("chapeu") in illustrate.SEM_FOTO or card.get("risco") == "cuidado":
-                bg = illustrate.imagem_de_fundo(card, pasta / stamp)
+            # 23/11/2026 (pedido do Arthur): a foto do parceiro vale em todas as editorias, inclusive
+            # POLÍCIA e risco "cuidado". A ilustração só entra quando a foto não pode ser usada (marca
+            # de outro veículo, ou a marca do parceiro não saiu).
+            if foto_limpa:
+                bg, card["_credito"], card["_ilustrativa"] = foto_limpa, "", False
             else:
-                bg, card["_credito"], card["_ilustrativa"] = foto, "", False
+                bg = illustrate.imagem_de_fundo(card, pasta / stamp)
             video, capa_jpg = M._gerar_video(card, bg, stamp)
             if not video:
                 raise ValueError(card.get("_erro_video", "o vídeo não ficou pronto"))
