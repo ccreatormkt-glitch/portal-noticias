@@ -518,10 +518,22 @@
    "nota": "18141085186733990",
    "categoria": "jp",
    "story": "17957684250319644"
+  },
+  "18427056484156856": {
+   "ts": 1795445787.7067814,
+   "status": "publicado",
+   "nota": "18013439102993779",
+   "categoria": "pb",
+   "editoria": "POLÍCIA",
+   "story": "18074337092600108"
   }
  },
- "tentativas": {},
+ "tentativas": {
+  "17929464093203643": 1,
+  "18113065505223889": 1,
+  "18653344159040739": 1
+ },
  "refazer": {},
- "aguardando": 1795445119.259701,
- "ultimo_tipo": "video"
+ "aguardando": 1795445847.7941887,
+ "ultimo_tipo": "imagem"
 }
