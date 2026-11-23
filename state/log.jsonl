@@ -591,3 +591,5 @@
 {"ts": "2026-11-23T05:02:40", "event": "published", "headline": "ICE intercepta pai e filha mexicanos antes de batismo em aeroporto de Seattle", "source": "g1", "ig_id": "18081371627726846", "note": ""}
 {"ts": "2026-11-23T05:29:27", "event": "gerado", "headline": "Exército dos EUA ignora decisão da Justiça e mantém plano de explodir carga em Iowa", "source": "g1", "ig_id": "", "note": ""}
 {"ts": "2026-11-23T05:29:27", "event": "falha_publicacao", "headline": "Exército dos EUA ignora decisão da Justiça e mantém plano de explodir carga em Iowa", "source": "g1", "ig_id": "", "note": "voz padrão indisponível agora (limite do Gemini); a notícia volta na próxima rodada"}
+{"ts": "2026-11-23T05:34:03", "event": "gerado", "headline": "Militares dos EUA querem destruir 5 toneladas de explosivos em fábrica de Iowa", "source": "g1", "ig_id": "", "note": ""}
+{"ts": "2026-11-23T05:35:05", "event": "published", "headline": "Exército dos EUA ignora decisão da Justiça e mantém plano de explodir carga em Iowa", "source": "g1", "ig_id": "18351290140286043", "note": ""}
