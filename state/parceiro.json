@@ -599,56 +599,190 @@
    "categoria": "pb",
    "editoria": "ECONOMIA",
    "story": "18128826847898529"
+  },
+  "17976928629175154": {
+   "ts": 1795460038.1567385,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos (adicione saldo em platform.openai.com > Billing); gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18110338265619477": {
+   "ts": 1795460061.0724757,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "17986222467104057": {
+   "ts": 1795460171.1052582,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18122281712061789": {
+   "ts": 1795460188.4202442,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18123819467086421": {
+   "ts": 1795460205.1061974,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "17939844288404829": {
+   "ts": 1795460221.9867065,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18120339517818846": {
+   "ts": 1795460244.6570818,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18119905787099214": {
+   "ts": 1795460261.1631973,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18120910061019376": {
+   "ts": 1795460278.0077543,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18148594639586435": {
+   "ts": 1795460294.6018486,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "17871972012662001": {
+   "ts": 1795460311.234105,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18114096962074834": {
+   "ts": 1795460327.866248,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18123791968746243": {
+   "ts": 1795460344.41573,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18116975351586984": {
+   "ts": 1795460361.0158463,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18121742440788617": {
+   "ts": 1795460377.6754608,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18130911779485912": {
+   "ts": 1795460394.0447981,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18127207387934279": {
+   "ts": 1795460411.5410867,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18064150718567274": {
+   "ts": 1795460428.2141023,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18418481794092229": {
+   "ts": 1795460445.1964135,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18106473107642340": {
+   "ts": 1795460461.59429,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18050179667637706": {
+   "ts": 1795460478.255974,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18157953520530405": {
+   "ts": 1795460479.3135686,
+   "status": "erro",
+   "nota": "post sem texto ou antigo demais"
+  },
+  "18110306633529841": {
+   "ts": 1795460495.7881663,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18656047240005536": {
+   "ts": 1795460512.2436082,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18117672434177586": {
+   "ts": 1795460528.5930555,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18123415907602825": {
+   "ts": 1795460545.6795328,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "17872510026659278": {
+   "ts": 1795460561.9842792,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18117378230166636": {
+   "ts": 1795460578.448986,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18122072671972718": {
+   "ts": 1795460595.1099074,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "17978056932156444": {
+   "ts": 1795460611.6367338,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18155038444559188": {
+   "ts": 1795460628.3408124,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "17997777251898469": {
+   "ts": 1795460644.700269,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18027983780929955": {
+   "ts": 1795460661.1911826,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
   }
  },
  "tentativas": {
   "18131907124855317": 1,
-  "17976928629175154": 2,
-  "18110338265619477": 2,
-  "18122281712061789": 2,
-  "18123819467086421": 2,
-  "17939844288404829": 2,
-  "18120339517818846": 2,
-  "18119905787099214": 2,
-  "18120910061019376": 2,
-  "18148594639586435": 2,
-  "17871972012662001": 2,
-  "18114096962074834": 2,
-  "18123791968746243": 2,
-  "18116975351586984": 2,
-  "18121742440788617": 2,
-  "18130911779485912": 2,
   "18110507768356123": 1,
   "18131812798842168": 1,
   "18644532898026667": 2,
   "18119068550137942": 2,
-  "18127207387934279": 2,
-  "18064150718567274": 2,
-  "18418481794092229": 2,
-  "18106473107642340": 2,
-  "18050179667637706": 2,
-  "18157953520530405": 2,
-  "18110306633529841": 2,
-  "18656047240005536": 2,
-  "18117672434177586": 2,
-  "18123415907602825": 2,
-  "17872510026659278": 2,
-  "18117378230166636": 2,
-  "18122072671972718": 2,
-  "17978056932156444": 2,
-  "18155038444559188": 2,
-  "17997777251898469": 2,
-  "18027983780929955": 2,
-  "17986222467104057": 2,
-  "18130877686804458": 1,
-  "18160459240521046": 1,
-  "18111869228264675": 1,
-  "18603510793068948": 1,
-  "17982322128138983": 1,
-  "18033695684917592": 1,
-  "18186732688426443": 1
+  "18130877686804458": 2,
+  "18160459240521046": 2,
+  "18111869228264675": 2,
+  "18603510793068948": 2,
+  "17982322128138983": 2,
+  "18033695684917592": 2,
+  "18186732688426443": 2,
+  "18118317712833967": 1,
+  "18081417791422141": 1
  },
  "refazer": {},
- "aguardando": 1795459620.696268,
+ "aguardando": 0,
  "ultimo_tipo": "imagem"
 }
