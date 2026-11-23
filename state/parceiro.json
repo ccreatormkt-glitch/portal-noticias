@@ -480,16 +480,35 @@
    "nota": "17999794803028413",
    "categoria": "jp",
    "story": "18419035945087391"
+  },
+  "18114915212150697": {
+   "ts": 1795413201.1753447,
+   "status": "pulado",
+   "nota": "mesmo fato já postado: Suspeitos executam homem de 41 anos a tiros no bairro Tibiri"
+  },
+  "18137249341587953": {
+   "ts": 1795413247.6550198,
+   "status": "pulado",
+   "nota": "mesmo fato já postado: Falsos motoboys matam morador de 29 anos no Santo Antônio em"
+  },
+  "18187616497423760": {
+   "ts": 1795413253.766374,
+   "status": "erro",
+   "nota": "post sem texto ou antigo demais"
+  },
+  "18183860464434049": {
+   "ts": 1795413254.295791,
+   "status": "erro",
+   "nota": "não achei a faixa do parceiro na foto"
+  },
+  "18122164339996096": {
+   "ts": 1795413270.9990482,
+   "status": "pulado",
+   "nota": "mesmo fato já postado: Mega-Sena acumula e valor chega a R$ 45 milhões para o próxi"
   }
  },
- "tentativas": {
-  "18187616497423760": 2,
-  "18183860464434049": 2,
-  "18114915212150697": 1,
-  "18137249341587953": 1,
-  "18122164339996096": 1
- },
+ "tentativas": {},
  "refazer": {},
- "aguardando": 1795412551.5760357,
+ "aguardando": 0,
  "ultimo_tipo": "imagem"
 }
