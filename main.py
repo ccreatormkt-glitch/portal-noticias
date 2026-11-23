@@ -355,6 +355,9 @@ def cmd_mesclar(args):
 
 
 def cmd_run(args):
+    if config.PAUSAR:
+        print("[run] PAUSADO (variável PAUSAR=true): nada é publicado")
+        return
     import illustrate
     import sources
 
@@ -521,6 +524,16 @@ def cmd_insights(_):
         print(f"\nDesempenho por {campo} (score = engajamento por mil pessoas alcançadas):")
         for k, (avg, n) in stats:
             print(f"  {k:<14} {avg:7.1f}  ({n} posts)")
+
+
+def cmd_vigiar(_):
+    """Lê os comentários dos posts recentes e avisa os que apontam erro (regra 16)."""
+    import moderacao
+    try:
+        novos = moderacao.vigiar()
+        print(f"[vigia] {len(novos)} comentário(s) novo(s) apontando erro")
+    except Exception as e:
+        print(f"[vigia] não consegui ler os comentários ({str(e)[:120]})")
 
 
 def cmd_relatorio(args):
@@ -725,6 +738,9 @@ def cmd_boletim(args):
 
 
 def cmd_parceiro(args):
+    if config.PAUSAR and not getattr(args, "modo", None) == "dry":
+        print("[parceiro] PAUSADO (variável PAUSAR=true): nada é publicado")
+        return
     import parceiro
     if args.modo != "dry" and not (config.IG_USER_ID and config.IG_ACCESS_TOKEN):
         print("[parceiro] aguardando configuração do Instagram (veja SETUP.md)")
@@ -825,6 +841,7 @@ def main():
     sub.add_parser("teste-upload").set_defaults(fn=cmd_teste_upload)
     sub.add_parser("check").set_defaults(fn=cmd_check)
     sub.add_parser("insights").set_defaults(fn=cmd_insights)
+    sub.add_parser("vigiar").set_defaults(fn=cmd_vigiar)
     pr = sub.add_parser("relatorio")
     pr.add_argument("--dias", type=int, default=7)
     pr.set_defaults(fn=cmd_relatorio)

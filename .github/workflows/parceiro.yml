@@ -96,6 +96,9 @@ jobs:
           IMGBB_API_KEY: ${{ secrets.IMGBB_API_KEY }}
           WHISPER_MODELO: ${{ vars.WHISPER_MODELO }}
           HUMANIZAR: ${{ vars.HUMANIZAR }}
+          MIX: ${{ vars.MIX }}
+          STORIES: ${{ vars.STORIES }}
+          PAUSAR: ${{ vars.PAUSAR }}
         run: |
           case "$ACAO" in
             aprovar)   if [ -n "$ID" ]; then python main.py parceiro-aprovar "$ID"; else python main.py parceiro-aprovar --all; fi ;;

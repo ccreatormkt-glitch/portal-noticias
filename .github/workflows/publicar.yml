@@ -127,6 +127,12 @@ jobs:
           VOZ_MOTOR: ${{ vars.VOZ_MOTOR }}
           WHISPER_MODELO: ${{ vars.WHISPER_MODELO }}
           SEMANTICO: ${{ vars.SEMANTICO }}
+          MIX: ${{ vars.MIX }}
+          STORIES: ${{ vars.STORIES }}
+          MIN_SOURCES: ${{ vars.MIN_SOURCES }}
+          MIN_SOURCES_POLICIA: ${{ vars.MIN_SOURCES_POLICIA }}
+          AB_GANCHO: ${{ vars.AB_GANCHO }}
+          PAUSAR: ${{ vars.PAUSAR }}
           VIDEO_FUNDO: ${{ vars.VIDEO_FUNDO }}
           SIMILARIDADE_MAX: ${{ vars.SIMILARIDADE_MAX }}
           EMBED_MODEL: ${{ vars.EMBED_MODEL }}
@@ -137,7 +143,7 @@ jobs:
           CREDITO: ${{ github.event.inputs.credito }}
           REFAZER: ${{ github.event.inputs.refazer }}
         run: |
-          if [ "$(date -u +%M)" -lt 10 ]; then python main.py insights || echo "métricas indisponíveis nesta rodada"; fi  # métricas 1x por hora
+          if [ "$(date -u +%M)" -lt 10 ]; then python main.py insights || echo "métricas indisponíveis nesta rodada"; python main.py vigiar || true; fi  # métricas e vigia de comentários 1x por hora
           if [ "$MODO" = "dry" ]; then
             python main.py run --dry-run --count 1
           else

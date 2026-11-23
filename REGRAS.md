@@ -173,3 +173,11 @@ Valem para tudo o que o sistema produz. Cada regra tem um teste que falha se ela
 - Hashtags viram rótulos: 3 a 5, minúsculas, locais primeiro (vale também para parceiros).
 - No perfil (manual, no app): nome "PB Minuto | Notícias de Campina Grande e João Pessoa" e bio com
   Paraíba, Campina Grande e João Pessoa.
+
+## 16. Vigia de comentários e pausa (23/11/2026)
+- Toda hora o robô lê os comentários dos posts das últimas 48h e separa os que apontam erro
+  (fake, mentira, informação errada, nome/cidade/foto errados, ameaça de processo).
+  Ficam em `state/alertas_comentarios.json` e no log. O robô NÃO responde nem apaga comentário.
+- Confirmado o erro: Actions > corrigir-noticia (comentário de correção fixado no post) ou
+  Actions > apagar-post. Crítica legítima não se apaga; só spam, ofensa e ameaça (no app).
+- Crise ou luto: variável `PAUSAR=true` para tudo (notícias e parceiros); `false` volta.

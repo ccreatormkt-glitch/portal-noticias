@@ -294,6 +294,21 @@ def comentar(media_id: str, texto: str) -> str:
                                 timeout=30))["id"]
 
 
+def posts_com_comentarios(limite: int = 50) -> list:
+    """Posts recentes do perfil que têm comentários: [{id, caption, timestamp, comments_count}]."""
+    _need_creds()
+    dados = _check(_ig().get(f"{BASE}/{IG_USER_ID}/media", params={
+        "fields": "id,caption,timestamp,comments_count,permalink", "limit": limite}, timeout=30)).get("data", [])
+    return [d for d in dados if d.get("comments_count")]
+
+
+def comentarios(media_id: str) -> list:
+    """Comentários de um post nosso: [{id, text, timestamp, username}]."""
+    _need_creds()
+    return _check(_ig().get(f"{BASE}/{media_id}/comments", params={
+        "fields": "id,text,timestamp,username", "limit": 50}, timeout=30)).get("data", [])
+
+
 def legendas_recentes(limite: int = 60) -> list:
     """Legendas dos últimos posts do perfil (para não repetir notícia mesmo se o histórico falhar)."""
     _need_creds()
