@@ -585,3 +585,5 @@
 {"ts": "2026-11-23T03:08:50", "event": "published", "headline": "Democratas conquistam 258 cadeiras na Câmara dos EUA e batem recorde", "source": "g1, CNN Brasil", "ig_id": "18113060189615231", "note": ""}
 {"ts": "2026-11-23T03:53:15", "event": "gerado", "headline": "COP31 encerra evento na Turquia sem consenso inédito em 17 anos", "source": "Agência Brasil, Polêmica Paraíba", "ig_id": "", "note": ""}
 {"ts": "2026-11-23T03:54:37", "event": "published", "headline": "COP31 encerra evento na Turquia sem consenso inédito em 17 anos", "source": "Agência Brasil, Polêmica Paraíba", "ig_id": "18130268063301270", "note": ""}
+{"ts": "2026-11-23T04:39:46", "event": "gerado", "headline": "ICE intercepta pai e filha mexicanos antes de batismo em aeroporto de Seattle", "source": "g1", "ig_id": "", "note": ""}
+{"ts": "2026-11-23T04:39:46", "event": "falha_publicacao", "headline": "ICE intercepta pai e filha mexicanos antes de batismo em aeroporto de Seattle", "source": "g1", "ig_id": "", "note": "voz padrão indisponível agora (limite do Gemini); a notícia volta na próxima rodada"}
