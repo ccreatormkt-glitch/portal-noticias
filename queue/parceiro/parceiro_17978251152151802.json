@@ -1,0 +1,51 @@
+{
+ "skip": false,
+ "motivo": "",
+ "risco": "ok",
+ "formato": "noticia",
+ "chapeu": "POLÍCIA",
+ "titulo": "Governo lança programa de combate ao crime organizado em João Pessoa",
+ "linha_fina": "O programa Paraíba contra o Crime Organizado será apresentado no Espaço Cultural",
+ "resumo": "O governador Lucas Ribeiro apresenta o projeto nesta segunda-feira no Teatro Paulo Pontes. A ação usa inteligência policial para reforçar a segurança no estado.",
+ "pontos": [
+  "Lançamento oficial no Espaço Cultural às 10h",
+  "Projeto une inteligência policial contra o crime",
+  "Medida visa reforçar a segurança estadual"
+ ],
+ "destaques": [
+  "crime organizado",
+  "Espaço Cultural",
+  "10h"
+ ],
+ "legenda": "🚨 Governo lança plano estadual de combate ao crime organizado\n\nO governador Lucas Ribeiro apresenta o programa Paraíba contra o Crime Organizado nesta segunda-feira. O evento acontece às 10h, no Teatro Paulo Pontes, no Espaço Cultural em João Pessoa. A iniciativa une ações de inteligência policial para combater a criminalidade no estado.\n\nManda para aquele amigo que sempre quer saber primeiro.",
+ "cidade": "João Pessoa",
+ "hashtags": [
+  "joaopessoa",
+  "paraiba",
+  "seguranca",
+  "lucasribeiro",
+  "policiapb"
+ ],
+ "foto_busca": "police blue light siren blur",
+ "foto_local": "Espaço Cultural José Lins do Rego João Pessoa",
+ "imagem_prompt": "a modern tactical briefing room with glowing digital screens and maps of a state, sleek dark interior, cinematic studio lighting",
+ "gatilho": "status",
+ "potencial": 3,
+ "original": true,
+ "humanizado": true,
+ "_origem": {
+  "id": "17978251152151802",
+  "permalink": "https://www.instagram.com/p/DgFLXM-h71-/",
+  "timestamp": "2026-11-23T10:34:51+0000",
+  "parceiro": "bombaparaiba_"
+ },
+ "_credito": "Ilustração gerada por IA",
+ "_ilustrativa": false,
+ "_credito_legenda": "",
+ "_revisar": [
+  "O texto original identifica Lucas Ribeiro como 'governador', porém, na estrutura política da Paraíba, Lucas Ribeiro é o vice-governador em exercício ou substituição, o que pode ser uma imprecisão fact",
+  "O texto original não especifica a fonte oficial ou o órgão do Governo do Estado que forneceu as informações sobre o programa, deixando a origem da notícia sem clareza."
+ ],
+ "_video": "parceiro_17978251152151802.mp4",
+ "_capa": "parceiro_17978251152151802_capa_reels.jpg"
+}
