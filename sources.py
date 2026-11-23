@@ -166,6 +166,12 @@ TRUSTED = ["g1", "jornal da paraiba", "portal correio", "clickpb", "paraibaonlin
            "policia civil", "policia militar", "tribunal", "ministerio publico", "detran",
            "prf", "a uniao", "diario do sertao", "uepb", "cbn paraiba", "bbc news brasil"]
 
+# crime, prisão e acusação: notícia de fonte única pequena com estes termos ainda pede 2 veículos
+POLICIAL_TERMS = [" pres", " suspeit", " acusad", " denunci", " investigad", " morto", " morta ",
+                  " assassin", " homicidio", " baleado", " tiro", " estupr", " trafic", " assalt",
+                  " roub", " furt", " golpe", " agred", " esfaque", " crime", " flagrante",
+                  " mandado", " operacao policial"]
+
 # palavras que indicam notícia local (dão prioridade)
 LOCAL_TERMS = [
     # cidades, apelidos e gentílicos
@@ -255,6 +261,12 @@ class Cluster:
     @property
     def trusted(self):
         return any(t in fold(s) for s in self.sources for t in TRUSTED)
+
+    @property
+    def policial(self):
+        """Crime, prisão ou acusação: com fonte única pequena, ainda pede 2 veículos (regra 12)."""
+        text = " " + fold(" ".join(i.title for i in self.items)) + " "
+        return any(t in text for t in POLICIAL_TERMS)
 
     @property
     def is_local(self):

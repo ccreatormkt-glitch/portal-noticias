@@ -119,6 +119,14 @@ Valem para tudo o que o sistema produz. Cada regra tem um teste que falha se ela
 - Vídeo e post de imagem dos parceiros se alternam: depois de um vídeo, as linhas de imagem pegam a vaga
   primeiro, e vice-versa (`est["ultimo_tipo"]`). Se o tipo da vez não tiver nada novo, o outro usa a vaga.
 
+## 12. Uma fonte basta (pedido do Arthur, 23/11/2026)
+- Antes: a notícia só entrava se 2 veículos diferentes dessem o mesmo fato (ou 1 grande/oficial).
+- Agora: basta 1 veículo da nossa lista de fontes (`MIN_SOURCES=1`).
+- Polícia também com uma fonte só (Arthur liberou em 23/11/2026, `MIN_SOURCES_POLICIA=1`).
+  Para voltar a exigir 2 veículos em crime/prisão/acusação de site pequeno: variável
+  `MIN_SOURCES_POLICIA=2`. O filtro de temas sensíveis continua barrando acusação sem prova.
+- Continuam valendo: filtro de temas sensíveis, trava contra repetição e reescrita sem cópia.
+- Onde: `main._confirmada`, `sources.Cluster.policial`. Teste: `tests/test_fluxo.py`.
 
 ## 13. Foto do Google Imagens (pedido do Arthur, 23/11/2026)
 - As imagens de banco/IA saíam diferentes do assunto. A foto de fundo passa a vir primeiro do próprio

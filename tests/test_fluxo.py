@@ -446,3 +446,18 @@ def test_aprovar_da_fila_segue_mix_e_stories(monkeypatch):
     main.cmd_approve(argparse.Namespace(all=True, id=""))
     assert stories == ["cg"]
     assert [c for _, c in db.categorias_recentes(5)] == ["cg"]
+
+
+def test_regra_12_uma_fonte_basta_ate_policia(monkeypatch):
+    """Regra 12 (23/11/2026): 1 veículo da lista basta, polícia inclusive; MIN_SOURCES_POLICIA=2 volta a travar."""
+    um = sources.Cluster([item("Feira de artesanato abre neste sábado em Campina Grande", fonte="Se Liga PB")])
+    assert main._confirmada(um)
+    crime = sources.Cluster([item("Suspeito é preso em flagrante em Campina Grande", fonte="Se Liga PB")])
+    assert crime.policial and main._confirmada(crime)
+    monkeypatch.setattr(config, "MIN_SOURCES_POLICIA", 2)
+    assert not main._confirmada(crime)
+    dois = sources.Cluster([item("Suspeito é preso em flagrante em Campina Grande", fonte="Se Liga PB"),
+                            item("Suspeito é preso em flagrante em CG", fonte="Paraíba Já")])
+    assert main._confirmada(dois)
+    grande = sources.Cluster([item("Suspeito é preso em flagrante em Campina Grande", fonte="g1 Paraíba")])
+    assert main._confirmada(grande)

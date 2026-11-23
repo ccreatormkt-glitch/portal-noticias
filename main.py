@@ -176,6 +176,15 @@ def _legendas_ig(atualizar=False) -> list:
     return _IG_LEGENDAS["lista"]
 
 
+def _confirmada(c) -> bool:
+    """Regra 12 (23/11/2026): basta 1 veículo da lista; crime/prisão/acusação de fonte pequena
+    ainda pede 2 veículos (ou 1 grande/oficial)."""
+    if config.TRUSTED_SINGLE_SOURCE and c.trusted:
+        return True
+    minimo = config.MIN_SOURCES_POLICIA if c.policial else config.MIN_SOURCES
+    return c.n_sources >= minimo
+
+
 def _candidatos(clusters, quantos, mode) -> list:
     """Escreve até `quantos` posts válidos (reaproveitando os do cache) para escolher o melhor."""
     import editor
@@ -218,7 +227,7 @@ def _candidatos(clusters, quantos, mode) -> list:
         if time.monotonic() > prazo and cards:
             print("[run] tempo de escrita esgotado; seguindo com os candidatos que já tenho")
             break
-        confirmed = c.n_sources >= config.MIN_SOURCES or (config.TRUSTED_SINGLE_SOURCE and c.trusted)
+        confirmed = _confirmada(c)
         # na pauta pedida, uma tentativa anterior descartada (ex.: texto parecido) pode ser refeita;
         # o que já foi PUBLICADO continua barrado pelo banco de notícias postadas
         visto = (False if _PAUTA.get("refazer") else
@@ -562,7 +571,7 @@ def cmd_check_feeds(_):
 
     items = sources.fetch_items(verbose=True)
     clusters = sources.cluster_items(items)
-    ok = [c for c in clusters if c.is_local and (c.n_sources >= config.MIN_SOURCES or c.trusted)]
+    ok = [c for c in clusters if c.is_local and _confirmada(c)]
     print(f"\n{len(items)} manchetes, {len(clusters)} assuntos, {len(ok)} aptos para post. Top 10:")
     for c in ok[:10]:
         print(f"  {c.score:5.1f} | {c.n_sources} fonte(s) | {c.rep.title[:80]}")
