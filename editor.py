@@ -671,11 +671,32 @@ def palavras_foto(card: dict) -> dict:
     return card["_foto_ia"]
 
 
-def escolher_foto(card: dict, imagens: list, cena: str = ""):
+CONFERIR_FOTO_MATERIA = """Você é editor de fotografia de um portal de notícias no Instagram. Recebe a
+NOTÍCIA INTEIRA e as fotos publicadas pelos portais que deram o fato (numeradas a partir de 0).
+LEIA o texto todo (quem, o quê, onde, quando) antes de olhar as fotos e avalie CADA foto:
+Nota de 0 a 10 para o quanto a foto mostra ESTE fato: 10 = o próprio fato, lugar ou objeto citado
+(a obra, a fachada do órgão, o acidente, a festa, o time); 8 = a mesma situação no mesmo lugar;
+7 = cena claramente ligada ao fato descrito; 6 ou menos = genérica, de outro assunto, de arquivo
+sem relação, ou só lembra o tema.
+Marque também, olhando a foto inteira com atenção, inclusive cantos e bordas:
+- "marca": true se tem marca d'água, logo ou nome de site, TV, rádio, agência ou fotógrafo POR CIMA
+  da foto (assinatura sobreposta, selo no canto), mesmo pequeno ou transparente;
+- "arte": true se é uma arte de post (manchete escrita, tarja, moldura, faixa colorida, montagem de
+  várias fotos, print de tela, mapa, gráfico) em vez de fotografia;
+- "rosto": true se aparece rosto reconhecível de suspeito, preso, vítima, ferido ou criança;
+- "chocante": true se mostra corpo, sangue, ferimento ou cena violenta;
+- "engana": true se pode enganar o leitor (foto de outro fato, outro lugar ou outra época).
+Placas, fachadas e letreiros que fazem parte da cena NÃO são marca nem arte.
+Responda só JSON: {"fotos": [{"foto": 0, "nota": 0 a 10, "marca": false, "arte": false,
+"rosto": false, "chocante": false, "engana": false, "motivo": "curto"}, ...]}"""
+
+
+def escolher_foto(card: dict, imagens: list, cena: str = "", sistema: str = None, defeitos=None):
     """A IA lê a notícia, olha as miniaturas e devolve o índice da que corresponde ao fato (nota >= 7),
-    ou None se nenhuma corresponde."""
+    ou None se nenhuma corresponde. `sistema`/`defeitos` trocam o critério (fotos das matérias)."""
     if not imagens:
         return None
+    sistema = sistema or ESCOLHER_FOTO
     noticia = "NOTÍCIA:\n" + _texto_da_noticia(card) + (f"\nFOTO IDEAL: {cena}" if cena else "")
     erros = []
     if GEMINI_API_KEY:
@@ -688,7 +709,7 @@ def escolher_foto(card: dict, imagens: list, cena: str = ""):
                 r = requests.post(
                     f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
                     headers={"x-goog-api-key": GEMINI_API_KEY},
-                    json={"systemInstruction": {"parts": [{"text": ESCOLHER_FOTO}]},
+                    json={"systemInstruction": {"parts": [{"text": sistema}]},
                           "contents": [{"role": "user", "parts": partes}],
                           "generationConfig": {"responseMimeType": "application/json"}},
                     timeout=(10, 60))
@@ -696,7 +717,7 @@ def escolher_foto(card: dict, imagens: list, cena: str = ""):
                     continue
                 r.raise_for_status()
                 resp = _extract_json(r.json()["candidates"][0]["content"]["parts"][0]["text"])
-                return _escolha(resp, len(imagens))
+                return _escolha(resp, len(imagens), defeitos)
             except Exception as ex:
                 erros.append(f"gemini {model}: {type(ex).__name__}")
     if OPENAI_API_KEY:
@@ -709,16 +730,16 @@ def escolher_foto(card: dict, imagens: list, cena: str = ""):
                               headers={"Authorization": f"Bearer {OPENAI_API_KEY}"},
                               json={"model": OPENAI_MODEL.split(",")[0].strip(), "reasoning_effort": "low",
                                     "response_format": {"type": "json_object"},
-                                    "messages": [{"role": "system", "content": ESCOLHER_FOTO},
+                                    "messages": [{"role": "system", "content": sistema},
                                                  {"role": "user", "content": conteudo}]}, timeout=(10, 60))
             r.raise_for_status()
-            return _escolha(_extract_json(r.json()["choices"][0]["message"]["content"]), len(imagens))
+            return _escolha(_extract_json(r.json()["choices"][0]["message"]["content"]), len(imagens), defeitos)
         except Exception as ex:
             erros.append(f"openai: {type(ex).__name__}")
     raise RuntimeError("; ".join(erros) or "nenhuma IA configurada")
 
 
-def _escolha(resp: dict, n: int):
+def _escolha(resp: dict, n: int, defeitos_considerados=None):
     """Fica a foto de maior nota (>= NOTA_MINIMA_FOTO) sem texto, sem rosto e que não engana."""
     fotos = resp.get("fotos")
     if not isinstance(fotos, list):  # formato antigo: {"escolhida": i, "nota": n}
@@ -734,7 +755,8 @@ def _escolha(resp: dict, n: int):
             i, nota = int(f.get("foto", -1)), float(f.get("nota", 0) or 0)
         except (TypeError, ValueError, AttributeError):
             continue
-        defeitos = [k for k in ("texto", "rosto", "engana") if f.get(k) in (True, "true", "sim")]
+        defeitos = [k for k in (defeitos_considerados or ("texto", "rosto", "engana"))
+                    if f.get(k) in (True, "true", "sim")]
         print(f"[banco] IA: foto {i}, nota {nota:g}{' — recusada: ' + ', '.join(defeitos) if defeitos else ''}"
               f" — {str(f.get('motivo', ''))[:70]}")
         if 0 <= i < n and nota >= NOTA_MINIMA_FOTO and not defeitos:

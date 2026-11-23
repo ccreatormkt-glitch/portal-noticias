@@ -1,7 +1,8 @@
 """Foto de fundo das notícias.
 
-Regra: só foto da cidade citada na notícia, de banco livre (Wikimedia Commons), com crédito
-pequeno na arte. A foto da matéria original nunca é publicada: serve só de referência para a busca.
+Ordem (23/11/2026): 1) a foto da própria notícia, tirada das matérias que deram o fato, se a IA
+aprovar lendo o texto inteiro e se não tiver marca d'água/logo de outro veículo; 2) Google Imagens;
+3) vídeo e fotos de banco; 4) fotos livres; 5) ilustração por IA. Sempre com crédito.
 Sem foto boa da cidade, a arte sai com o ícone do assunto. O post nunca deixa de sair por isso.
 """
 import base64
@@ -21,7 +22,17 @@ def _cena(card: dict) -> str:
     """O que desenhar: a cena da foto da matéria (descrita pela IA, sem pessoas nem textos);
     sem ela, o próprio texto da notícia."""
     v = _visao(card)
-    return v.get("cena_en") or card.get("imagem_prompt") or card.get("foto_busca") or card.get("titulo", "")
+    if v.get("cena_en") or card.get("imagem_prompt"):
+        return v.get("cena_en") or card.get("imagem_prompt")
+    try:  # a IA leu a notícia inteira para montar as buscas: a cena vem dali, não só da manchete
+        import editor
+        ia = editor.palavras_foto(card)
+        en = [b["q"] for b in ia.get("buscas", []) if isinstance(b, dict) and b.get("lang") == "en"]
+        if en:
+            return ", ".join(en[:3])
+    except Exception:
+        pass
+    return card.get("foto_busca") or card.get("titulo", "")
 
 
 def _pollinations(prompt: str, out_path: Path):
@@ -216,6 +227,100 @@ def cidades_citadas(card: dict) -> list:
 
 
 _ORIG = {}
+
+
+# fontes cuja foto pode ser usada com crédito (licença aberta ou órgão público) vêm primeiro
+FONTES_ABERTAS = ("agenciabrasil.ebc.com.br", ".gov.br", ".leg.br", ".jus.br", ".mp.br", "uepb.edu.br")
+FOTO_MATERIA_MAX = 6
+
+
+def _fotos_das_materias(card: dict) -> list:
+    """Fotos de capa (og:image / twitter:image) de TODAS as matérias que deram o fato, respeitando o
+    robots.txt. Devolve [(bytes, tipo, site, url)], fontes abertas primeiro, sem repetir."""
+    import re
+
+    import editor
+    achadas, vistas = [], set()
+    links = sorted((l for l in card.get("links", []) if l and "news.google.com" not in l),
+                   key=lambda l: not any(f in _site(l) for f in FONTES_ABERTAS))
+    for link in links:
+        if len(achadas) >= FOTO_MATERIA_MAX:
+            break
+        try:
+            if not editor._robots_ok(link):
+                continue
+            html = requests.get(link, headers=UA, timeout=(5, 12)).text
+        except Exception:
+            continue
+        urls = re.findall(r'<meta[^>]+(?:property|name)=["\'](?:og:image|twitter:image)(?::src)?["\'][^>]+content=["\']([^"\']+)',
+                          html) + re.findall(r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+(?:property|name)=["\']og:image', html)
+        for url in urls[:2]:
+            url = url.replace("&amp;", "&")
+            if url in vistas or any(x in url.lower() for x in ("logo", "default", "placeholder", "favicon")):
+                continue
+            vistas.add(url)
+            try:
+                img = requests.get(url, headers=UA, timeout=(5, 15))
+                tipo = img.headers.get("content-type", "image/jpeg").split(";")[0]
+                if img.status_code == 200 and tipo.startswith("image/") and 20_000 < len(img.content) < 8_000_000:
+                    achadas.append((img.content, tipo, _site(link), url))
+                    break
+            except Exception:
+                continue
+    return achadas
+
+
+def _miniatura(dados: bytes, lado: int = 768):
+    """Versão menor (JPEG) para a IA olhar; devolve (bytes, tipo, largura, altura) ou None."""
+    import io
+
+    from PIL import Image
+    try:
+        im = Image.open(io.BytesIO(dados)).convert("RGB")
+    except Exception:
+        return None
+    w, h = im.size
+    im.thumbnail((lado, lado))
+    buf = io.BytesIO()
+    im.save(buf, "JPEG", quality=85)
+    return buf.getvalue(), "image/jpeg", w, h
+
+
+def foto_da_noticia(card: dict, base: Path):
+    """A foto da própria notícia (pedido do Arthur, 23/11/2026): junta as fotos de capa de todas as
+    matérias que deram o fato e a IA, lendo o TEXTO INTEIRO, escolhe a que mostra este fato. Só entra
+    foto limpa: com marca d'água, logo ou assinatura de outro veículo por cima, ou arte com texto, a
+    foto é recusada (marca de terceiros não é apagada). Em polícia, nada de rosto de suspeito ou
+    vítima nem cena chocante. Devolve (arquivo, crédito) ou None."""
+    import editor
+    fotos = [(f, _miniatura(f[0])) for f in _fotos_das_materias(card)]
+    fotos = [(f, m) for f, m in fotos if m and min(m[2], m[3]) >= 500]
+    if not fotos:
+        print("[matéria] nenhuma foto de capa utilizável nas matérias")
+        return None
+    defeitos = ("marca", "arte", "engana", "rosto", "chocante")
+    try:
+        idx = editor.escolher_foto(card, [(m[0], m[1]) for _, m in fotos],
+                                   sistema=editor.CONFERIR_FOTO_MATERIA, defeitos=defeitos)
+    except Exception as e:
+        print(f"[matéria] a IA não conseguiu conferir as fotos ({str(e)[:60]})")
+        return None
+    if idx is None or not 0 <= idx < len(fotos):
+        print(f"[matéria] nenhuma das {len(fotos)} fotos das matérias serve (fato diferente, marca ou arte)")
+        return None
+    (dados, tipo, site, url), _ = fotos[idx]
+    fid = "materia:" + url[:300]
+    if fid in _usadas():
+        print("[matéria] essa foto já foi usada em outro post")
+        return None
+    import io
+
+    from PIL import Image
+    destino = Path(f"{base}_materia.jpg")
+    Image.open(io.BytesIO(dados)).convert("RGB").save(destino, quality=92)
+    _marcar(fid)
+    print(f"[matéria] foto da notícia aprovada: {site}")
+    return destino, site
 
 
 def _original(card: dict):
@@ -559,7 +664,14 @@ def buscas_google(card: dict) -> list:
     if _fold(cidade) in ("paraiba", "brasil", ""):
         cidade = ""
     titulo = " ".join(str(card.get("titulo") or "").split())
-    buscas = [titulo if not cidade or _fold(cidade) in _fold(titulo) else f"{titulo} {cidade}",
+    cena_pt = ""
+    try:  # a cena ideal que a IA tirou do texto inteiro (não só da manchete)
+        import editor
+        ia = editor.palavras_foto(card)
+        cena_pt = " ".join(b["q"] for b in ia.get("buscas", []) if isinstance(b, dict) and b.get("lang") == "pt")
+    except Exception:
+        pass
+    buscas = [titulo if not cidade or _fold(cidade) in _fold(titulo) else f"{titulo} {cidade}", cena_pt,
               " ".join(str(card.get("foto_local") or "").split()),
               " ".join([*(card.get("destaques") or [])[:2], cidade or "Paraíba"])]
     vistas, saida = set(), []
@@ -918,8 +1030,8 @@ def video_banco(card: dict, base: Path):
 
 
 def imagem_de_fundo(card: dict, base: Path):
-    """Toda arte tem imagem, sem textos. A foto da matéria original NUNCA vai para a arte (costuma
-    ter texto, logo ou marca do site): serve só de referência. Ordem de reserva:
+    """Toda arte tem imagem. Primeiro a foto da própria notícia (foto_da_noticia), só se estiver limpa;
+    depois Google Imagens; depois, ordem de reserva:
     1) foto livre do lugar ligado ao fato, na cidade citada (Wikimedia Commons, com crédito);
     2) a cena da notícia refeita por IA, a partir da foto original ou do texto ("Ilustração por IA");
     3) foto livre ligada ao assunto (tema da notícia), sem pessoas em destaque nem letreiros;
@@ -930,7 +1042,16 @@ def imagem_de_fundo(card: dict, base: Path):
     Pixabay (ou Pexels) -> a IA escolhe. As outras fontes só entram se o banco não tiver foto boa."""
     card["_credito"], card["_ilustrativa"], card["_credito_legenda"] = "", False, ""
     card.pop("_video_fundo", None)
-    try:  # antes de tudo (pedido do Arthur, 23/11/2026): foto do assunto no Google Imagens
+    try:  # antes de tudo (pedido do Arthur, 23/11/2026): a foto da própria notícia, se estiver limpa
+        achou = foto_da_noticia(card, base)
+    except Exception as e:
+        print(f"[matéria] falhou ({type(e).__name__}); outras fontes")
+        achou = None
+    if achou:
+        card["_credito"] = f"Foto: {achou[1]}"
+        card["_credito_legenda"] = f"📷 Foto: reprodução/{achou[1]}"
+        return achou[0]
+    try:  # depois: foto do assunto no Google Imagens
         achou = foto_google(card, base)
     except Exception as e:
         print(f"[google] busca falhou ({type(e).__name__}); outras fontes")

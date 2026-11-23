@@ -145,3 +145,14 @@ Valem para tudo o que o sistema produz. Cada regra tem um teste que falha se ela
 - Onde: `illustrate.foto_google` (começo de `illustrate.imagem_de_fundo`, notícias e parceiros),
   `google_mac.py`, `.github/workflows/google-mac.yml`. Instalação no Mac: SETUP.md, "Google Imagens pelo Mac".
   Teste: `tests/test_google_imagens.py`.
+
+## 13. Foto da própria notícia primeiro (pedido do Arthur, 23/11/2026)
+- Ordem da foto: 1) foto de capa das matérias que deram o fato; 2) Google Imagens; 3) vídeo/fotos de
+  banco; 4) fotos livres; 5) ilustração por IA.
+- A IA lê o TEXTO INTEIRO (manchete, linha fina, pontos, legenda, cidade) e só aprova foto que mostra
+  este fato (nota 7 ou mais). Fontes abertas (Agência Brasil, sites .gov.br) são olhadas primeiro.
+- Foto com marca d'água, logo ou assinatura de outro veículo por cima, ou arte com texto: recusada.
+  Marca de terceiros nunca é apagada (é a identificação do dono da foto).
+- Polícia: nada de rosto de suspeito, preso, vítima ou criança, nem cena chocante.
+- Crédito na arte ("Foto: site") e na legenda ("📷 Foto: reprodução/site").
+- As buscas do Google e a ilustração por IA usam a cena que a IA tirou do texto inteiro.

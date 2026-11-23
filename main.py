@@ -269,7 +269,7 @@ def _candidatos(clusters, quantos, mode) -> list:
             continue
         # banco de notícias já postadas (+ legendas do próprio Instagram)
         motivo = "" if _PAUTA.get("refazer") else db.ja_publicada(
-            {**card, "fp": c.fingerprint, "titulo_fonte": c.rep.title, "links": [i.link for i in c.items[:4]]},
+            {**card, "fp": c.fingerprint, "titulo_fonte": c.rep.title, "links": sorted((i.link for i in c.items[:10]), key=lambda l: "news.google.com" in l)},
             _legendas_ig() if mode == "auto" else ())
         if not motivo and not _PAUTA.get("refazer"):
             motivo = _repetida_pela_ia(card)
