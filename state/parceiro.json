@@ -391,13 +391,35 @@
    "ts": 1795388655.5838857,
    "status": "pulado",
    "nota": "IA: O conteúdo trata-se de desinformação e teorias da conspiração sem fundamento, violando as diretrizes de veracidade do PB Minuto."
+  },
+  "18170452465469910": {
+   "ts": 1795393208.114473,
+   "status": "na_fila",
+   "nota": ""
+  },
+  "18647513179025884": {
+   "ts": 1795393248.8407934,
+   "status": "pulado",
+   "nota": "mesmo fato já postado: Suspeitos executam homem de 41 anos a tiros no bairro Tibiri"
+  },
+  "18149943193575259": {
+   "ts": 1795393289.6240702,
+   "status": "pulado",
+   "nota": "mesmo fato já postado: Falsos motoboys matam morador de 29 anos no Santo Antônio em"
+  },
+  "17990620671093613": {
+   "ts": 1795393410.4069114,
+   "status": "publicado",
+   "nota": "18126311914937262",
+   "categoria": "cg",
+   "story": "18147938128582843"
   }
  },
  "tentativas": {
-  "18103755947392994": 1,
-  "18043841588892437": 1
+  "18103755947392994": 2,
+  "18043841588892437": 2
  },
  "refazer": {},
- "aguardando": 1795392136.6733553,
- "ultimo_tipo": "video"
+ "aguardando": 1795393464.2560709,
+ "ultimo_tipo": "imagem"
 }
