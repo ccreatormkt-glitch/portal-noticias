@@ -506,16 +506,18 @@
    "status": "pulado",
    "nota": "mesmo fato já postado: Mega-Sena acumula e valor chega a R$ 45 milhões para o próxi"
   },
-  "17978251152151802": {
-   "ts": 1795431212.774316,
-   "status": "na_fila",
-   "nota": ""
-  },
   "18143704393617315": {
    "ts": 1795437253.3316329,
    "status": "publicado",
    "nota": "18111800228224807",
    "categoria": "brasil"
+  },
+  "17978251152151802": {
+   "ts": 1795437492.1812124,
+   "status": "publicado",
+   "nota": "18141085186733990",
+   "categoria": "jp",
+   "story": "17957684250319644"
   }
  },
  "tentativas": {},
