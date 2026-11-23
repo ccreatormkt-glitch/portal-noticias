@@ -1510,7 +1510,9 @@ def teste_imagem(usuario: str, quantos: int = 2) -> int:
     # perfil com linha de vídeo e linha de imagem: vale a de imagem (com as flags dela)
     p = next((x for x in mesmos if x.get("imagem")), None) or next(iter(mesmos), None) or \
         {"usuario": usuario.lstrip("@").lower(), "desde": "", "grade": False, "imagem": True}
-    return _rodada_imagens(dict(p, imagem=True), _estado(), "dry", quantos)
+    est = _estado()
+    est["vistos"] = {}        # teste: remonta os posts recentes mesmo se já usados (dry não grava nada)
+    return _rodada_imagens(dict(p, imagem=True), est, "dry", quantos)
 
 
 def amostra(usuario: str, n: int = 12) -> int:
