@@ -7,6 +7,7 @@ import base64
 import json
 from pathlib import Path
 import re
+import os
 import time
 
 import requests
@@ -48,6 +49,20 @@ PADRÃO DE REDAÇÃO (o mesmo dos grandes portais de notícia)
   Quando a informação é de uma autoridade, atribua no fim: "..., diz PM", "..., segundo a prefeitura".
   Sem adjetivos, sem caixa alta, sem ponto de exclamação, sem pergunta, sem ponto final.
   O título é a primeira frase que o público ouve: o fato mais forte logo no começo.
+- GANCHO (o título é a capa e os 3 primeiros segundos do vídeo; muita gente decide ali se fica):
+  abra com o elemento MAIS FORTE E VERDADEIRO do próprio texto: o número mais específico, o lugar
+  que o paraibano conhece (Açude Velho, Parque do Povo, Mangabeira, BR-230), o prazo, o efeito na
+  vida de quem mora ali. Por editoria:
+  EMPREGO, CONCURSO, EDUCAÇÃO, SERVIÇO: o benefício concreto e o prazo ("500 vagas em cursos
+  gratuitos em CG; inscrição vai até sexta").
+  POLÍCIA, TRÂNSITO: o fato principal e o lugar conhecido, sem adjetivo e sem detalhe mórbido.
+  CIDADE, PARAÍBA, CLIMA, SAÚDE: o que muda para quem mora ali (rua, bairro, horário, chuva, fila).
+  POLÍTICA, ECONOMIA, BRASIL, MUNDO: o efeito no bolso ou no dia a dia do leitor, quando o texto
+  traz; se não, o número ou a decisão central.
+  ESPORTE, CULTURA: o resultado ou o que está em jogo (placar, vaga, data e lugar do show).
+  PROIBIDO no gancho: "você não vai acreditar", "veja", "saiba", "entenda", "chocante", pergunta,
+  mistério que esconde o fato, exagero, ou promessa que o resto do texto não cumpre.
+{{GANCHO_VARIANTE}}
 - Para o ouvido: frases curtas na ordem direta (sujeito, verbo, complemento), uma ideia por
   frase, sem parênteses, sem travessões, sem siglas pouco conhecidas, sem números longos
   (arredonde: "cerca de 1,2 mil" em vez de "1.187").
@@ -137,6 +152,8 @@ skip (bool), motivo (string), risco ("ok"|"cuidado"|"skip"), formato, chapeu, ti
 linha_fina, resumo, pontos (lista), destaques (lista), legenda, cidade, hashtags (lista), foto_busca,
 foto_local, imagem_prompt, gatilho, potencial (número 1-5).
 """
+SYSTEM_MODELO = SYSTEM   # com a vaga da versão do gancho (teste A/B)
+SYSTEM = SYSTEM_MODELO.replace("{GANCHO_VARIANTE}\n", "")
 
 
 def _extract_json(text: str) -> dict:
@@ -447,8 +464,30 @@ def validate(card: dict) -> dict:
     return card
 
 
+# Teste A/B do gancho (relatório semanal compara o alcance das duas versões).
+# A = fato primeiro (padrão dos portais); B = o efeito na vida do leitor primeiro.
+GANCHOS_AB = {
+    "A": "  VERSÃO DESTE POST: comece pelo FATO (quem fez o quê, onde).",
+    "B": "  VERSÃO DESTE POST: comece pelo EFEITO para o leitor (o que muda para quem mora ali, o "
+         "benefício ou o risco) e depois o fato; se o texto não tiver efeito claro, comece pelo fato.",
+}
+_AB = {"n": 0}
+
+
+def variante_gancho() -> str:
+    """AB_GANCHO=A ou B fixa a vencedora; AB_GANCHO=ab (padrão) alterna post a post."""
+    fixo = os.environ.get("AB_GANCHO", "ab").strip().upper()
+    if fixo in GANCHOS_AB:
+        return fixo
+    _AB["n"] += 1
+    return "AB"[int(time.time() // 60 + _AB["n"]) % 2]
+
+
 def make_card(cluster) -> dict:
-    card = validate(_extract_json(generate(build_prompt(cluster))))
+    variante = variante_gancho()
+    sistema = SYSTEM_MODELO.replace("{GANCHO_VARIANTE}", GANCHOS_AB[variante])
+    card = validate(_extract_json(generate(build_prompt(cluster), system=sistema)))
+    card["_variante"] = variante
     if not card.get("skip"):
         card = originalizar(card, cluster)
         if not card.get("original"):

@@ -461,3 +461,18 @@ def test_regra_12_uma_fonte_basta_ate_policia(monkeypatch):
     assert main._confirmada(dois)
     grande = sources.Cluster([item("Suspeito é preso em flagrante em Campina Grande", fonte="g1 Paraíba")])
     assert main._confirmada(grande)
+
+
+def test_gancho_por_editoria_e_variantes_ab(monkeypatch):
+    """Regra 14: gancho tirado do próprio texto, por editoria, sem clickbait; A/B alterna e é gravado."""
+    import editor
+    assert "GANCHO" in editor.SYSTEM and "{GANCHO_VARIANTE}" not in editor.SYSTEM
+    assert "você não vai acreditar" in editor.SYSTEM
+    monkeypatch.setenv("AB_GANCHO", "B")
+    assert editor.variante_gancho() == "B"
+    monkeypatch.setenv("AB_GANCHO", "ab")
+    assert {editor.variante_gancho() for _ in range(4)} == {"A", "B"}
+    import db
+    db.marcar_variante("IG77", "B")
+    with db._conn() as c:
+        assert c.execute("SELECT variante FROM variantes WHERE ig_id='IG77'").fetchone()[0] == "B"

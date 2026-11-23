@@ -184,7 +184,7 @@ def gerar(dias: int = 7) -> str:
         "## Por origem", "", _tabela(g_orig, "origem"), "",
     ]
     if g_var:
-        corpo += ["## Teste A/B (capa e gancho)", "", _tabela(g_var, "versão"), ""]
+        corpo += ["## Teste A/B do gancho (A = fato primeiro · B = efeito no leitor primeiro)", "", _tabela(g_var, "versão"), ""]
     # 3 recomendações, todas tiradas dos números acima
     rec = []
     if novo != mix:
@@ -207,7 +207,7 @@ def gerar(dias: int = 7) -> str:
         dif = (a["alcance"] / max(1, b["alcance"]) - 1) * 100
         rec.append(f"**Teste A/B:** a versão {a['chave']} alcançou {dif:.0f}% mais que a {b['chave']} "
                    f"({a['n']} x {b['n']} posts). " + ("Diferença grande: dá para fixar a vencedora "
-                   f"(`AB_CAPA={a['chave']}`)." if dif >= 15 else "Diferença pequena: seguir testando."))
+                   f"(variável `AB_GANCHO={a['chave']}`; A = fato primeiro, B = efeito no leitor primeiro)." if dif >= 15 else "Diferença pequena: seguir testando."))
     elif len(hora_ok) >= 2:
         rec.append(f"**Horário:** {hora_ok[0]['chave']} rende {f(hora_ok[0]['alcance'])} por post e "
                    f"{hora_ok[-1]['chave']} {f(hora_ok[-1]['alcance'])}. Guardar as notícias mais fortes "

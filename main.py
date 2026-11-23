@@ -495,6 +495,7 @@ def cmd_run(args):
             db.update_status(fp, "published", ig_id=mid)
             db.marcar_regiao(fp, card.get("categoria") or card.get("regiao", "paraiba"))
             db.registrar_publicada(card, mid)  # entra no banco de notícias já postadas
+            db.marcar_variante(mid, card.get("_variante", ""))  # teste A/B do gancho (relatório semanal)
             print(f"[publicado] {mid}  {card['titulo']}")
             sid = publish.story_se_paraiba(card.get("categoria"), card.get("_video"))   # regra dos Stories
             if sid:

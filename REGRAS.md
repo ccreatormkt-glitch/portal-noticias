@@ -156,3 +156,12 @@ Valem para tudo o que o sistema produz. Cada regra tem um teste que falha se ela
 - Polícia: nada de rosto de suspeito, preso, vítima ou criança, nem cena chocante.
 - Crédito na arte ("Foto: site") e na legenda ("📷 Foto: reprodução/site").
 - As buscas do Google e a ilustração por IA usam a cena que a IA tirou do texto inteiro.
+
+## 14. Gancho e teste A/B (23/11/2026)
+- O título é a capa e os 3 primeiros segundos do vídeo: abre com o elemento mais forte e verdadeiro
+  do próprio texto (número, lugar conhecido, prazo, efeito na vida do leitor), com regra por editoria
+  no prompt do editor (`editor.SYSTEM`, bloco GANCHO).
+- Proibido: "você não vai acreditar", "veja", "saiba", "entenda", "chocante", pergunta, mistério,
+  exagero ou promessa que o texto não cumpre.
+- Teste A/B: A = fato primeiro, B = efeito no leitor primeiro. Alterna post a post (`AB_GANCHO=ab`);
+  o relatório semanal compara o alcance. Para fixar a vencedora: variável `AB_GANCHO=A` ou `B`.

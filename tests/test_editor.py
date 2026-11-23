@@ -52,8 +52,9 @@ def test_agente_reescritor_corrige_ou_descarta(monkeypatch):
     chamadas = []
 
     def fake(prompt, system=None):
-        chamadas.append("reescritor" if system else "editor")
-        return json.dumps(reescrito if system else copiado, ensure_ascii=False)
+        reescritor = bool(system) and "VERSÃO DESTE POST" not in system   # o editor leva a versão do gancho
+        chamadas.append("reescritor" if reescritor else "editor")
+        return json.dumps(reescrito if reescritor else copiado, ensure_ascii=False)
     monkeypatch.setattr(editor, "generate", fake)
     monkeypatch.setattr(editor, "texto_completo", lambda c: "")
     out = editor.make_card(cl)
