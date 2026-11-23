@@ -427,6 +427,17 @@
    "nota": "17968654206207335",
    "categoria": "pb",
    "story": "18277212073305955"
+  },
+  "18124158581285135": {
+   "ts": 1795404424.5866008,
+   "status": "pulado",
+   "nota": "mesmo fato já postado: Xuxa anuncia que espera o primeiro neto no palco do Domingão"
+  },
+  "18149743087574881": {
+   "ts": 1795404538.0964766,
+   "status": "publicado",
+   "nota": "18067577309795110",
+   "categoria": "brasil"
   }
  },
  "tentativas": {
@@ -434,6 +445,6 @@
   "18043841588892437": 2
  },
  "refazer": {},
- "aguardando": 1795403396.257794,
- "ultimo_tipo": "imagem"
+ "aguardando": 1795404542.4111924,
+ "ultimo_tipo": "video"
 }
