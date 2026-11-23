@@ -1,6 +1,11 @@
-"""Foto do Google Imagens (SerpAPI): busca pelo assunto -> a IA confere -> baixa -> crédito do site."""
+"""Foto do Google Imagens: navegador abre a busca -> a IA escolhe a miniatura -> print da foto grande.
+Usa uma página falsa do Google servida localmente (nada sai para a internet)."""
+import base64
+import http.server
 import io
+import threading
 
+import pytest
 from PIL import Image
 
 import config
@@ -8,29 +13,46 @@ import editor
 import illustrate
 
 
-def jpg(w=1200, h=800):
+def _png(w, h, cor):
     b = io.BytesIO()
-    Image.new("RGB", (w, h), (90, 90, 90)).save(b, "JPEG")
+    Image.new("RGB", (w, h), cor).save(b, "PNG")
     return b.getvalue()
 
 
-class Resp:
-    def __init__(self, json=None, content=b"", status=200):
-        self._json, self.content, self.status_code = json, content, status
-        self.headers = {"content-type": "image/jpeg"}
-
-    def json(self):
-        return self._json
-
-    def raise_for_status(self):
-        if self.status_code >= 400:
-            raise RuntimeError(f"HTTP {self.status_code}")
+MINI = "data:image/png;base64," + base64.b64encode(_png(150, 150, (200, 50, 50))).decode()
+PAGINA = f"""<html><body><div style="height:150px">Google</div><div id="search">
+<img src="{MINI}" width="180" height="180" onclick="abrir(1)">
+<img src="{MINI}" width="180" height="180" onclick="abrir(2)"></div>
+<div id="painel"></div><script>
+function abrir(n) {{ document.getElementById('painel').innerHTML =
+ '<a href="https://www.jornalx.com.br/materia' + n + '"><img src="/grande' + n + '.png" width="600" height="400"></a>'; }}
+</script></body></html>"""
 
 
-def res(i, w=1200, h=800, source="Jornal X"):
-    return {"original": f"https://site{i}.com/f.jpg", "thumbnail": f"https://tbn/{i}",
-            "original_width": w, "original_height": h, "source": source, "title": f"foto {i}",
-            "link": f"https://site{i}.com/materia"}
+class Fake(http.server.BaseHTTPRequestHandler):
+    def do_GET(self):
+        if self.path.startswith("/grande"):
+            corpo, tipo = _png(1200, 800, (30, 90, 160)), "image/png"
+        elif self.path.startswith("/sorry"):
+            corpo, tipo = b"<form id='captcha-form'></form>", "text/html"
+        else:
+            corpo, tipo = PAGINA.encode(), "text/html"
+        self.send_response(200)
+        self.send_header("Content-Type", tipo)
+        self.end_headers()
+        self.wfile.write(corpo)
+
+    def log_message(self, *a):
+        pass
+
+
+@pytest.fixture(scope="module")
+def servidor():
+    pytest.importorskip("playwright.sync_api")
+    s = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Fake)
+    threading.Thread(target=s.serve_forever, daemon=True).start()
+    yield f"http://127.0.0.1:{s.server_port}"
+    s.shutdown()
 
 
 def card(**kw):
@@ -41,67 +63,52 @@ def card(**kw):
     return c
 
 
-def preparar(monkeypatch, tmp_path, resultados, escolha=0, status=200):
-    monkeypatch.setattr(config, "SERPAPI_KEY", "chave-de-teste")
+def preparar(monkeypatch, tmp_path, url, escolha):
     monkeypatch.setattr(config, "GOOGLE_IMAGENS", True)
     monkeypatch.setattr(config, "STATE_DIR", tmp_path)
-    monkeypatch.setattr(illustrate, "CACHE_BUSCAS", tmp_path / "cache.json")
-    buscas = []
+    monkeypatch.setattr(illustrate, "GOOGLE_URL", url)
+    vistas = []
 
-    def get(url, timeout=None, params=None, headers=None):
-        if url == illustrate.SERPAPI_URL:
-            buscas.append(params["q"])
-            assert params["engine"] == "google_images" and params["gl"] == "br"
-            return Resp({"images_results": resultados}, status=status)
-        return Resp(content=jpg())
-    monkeypatch.setattr(illustrate.requests, "get", get)
-    monkeypatch.setattr(editor, "escolher_foto", lambda c, imgs, cena="": escolha)
-    return buscas
+    def escolher(c, imgs, cena=""):
+        vistas.append(len(imgs))
+        return escolha
+    monkeypatch.setattr(editor, "escolher_foto", escolher)
+    return vistas
 
 
 def test_buscas_em_portugues_com_cidade():
     assert illustrate.buscas_google(card()) == [
         "Homem é morto a tiros no bairro Mandacaru João Pessoa", "Bairro Mandacaru João Pessoa",
         "Mandacaru dez disparos João Pessoa"]
-    # "Paraíba" não é cidade: não entra na manchete
     assert illustrate.buscas_google(card(cidade="Paraíba", foto_local=""))[0] == card()["titulo"]
 
 
-def test_usa_a_foto_do_google_antes_de_tudo(monkeypatch, tmp_path):
-    buscas = preparar(monkeypatch, tmp_path, [res(1), res(2, source="Portal Correio")], escolha=1)
+def test_print_da_foto_escolhida_antes_de_tudo(monkeypatch, tmp_path, servidor):
+    vistas = preparar(monkeypatch, tmp_path, servidor + "/search?q=", escolha=1)
     c = card()
     arq = illustrate.imagem_de_fundo(c, tmp_path / "x")
     assert arq.name == "x_google.jpg" and arq.exists()
-    assert buscas == ["Homem é morto a tiros no bairro Mandacaru João Pessoa"]
-    assert c["_credito"] == "Foto: Reprodução / Portal Correio" and c["_ilustrativa"] is False
-    assert "Portal Correio" in c["_credito_legenda"]
-    assert "google:https://site2.com/f.jpg" in illustrate._usadas()   # não repete depois
+    assert vistas == [2]                                          # a IA viu as 2 miniaturas
+    with Image.open(arq) as im:
+        assert im.size == (1200, 800)                             # print da foto grande (600x400 em 2x)
+        assert im.getpixel((600, 400))[2] > 120                   # é a foto do painel, não a miniatura
+    assert c["_credito"] == "Foto: Reprodução / jornalx.com.br" and c["_ilustrativa"] is False
+    assert "jornalx.com.br" in c["_credito_legenda"]
+    assert any(u.startswith("google:") for u in illustrate._usadas())
 
 
-def test_ia_recusa_tudo_tenta_a_segunda_busca_e_depois_cai_para_o_resto(monkeypatch, tmp_path):
-    buscas = preparar(monkeypatch, tmp_path, [res(1)], escolha=None)
+def test_ia_recusa_tudo_cai_para_o_resto(monkeypatch, tmp_path, servidor):
+    vistas = preparar(monkeypatch, tmp_path, servidor + "/search?q=", escolha=None)
     assert illustrate.foto_google(card(), tmp_path / "x") is None
-    assert len(buscas) == illustrate.GOOGLE_MAX_BUSCAS
+    assert len(vistas) == illustrate.GOOGLE_MAX_BUSCAS
 
 
-def test_filtra_fotos_pequenas_e_ja_usadas(monkeypatch, tmp_path):
-    monkeypatch.setattr(config, "STATE_DIR", tmp_path)
-    illustrate._marcar("google:https://site3.com/f.jpg")
-    fotos = [{"id": "google:https://site1.com/f.jpg", "miniatura": "t", "grande": "https://site1.com/f.jpg",
-              "w": 300, "h": 200, "texto": ""},
-             {"id": "google:https://site3.com/f.jpg", "miniatura": "t", "grande": "https://site3.com/f.jpg",
-              "w": 1200, "h": 800, "texto": ""},
-             {"id": "google:https://site4.com/f.jpg", "miniatura": "t", "grande": "https://site4.com/f.jpg",
-              "w": 1200, "h": 800, "texto": ""}]
-    assert [f["id"] for f in illustrate._filtrar_google(fotos)] == ["google:https://site4.com/f.jpg"]
-
-
-def test_sem_chave_nao_busca(monkeypatch, tmp_path):
-    monkeypatch.setattr(config, "SERPAPI_KEY", "")
+def test_captcha_para_de_buscar(monkeypatch, tmp_path, servidor):
+    vistas = preparar(monkeypatch, tmp_path, servidor + "/sorry/?q=", escolha=0)
     assert illustrate.foto_google(card(), tmp_path / "x") is None
+    assert vistas == []
 
 
-def test_limite_da_serpapi_para_de_buscar(monkeypatch, tmp_path):
-    buscas = preparar(monkeypatch, tmp_path, [], status=429)
+def test_desligado_nao_abre_navegador(monkeypatch, tmp_path):
+    monkeypatch.setattr(config, "GOOGLE_IMAGENS", False)
     assert illustrate.foto_google(card(), tmp_path / "x") is None
-    assert len(buscas) == 1

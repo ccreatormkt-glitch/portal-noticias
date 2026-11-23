@@ -121,13 +121,15 @@ Valem para tudo o que o sistema produz. Cada regra tem um teste que falha se ela
 
 
 ## 13. Foto do Google Imagens (pedido do Arthur, 23/11/2026)
-- As imagens de banco/IA saíam diferentes do assunto. A foto de fundo passa a vir primeiro de uma busca
-  no Google Imagens pelo assunto (manchete + cidade; depois o lugar real ou os destaques), sem filtro de
-  licença, inclusive em polícia (escolha do Arthur, ciente do risco de direito autoral e de foto do caso).
-- A IA confere cada foto: só aprova a que corresponde ao fato (nota >= 7) e recusa texto, marca d'água,
-  logo e rosto reconhecível. Sem foto aprovada, segue a ordem antiga (vídeo/banco de fotos/IA/cidade).
+- As imagens de banco/IA saíam diferentes do assunto. A foto de fundo passa a vir primeiro do próprio
+  Google Imagens, sem filtro de licença, inclusive em polícia (escolha do Arthur, ciente do risco de
+  direito autoral e de foto do caso).
+- Como: um navegador sem tela (Playwright/Chromium) abre a busca pelo assunto (manchete + cidade; depois o
+  lugar real ou os destaques), a IA olha as miniaturas e só aprova a que corresponde ao fato (nota >= 7),
+  recusando texto, marca d'água, logo e rosto reconhecível; o navegador abre a foto e tira um print dela.
+  Sem chave de API. Até 2 buscas por notícia.
+- Sem foto aprovada (ou se o Google pedir captcha), segue a ordem antiga (vídeo/banco de fotos/IA/cidade).
 - Crédito na arte e na legenda: "Foto: Reprodução / <site de origem>".
-- Busca pela SerpAPI (segredo `SERPAPI_KEY`; o Google Custom Search não aceita clientes novos e sai do ar
-  em 1/1/2027). Até 2 buscas por notícia, guardadas 24 h. Desliga com a variável `GOOGLE_IMAGENS=false`.
+- Desliga com a variável `GOOGLE_IMAGENS=false` (também pula a instalação do navegador nos workflows).
 - Onde: `illustrate.foto_google`, chamada no começo de `illustrate.imagem_de_fundo` (notícias e parceiros).
-  Teste: `tests/test_google_imagens.py`.
+  Teste: `tests/test_google_imagens.py` (página falsa do Google, local).

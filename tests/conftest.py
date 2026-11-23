@@ -18,6 +18,7 @@ def isolar(tmp_path, monkeypatch):
 
     monkeypatch.setattr(config, "PEXELS_API_KEY", "")  # sem rede nos testes (os bancos têm teste próprio)
     monkeypatch.setattr(config, "PIXABAY_API_KEY", "")
+    monkeypatch.setattr(config, "GOOGLE_IMAGENS", False)  # sem navegador nos testes (o Google tem teste próprio)
     import illustrate
     monkeypatch.setattr(illustrate, "CACHE_BUSCAS", tmp_path / "cache_bancos.json")
     monkeypatch.setattr(config, "HORA_INICIO", 0)  # testes rodam a qualquer hora (a guarda tem teste próprio)

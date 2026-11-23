@@ -62,6 +62,9 @@ jobs:
           python-version: "3.12"
           cache: pip
       - run: pip install -r requirements.txt
+      - name: Navegador para o print do Google Imagens
+        if: vars.GOOGLE_IMAGENS != 'false'
+        run: python -m playwright install --with-deps chromium
       - name: Guardar as buscas de fotos por 24 h (exigência da API do Pixabay)
         uses: actions/cache@v4
         with:
@@ -113,7 +116,6 @@ jobs:
           IMGBB_API_KEY: ${{ secrets.IMGBB_API_KEY }}
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
           PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
-          SERPAPI_KEY: ${{ secrets.SERPAPI_KEY }}
           GOOGLE_IMAGENS: ${{ vars.GOOGLE_IMAGENS }}
           CANDIDATOS: ${{ vars.CANDIDATOS }}
           FORMATO: ${{ vars.FORMATO }}

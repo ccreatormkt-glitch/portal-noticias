@@ -511,20 +511,49 @@ def foto_banco(card: dict, base: Path):
 foto_pexels = foto_banco  # nome antigo
 
 
-# ------------------------------------------------------------------ Google Imagens (via SerpAPI)
-# Pedido do Arthur (23/11/2026): as fotos de banco/IA saíam diferentes do assunto; a foto passa a vir
-# de uma busca no próprio Google Imagens pelo assunto da notícia (manchete + lugar). A IA continua
-# conferindo: só aprova foto que corresponde ao fato e sem texto, marca d'água, logo ou rosto
-# reconhecível. Crédito: "Foto: Reprodução / <site de onde veio>". Google Custom Search não aceita
-# clientes novos e sai do ar em 1/1/2027, por isso a busca vai pela SerpAPI (resultado do Google).
-SERPAPI_URL = "https://serpapi.com/search.json"
-GOOGLE_MAX_BUSCAS = 2          # buscas por notícia (economiza a cota mensal da SerpAPI)
-GOOGLE_MIN_LADO = 500          # menor lado da foto original, em pixels
+# ------------------------------------------------------------------ Google Imagens (print da tela)
+# Pedido do Arthur (23/11/2026): as fotos de banco/IA saíam diferentes do assunto. A foto passa a vir
+# do próprio Google Imagens, sem chave de API: um navegador sem tela (Chromium/Playwright) abre a
+# busca pelo assunto da notícia, a IA olha as miniaturas e escolhe a do fato (sem texto, marca
+# d'água, logo ou rosto reconhecível), o navegador abre essa foto e tira um print dela.
+# Crédito: "Foto: Reprodução / <site de onde veio>". Se o Google pedir captcha ou nada servir,
+# segue a ordem antiga (vídeo/banco/IA/cidade). GOOGLE_IMAGENS=false desliga.
+GOOGLE_URL = "https://www.google.com/search?tbm=isch&hl=pt-BR&gl=br&safe=active&q="
+GOOGLE_MAX_BUSCAS = 2          # buscas por notícia
+GOOGLE_MAX_MINIATURAS = 8      # miniaturas mostradas para a IA
+GOOGLE_MIN_LADO = 400          # menor lado do print final, em pixels
+UA_NAVEGADOR = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/124.0 Safari/537.36")
+
+# JS que roda na página de resultados: miniaturas grandes o bastante, na ordem do Google
+_JS_MINIATURAS = """() => [...document.querySelectorAll('img')].map((im, i) => {
+  const r = im.getBoundingClientRect();
+  return {i, w: r.width, h: r.height, top: r.top + window.scrollY,
+          src: im.currentSrc || im.src || ''};
+}).filter(m => m.w >= 90 && m.h >= 90 && m.top > 120 &&
+               (m.src.startsWith('data:image') || m.src.includes('encrypted-tbn') || m.src.includes('gstatic')))"""
+
+# JS depois do clique: a maior foto visível vinda do site de origem (não a miniatura do Google)
+_JS_FOTO_GRANDE = """() => {
+  const ims = [...document.querySelectorAll('img')].map((im, i) => {
+    const r = im.getBoundingClientRect();
+    return {i, w: r.width, h: r.height, nw: im.naturalWidth, nh: im.naturalHeight, src: im.currentSrc || im.src || '',
+            vis: r.width > 0 && r.height > 0 && r.bottom > 0 && r.right > 0};
+  }).filter(m => m.vis && m.src.startsWith('http') && !m.src.includes('gstatic') && !m.src.includes('google.'));
+  ims.sort((a, b) => b.w * b.h - a.w * a.h);
+  if (!ims.length) return null;
+  const im = document.querySelectorAll('img')[ims[0].i];
+  let a = im.closest('a[href]'), href = '';
+  document.querySelectorAll('a[href^="http"]').forEach(x => {
+    if (!href && !x.href.includes('google.') && x.getBoundingClientRect().width > 0 &&
+        Math.abs(x.getBoundingClientRect().top - im.getBoundingClientRect().top) < 600) href = x.href; });
+  return {...ims[0], href: (a && !a.href.includes('google.') ? a.href : href)};
+}"""
 
 
 def buscas_google(card: dict) -> list:
     """Buscas em português, da mais fiel para a mais ampla: a manchete com a cidade; depois o lugar
-    real ligado ao fato (foto_local) ou o assunto curto com a cidade."""
+    real ligado ao fato (foto_local) ou os destaques com a cidade."""
     cidade = " ".join(str(card.get("cidade") or "").split())
     if _fold(cidade) in ("paraiba", "brasil", ""):
         cidade = ""
@@ -541,97 +570,104 @@ def buscas_google(card: dict) -> list:
     return saida
 
 
-def _busca_google(busca: str) -> list:
-    from config import SERPAPI_KEY
-    r = requests.get(SERPAPI_URL, timeout=(5, 30), params={
-        "engine": "google_images", "q": busca, "google_domain": "google.com.br", "gl": "br",
-        "hl": "pt-br", "safe": "active", "api_key": SERPAPI_KEY})
-    if r.status_code in (401, 403, 429):
-        raise RuntimeError(f"limite ou chave da SerpAPI recusada (HTTP {r.status_code})")
-    r.raise_for_status()
-    saida = []
-    for f in r.json().get("images_results", []) or []:
-        orig = f.get("original") or ""
-        saida.append({"id": "google:" + orig[:300], "texto": f.get("title") or "",
-                      "w": f.get("original_width") or 0, "h": f.get("original_height") or 0,
-                      "autor": f.get("source") or urlsplit(f.get("link") or orig).netloc or "Google",
-                      "miniatura": f.get("thumbnail"), "grande": orig})
-    return saida
+def _site(url: str) -> str:
+    host = urlsplit(url or "").netloc.lower()
+    return host[4:] if host.startswith("www.") else host
 
 
-def _filtrar_google(fotos: list) -> list:
-    usadas = _usadas()
-    return [f for f in fotos
-            if f.get("miniatura") and str(f.get("grande") or "").startswith("http") and f["id"] not in usadas
-            and min(f.get("w") or 0, f.get("h") or 0) >= GOOGLE_MIN_LADO
-            and not NAO_E_FOTO.search(_fold(f.get("texto", "")))]
+def _aceitar_cookies(page):
+    for nome in ("Aceitar tudo", "Accept all", "Concordo", "I agree"):
+        try:
+            page.get_by_role("button", name=nome).first.click(timeout=1500)
+            page.wait_for_timeout(800)
+            return
+        except Exception:
+            pass
 
 
-def _baixar_imagem(url: str):
-    """Baixa a foto original e confere que é imagem de verdade (site pode devolver página de erro)."""
-    import io
+def _print_google(page, busca: str, card: dict, destino: Path):
+    """Uma busca: abre o Google Imagens, a IA escolhe a miniatura, clica e tira o print da foto grande.
+    Devolve o site de origem ou None."""
+    import editor
+    from urllib.parse import quote_plus
+    page.goto(GOOGLE_URL + quote_plus(busca), wait_until="domcontentloaded", timeout=30000)
+    _aceitar_cookies(page)
+    if "/sorry/" in page.url or page.locator("form#captcha-form, #recaptcha").count():
+        raise RuntimeError("o Google pediu captcha (tráfego automático)")
+    page.wait_for_timeout(1500)
+    minis = page.evaluate(_JS_MINIATURAS)[:GOOGLE_MAX_MINIATURAS]
+    if not minis:
+        print(f"[google] '{busca}': nenhuma miniatura na página")
+        return None
+    imgs = page.locator("img")
+    prints = []
+    for m in minis:
+        try:
+            prints.append((imgs.nth(m["i"]).screenshot(timeout=5000), "image/png"))
+        except Exception:
+            prints.append(None)
+    validas = [m for m, p in zip(minis, prints) if p]
+    try:
+        idx = editor.escolher_foto(card, [p for p in prints if p])
+    except Exception as e:
+        print(f"[google] a IA não conseguiu conferir as fotos ({str(e)[:60]})")
+        return None
+    if idx is None or not 0 <= idx < len(validas):
+        print(f"[google] '{busca}': nenhuma das {len(validas)} fotos corresponde à notícia")
+        return None
+    imgs.nth(validas[idx]["i"]).click(timeout=5000)
+    grande = None
+    for _ in range(12):  # espera a foto do site carregar no painel
+        page.wait_for_timeout(700)
+        grande = page.evaluate(_JS_FOTO_GRANDE)
+        if grande and grande["nw"] >= GOOGLE_MIN_LADO and min(grande["w"], grande["h"]) >= 150:
+            break
+    if not grande:
+        print(f"[google] '{busca}': a foto grande não abriu")
+        return None
+    page.locator("img").nth(grande["i"]).screenshot(path=str(destino), timeout=8000)
     from PIL import Image
-    r = requests.get(url, timeout=(5, 30), headers={
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
-                      "Chrome/124.0 Safari/537.36"})
-    r.raise_for_status()
-    img = Image.open(io.BytesIO(r.content))
-    img.load()
-    if min(img.size) < GOOGLE_MIN_LADO:
-        raise ValueError(f"foto pequena ({img.width}x{img.height})")
-    return img.convert("RGB")
+    with Image.open(destino) as im:
+        tam = im.size
+        if min(tam) < GOOGLE_MIN_LADO:
+            print(f"[google] '{busca}': print pequeno demais ({tam[0]}x{tam[1]})")
+            return None
+        im.convert("RGB").save(destino.with_suffix(".jpg"), quality=92)
+    _marcar("google:" + grande["src"][:300])
+    return _site(grande.get("href") or grande["src"]) or "Google", tam
 
 
 def foto_google(card: dict, base: Path):
-    """Busca o assunto da notícia no Google Imagens, a IA escolhe a foto que corresponde ao fato,
-    baixa e devolve (arquivo, crédito). Sem chave da SerpAPI, não faz nada."""
-    from config import GOOGLE_IMAGENS, SERPAPI_KEY
-    if not (SERPAPI_KEY and GOOGLE_IMAGENS):
-        if not SERPAPI_KEY:
-            print("[google] sem chave da SerpAPI (segredo SERPAPI_KEY): outras fontes")
+    """Busca o assunto no Google Imagens e tira print da foto que a IA aprovou. Devolve (arquivo, crédito)."""
+    from config import GOOGLE_IMAGENS
+    if not GOOGLE_IMAGENS:
         return None
-    import editor
-    for busca in buscas_google(card)[:GOOGLE_MAX_BUSCAS]:
+    try:
+        from playwright.sync_api import sync_playwright
+    except ImportError:
+        print("[google] Playwright não instalado: outras fontes")
+        return None
+    destino = Path(f"{base}_google.png")
+    with sync_playwright() as pw:
+        nav = pw.chromium.launch()
         try:
-            cands = _filtrar_google(_cache("Google", busca, lambda: _busca_google(busca), "pt"))[:8]
-        except Exception as e:
-            print(f"[google] '{busca}': {str(e)[:100]}")
-            if "limite" in str(e):
-                break
-            continue
-        if not cands:
-            print(f"[google] '{busca}': nada utilizável")
-            continue
-        miniaturas = []
-        for f in cands:
-            try:
-                m = requests.get(f["miniatura"], timeout=(5, 15))
-                m.raise_for_status()
-                miniaturas.append((m.content, m.headers.get("content-type", "image/jpeg").split(";")[0]))
-            except Exception:
-                miniaturas.append(None)
-        validas = [f for f, m in zip(cands, miniaturas) if m]
-        try:  # a IA só aprova foto do fato (ou bem parecida) e sem texto/marca d'água/rosto
-            idx = editor.escolher_foto(card, [m for m in miniaturas if m])
-        except Exception as e:
-            print(f"[google] a IA não conseguiu conferir as fotos ({str(e)[:60]})")
-            idx = None
-        if idx is None or not 0 <= idx < len(validas):
-            print(f"[google] '{busca}': nenhuma das {len(cands)} fotos corresponde à notícia")
-            continue
-        f = validas[idx]
-        try:  # se o site bloquear o download, passa para a próxima busca
-            img = _baixar_imagem(f["grande"])
-        except Exception as e:
-            print(f"[google] download de {f['autor']} falhou ({str(e)[:60]})")
-            continue
-        destino = Path(f"{base}_google.jpg")
-        img.save(destino, quality=92)
-        _marcar(f["id"])
-        site = " ".join(str(f.get("autor") or "Google").split())[:40]
-        print(f"[google] '{busca}': foto de {site} ({img.width}x{img.height})")
-        card["_credito_legenda"] = f"📷 Foto: Reprodução / {site}"
-        return destino, f"Foto: Reprodução / {site}"
+            page = nav.new_page(locale="pt-BR", user_agent=UA_NAVEGADOR, device_scale_factor=2,
+                                viewport={"width": 1280, "height": 1400})
+            for busca in buscas_google(card)[:GOOGLE_MAX_BUSCAS]:
+                try:
+                    achou = _print_google(page, busca, card, destino)
+                except Exception as e:
+                    print(f"[google] '{busca}': {str(e)[:100]}")
+                    if "captcha" in str(e):
+                        break
+                    continue
+                if achou:
+                    site, (w, h) = achou
+                    print(f"[google] '{busca}': print da foto de {site} ({w}x{h})")
+                    card["_credito_legenda"] = f"📷 Foto: Reprodução / {site}"
+                    return destino.with_suffix(".jpg"), f"Foto: Reprodução / {site}"
+        finally:
+            nav.close()
     return None
 
 
