@@ -638,3 +638,5 @@
 {"ts": "2026-11-23T15:50:09", "event": "pulado", "headline": "Como foi captura de narcotraficante mexicano na lista dos 10 mais procurados do FBI", "source": "", "ig_id": "", "note": "mesmo fato já postado (sentido 0.90): México prende líder do tráfico procurado pelo FBI"}
 {"ts": "2026-11-23T16:56:37", "event": "gerado", "headline": "Novo tratamento contra câncer de mama ganha aprovação da Anvisa", "source": "Agência Brasil, Big PB", "ig_id": "", "note": ""}
 {"ts": "2026-11-23T16:58:18", "event": "published", "headline": "Novo tratamento contra câncer de mama ganha aprovação da Anvisa", "source": "Agência Brasil, Big PB", "ig_id": "18076827617592153", "note": ""}
+{"ts": "2026-11-23T17:29:08", "event": "gerado", "headline": "Supremo da Espanha concede anistia e perdoa líder separatista Carles Puigdemont", "source": "g1", "ig_id": "", "note": ""}
+{"ts": "2026-11-23T17:29:53", "event": "published", "headline": "Supremo da Espanha concede anistia e perdoa líder separatista Carles Puigdemont", "source": "g1", "ig_id": "18108824717573726", "note": ""}
