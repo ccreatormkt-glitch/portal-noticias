@@ -799,6 +799,29 @@
    "ts": 1795461493.9894638,
    "status": "erro",
    "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18118317712833967": {
+   "ts": 1795464119.4792044,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18081417791422141": {
+   "ts": 1795464136.099278,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "17933524359425734": {
+   "ts": 1795464156.644841,
+   "status": "pulado",
+   "nota": "O material apresenta apenas críticas genéricas de oposição sobre a atuação dos vereadores, sem citar fatos concretos, projetos, votações ou episódios específicos."
+  },
+  "18147618514596001": {
+   "ts": 1795464305.2683263,
+   "status": "publicado",
+   "nota": "17919454242554818",
+   "categoria": "jp",
+   "editoria": "CIDADE",
+   "story": "18201210256386711"
   }
  },
  "tentativas": {
@@ -807,11 +830,10 @@
   "18131812798842168": 1,
   "18644532898026667": 2,
   "18119068550137942": 2,
-  "18118317712833967": 2,
-  "18081417791422141": 2,
-  "17933524359425734": 1
+  "17892085605478311": 1,
+  "18344255932274036": 1
  },
  "refazer": {},
- "aguardando": 1795463380.6713767,
+ "aguardando": 0,
  "ultimo_tipo": "imagem"
 }
