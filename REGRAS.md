@@ -91,6 +91,7 @@ Valem para tudo o que o sistema produz. Cada regra tem um teste que falha se ela
 - Fidelidade: números/datas do nosso texto precisam estar no post; a IA confere se o texto novo é fiel
   e se o original deixa algo duvidoso. Qualquer dúvida: vai para a fila de aprovação, não publica direto.
 - Polícia e temas sensíveis: foto ilustrativa, nunca a foto do caso (regra de credibilidade).
+  (Atualizado em 23/11/2026, regra 13: a foto vem primeiro do Google Imagens, mesmo em polícia.)
 - As fontes não aparecem no post (regra do PB Minuto), como nos outros parceiros.
 
 ## 10. Parceiro @destaques.dodia (pedido do Arthur, 22/11/2026)
@@ -117,3 +118,16 @@ Valem para tudo o que o sistema produz. Cada regra tem um teste que falha se ela
 - A foto vira Reels do PB Minuto com locução e o texto é reescrito pelas regras das notícias.
 - Vídeo e post de imagem dos parceiros se alternam: depois de um vídeo, as linhas de imagem pegam a vaga
   primeiro, e vice-versa (`est["ultimo_tipo"]`). Se o tipo da vez não tiver nada novo, o outro usa a vaga.
+
+
+## 13. Foto do Google Imagens (pedido do Arthur, 23/11/2026)
+- As imagens de banco/IA saíam diferentes do assunto. A foto de fundo passa a vir primeiro de uma busca
+  no Google Imagens pelo assunto (manchete + cidade; depois o lugar real ou os destaques), sem filtro de
+  licença, inclusive em polícia (escolha do Arthur, ciente do risco de direito autoral e de foto do caso).
+- A IA confere cada foto: só aprova a que corresponde ao fato (nota >= 7) e recusa texto, marca d'água,
+  logo e rosto reconhecível. Sem foto aprovada, segue a ordem antiga (vídeo/banco de fotos/IA/cidade).
+- Crédito na arte e na legenda: "Foto: Reprodução / <site de origem>".
+- Busca pela SerpAPI (segredo `SERPAPI_KEY`; o Google Custom Search não aceita clientes novos e sai do ar
+  em 1/1/2027). Até 2 buscas por notícia, guardadas 24 h. Desliga com a variável `GOOGLE_IMAGENS=false`.
+- Onde: `illustrate.foto_google`, chamada no começo de `illustrate.imagem_de_fundo` (notícias e parceiros).
+  Teste: `tests/test_google_imagens.py`.

@@ -92,6 +92,12 @@ LLM_PROVIDER = env("LLM_PROVIDER") or ("openai" if OPENAI_API_KEY else "gemini" 
 # ---- Foto de banco gratuito (Pexels: chave grátis em pexels.com/api) --------
 PEXELS_API_KEY = env("PEXELS_API_KEY")
 PIXABAY_API_KEY = env("PIXABAY_API_KEY")  # chave grátis em pixabay.com/api/docs (com login)
+# ---- Foto do Google Imagens (pedido do Arthur, 23/11/2026) ----------------------
+# Busca pelo assunto da notícia no Google Imagens (via SerpAPI: chave em serpapi.com) e a IA escolhe a
+# foto que corresponde ao fato, sem texto/marca d'água/rosto. Vem antes dos bancos de foto e da IA.
+# GOOGLE_IMAGENS=false desliga sem apagar a chave.
+SERPAPI_KEY = env("SERPAPI_KEY")
+GOOGLE_IMAGENS = env_bool("GOOGLE_IMAGENS", True)
 
 # ---- Formato do post ----------------------------------------------------------
 # reels  = vídeo animado com narração (Piper + FFmpeg); se falhar, publica a imagem

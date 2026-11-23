@@ -511,6 +511,130 @@ def foto_banco(card: dict, base: Path):
 foto_pexels = foto_banco  # nome antigo
 
 
+# ------------------------------------------------------------------ Google Imagens (via SerpAPI)
+# Pedido do Arthur (23/11/2026): as fotos de banco/IA saíam diferentes do assunto; a foto passa a vir
+# de uma busca no próprio Google Imagens pelo assunto da notícia (manchete + lugar). A IA continua
+# conferindo: só aprova foto que corresponde ao fato e sem texto, marca d'água, logo ou rosto
+# reconhecível. Crédito: "Foto: Reprodução / <site de onde veio>". Google Custom Search não aceita
+# clientes novos e sai do ar em 1/1/2027, por isso a busca vai pela SerpAPI (resultado do Google).
+SERPAPI_URL = "https://serpapi.com/search.json"
+GOOGLE_MAX_BUSCAS = 2          # buscas por notícia (economiza a cota mensal da SerpAPI)
+GOOGLE_MIN_LADO = 500          # menor lado da foto original, em pixels
+
+
+def buscas_google(card: dict) -> list:
+    """Buscas em português, da mais fiel para a mais ampla: a manchete com a cidade; depois o lugar
+    real ligado ao fato (foto_local) ou o assunto curto com a cidade."""
+    cidade = " ".join(str(card.get("cidade") or "").split())
+    if _fold(cidade) in ("paraiba", "brasil", ""):
+        cidade = ""
+    titulo = " ".join(str(card.get("titulo") or "").split())
+    buscas = [titulo if not cidade or _fold(cidade) in _fold(titulo) else f"{titulo} {cidade}",
+              " ".join(str(card.get("foto_local") or "").split()),
+              " ".join([*(card.get("destaques") or [])[:2], cidade or "Paraíba"])]
+    vistas, saida = set(), []
+    for q in buscas:
+        q = q[:120].strip()
+        if q and _fold(q) not in vistas:
+            vistas.add(_fold(q))
+            saida.append(q)
+    return saida
+
+
+def _busca_google(busca: str) -> list:
+    from config import SERPAPI_KEY
+    r = requests.get(SERPAPI_URL, timeout=(5, 30), params={
+        "engine": "google_images", "q": busca, "google_domain": "google.com.br", "gl": "br",
+        "hl": "pt-br", "safe": "active", "api_key": SERPAPI_KEY})
+    if r.status_code in (401, 403, 429):
+        raise RuntimeError(f"limite ou chave da SerpAPI recusada (HTTP {r.status_code})")
+    r.raise_for_status()
+    saida = []
+    for f in r.json().get("images_results", []) or []:
+        orig = f.get("original") or ""
+        saida.append({"id": "google:" + orig[:300], "texto": f.get("title") or "",
+                      "w": f.get("original_width") or 0, "h": f.get("original_height") or 0,
+                      "autor": f.get("source") or urlsplit(f.get("link") or orig).netloc or "Google",
+                      "miniatura": f.get("thumbnail"), "grande": orig})
+    return saida
+
+
+def _filtrar_google(fotos: list) -> list:
+    usadas = _usadas()
+    return [f for f in fotos
+            if f.get("miniatura") and str(f.get("grande") or "").startswith("http") and f["id"] not in usadas
+            and min(f.get("w") or 0, f.get("h") or 0) >= GOOGLE_MIN_LADO
+            and not NAO_E_FOTO.search(_fold(f.get("texto", "")))]
+
+
+def _baixar_imagem(url: str):
+    """Baixa a foto original e confere que é imagem de verdade (site pode devolver página de erro)."""
+    import io
+    from PIL import Image
+    r = requests.get(url, timeout=(5, 30), headers={
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
+                      "Chrome/124.0 Safari/537.36"})
+    r.raise_for_status()
+    img = Image.open(io.BytesIO(r.content))
+    img.load()
+    if min(img.size) < GOOGLE_MIN_LADO:
+        raise ValueError(f"foto pequena ({img.width}x{img.height})")
+    return img.convert("RGB")
+
+
+def foto_google(card: dict, base: Path):
+    """Busca o assunto da notícia no Google Imagens, a IA escolhe a foto que corresponde ao fato,
+    baixa e devolve (arquivo, crédito). Sem chave da SerpAPI, não faz nada."""
+    from config import GOOGLE_IMAGENS, SERPAPI_KEY
+    if not (SERPAPI_KEY and GOOGLE_IMAGENS):
+        if not SERPAPI_KEY:
+            print("[google] sem chave da SerpAPI (segredo SERPAPI_KEY): outras fontes")
+        return None
+    import editor
+    for busca in buscas_google(card)[:GOOGLE_MAX_BUSCAS]:
+        try:
+            cands = _filtrar_google(_cache("Google", busca, lambda: _busca_google(busca), "pt"))[:8]
+        except Exception as e:
+            print(f"[google] '{busca}': {str(e)[:100]}")
+            if "limite" in str(e):
+                break
+            continue
+        if not cands:
+            print(f"[google] '{busca}': nada utilizável")
+            continue
+        miniaturas = []
+        for f in cands:
+            try:
+                m = requests.get(f["miniatura"], timeout=(5, 15))
+                m.raise_for_status()
+                miniaturas.append((m.content, m.headers.get("content-type", "image/jpeg").split(";")[0]))
+            except Exception:
+                miniaturas.append(None)
+        validas = [f for f, m in zip(cands, miniaturas) if m]
+        try:  # a IA só aprova foto do fato (ou bem parecida) e sem texto/marca d'água/rosto
+            idx = editor.escolher_foto(card, [m for m in miniaturas if m])
+        except Exception as e:
+            print(f"[google] a IA não conseguiu conferir as fotos ({str(e)[:60]})")
+            idx = None
+        if idx is None or not 0 <= idx < len(validas):
+            print(f"[google] '{busca}': nenhuma das {len(cands)} fotos corresponde à notícia")
+            continue
+        f = validas[idx]
+        try:  # se o site bloquear o download, passa para a próxima busca
+            img = _baixar_imagem(f["grande"])
+        except Exception as e:
+            print(f"[google] download de {f['autor']} falhou ({str(e)[:60]})")
+            continue
+        destino = Path(f"{base}_google.jpg")
+        img.save(destino, quality=92)
+        _marcar(f["id"])
+        site = " ".join(str(f.get("autor") or "Google").split())[:40]
+        print(f"[google] '{busca}': foto de {site} ({img.width}x{img.height})")
+        card["_credito_legenda"] = f"📷 Foto: Reprodução / {site}"
+        return destino, f"Foto: Reprodução / {site}"
+    return None
+
+
 # ------------------------------------------------------------------ vídeo de banco (Pixabay)
 PIXABAY_VIDEO_URL = "https://pixabay.com/api/videos/"
 VIDEO_MIN_ALTURA = 1600     # altura mínima do trecho: abaixo disso o vídeo 2K sairia ampliado (borrado)
@@ -641,7 +765,15 @@ def imagem_de_fundo(card: dict, base: Path):
     Pixabay (ou Pexels) -> a IA escolhe. As outras fontes só entram se o banco não tiver foto boa."""
     card["_credito"], card["_ilustrativa"], card["_credito_legenda"] = "", False, ""
     card.pop("_video_fundo", None)
-    try:  # primeiro: trecho de vídeo de banco (fundo em movimento); o quadro dele vira a capa
+    try:  # antes de tudo (pedido do Arthur, 23/11/2026): foto do assunto no Google Imagens
+        achou = foto_google(card, base)
+    except Exception as e:
+        print(f"[google] busca falhou ({type(e).__name__}); outras fontes")
+        achou = None
+    if achou:
+        card["_credito"] = achou[1]
+        return achou[0]
+    try:  # depois: trecho de vídeo de banco (fundo em movimento); o quadro dele vira a capa
         achou = video_banco(card, base)
     except Exception as e:
         print(f"[vídeo] busca falhou ({type(e).__name__}); vou de foto")
