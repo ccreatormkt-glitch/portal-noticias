@@ -589,3 +589,5 @@
 {"ts": "2026-11-23T04:39:46", "event": "falha_publicacao", "headline": "ICE intercepta pai e filha mexicanos antes de batismo em aeroporto de Seattle", "source": "g1", "ig_id": "", "note": "voz padrão indisponível agora (limite do Gemini); a notícia volta na próxima rodada"}
 {"ts": "2026-11-23T05:01:57", "event": "gerado", "headline": "Agentes de imigração dos EUA prendem pai e filha em aeroporto", "source": "g1", "ig_id": "", "note": ""}
 {"ts": "2026-11-23T05:02:40", "event": "published", "headline": "ICE intercepta pai e filha mexicanos antes de batismo em aeroporto de Seattle", "source": "g1", "ig_id": "18081371627726846", "note": ""}
+{"ts": "2026-11-23T05:29:27", "event": "gerado", "headline": "Exército dos EUA ignora decisão da Justiça e mantém plano de explodir carga em Iowa", "source": "g1", "ig_id": "", "note": ""}
+{"ts": "2026-11-23T05:29:27", "event": "falha_publicacao", "headline": "Exército dos EUA ignora decisão da Justiça e mantém plano de explodir carga em Iowa", "source": "g1", "ig_id": "", "note": "voz padrão indisponível agora (limite do Gemini); a notícia volta na próxima rodada"}
