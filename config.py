@@ -50,7 +50,7 @@ HORAS_ATIVAS = 24  # 24 horas por dia, 7 dias por semana: o ritmo alvo é MAX_PO
 INTERVALO_POSTS = float(env("INTERVALO_POSTS_MIN", str(round(24 * 60 / MAX_POSTS_PER_DAY * 0.92, 1)))) * 60
 HORA_INICIO = int(env("HORA_INICIO", "0"))  # 0 = posta a qualquer hora (24/7); ex.: 6 para pausar de madrugada
 MIN_SOURCES = int(env("MIN_SOURCES", "1"))       # 1 = basta um veículo da lista (pedido do Arthur, 23/11/2026)
-MIN_SOURCES_POLICIA = int(env("MIN_SOURCES_POLICIA", "2"))  # crime/acusação de fonte pequena: 2 veículos
+MIN_SOURCES_POLICIA = int(env("MIN_SOURCES_POLICIA", "1"))  # 1 = polícia também com uma fonte (pedido do Arthur, 23/11/2026); 2 = volta a exigir confirmação
 # notícia vinda de 1 só veículo é aceita se ele estiver nesta lista (veículos grandes/oficiais)
 TRUSTED_SINGLE_SOURCE = env_bool("TRUSTED_SINGLE_SOURCE", True)
 # como tratar polícia/tragédia: "careful" = publica com regras de cuidado, "skip" = não publica
