@@ -21,6 +21,12 @@ def _conn():
     c.execute("""CREATE TABLE IF NOT EXISTS metricas (
         ig_id TEXT PRIMARY KEY, ts REAL, reach INTEGER, saved INTEGER, shares INTEGER,
         likes INTEGER, comments INTEGER, score REAL)""")
+    for col in ("views INTEGER", "variante TEXT"):  # colunas novas (relatório semanal e teste A/B)
+        try:
+            c.execute(f"ALTER TABLE metricas ADD COLUMN {col}")
+        except sqlite3.OperationalError:
+            pass
+    c.execute("""CREATE TABLE IF NOT EXISTS variantes (ig_id TEXT PRIMARY KEY, variante TEXT)""")
     return c
 
 
@@ -44,10 +50,23 @@ def save_metrics(ig_id, m: dict):
     score = (m.get("shares", 0) * 3 + m.get("saved", 0) * 2 + m.get("comments", 0)
              + m.get("likes", 0) * 0.5) / reach * 1000
     with _conn() as c:
-        c.execute("INSERT OR REPLACE INTO metricas VALUES (?,?,?,?,?,?,?,?)",
+        c.execute("INSERT OR REPLACE INTO metricas (ig_id, ts, reach, saved, shares, likes, comments, score, views) "
+                  "VALUES (?,?,?,?,?,?,?,?,?)",
                   (ig_id, time.time(), m.get("reach", 0), m.get("saved", 0), m.get("shares", 0),
-                   m.get("likes", 0), m.get("comments", 0), score))
+                   m.get("likes", 0), m.get("comments", 0), score, m.get("views", 0)))
     return score
+
+
+def tem_metricas(ig_id: str) -> bool:
+    with _conn() as c:
+        return c.execute("SELECT 1 FROM metricas WHERE ig_id=?", (ig_id,)).fetchone() is not None
+
+
+def marcar_variante(ig_id: str, variante: str):
+    """Guarda qual versão (teste A/B) saiu neste post, para o relatório comparar."""
+    if ig_id and variante:
+        with _conn() as c:
+            c.execute("INSERT OR REPLACE INTO variantes VALUES (?,?)", (ig_id, variante))
 
 
 def desempenho(campo="chapeu") -> dict:

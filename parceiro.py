@@ -1389,6 +1389,7 @@ def _rodada_imagens(p: dict, est: dict, modo: str, limite: int, so_ids: set = No
                 mid = _publicar(card, video, capa_jpg)
                 _marcar(est, m["id"], "publicado", mid)
                 est["vistos"][m["id"]]["categoria"] = categoria_do_card(card)
+                est["vistos"][m["id"]]["editoria"] = card.get("chapeu", "")  # relatório semanal
                 est["ultimo_tipo"] = "imagem"
                 _guardar_estado(est)
                 import publish
@@ -1638,6 +1639,7 @@ def _rodada_parceiro(p: dict, est: dict, modo: str, limite: int, so_ids: set = N
                 mid = _publicar(card, video, capa_jpg)
                 _marcar(est, m["id"], "publicado", mid)
                 est["vistos"][m["id"]]["categoria"] = categoria_do_card(card)
+                est["vistos"][m["id"]]["editoria"] = card.get("chapeu", "")  # relatório semanal
                 est["ultimo_tipo"] = "video"
                 _guardar_estado(est)
                 import publish
@@ -1678,6 +1680,7 @@ def aprovar(todos: bool = False, ident: str = "") -> int:
         _marcar(est, oid, "publicado", mid)
         # mesmo caminho do modo auto: conta no mix (regra 7) e, se for da Paraíba, vai aos Stories (regra 8)
         est["vistos"][oid]["categoria"] = categoria_do_card(card)
+        est["vistos"][oid]["editoria"] = card.get("chapeu", "")  # relatório semanal
         _guardar_estado(est)
         import publish
         sid = publish.story_se_paraiba(est["vistos"][oid]["categoria"], video)

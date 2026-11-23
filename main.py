@@ -509,7 +509,9 @@ def cmd_insights(_):
     """Lê alcance/salvamentos/compartilhamentos dos posts com 24h a 7 dias e mostra o ranking."""
     import publish
 
-    for ig_id in db.published_without_metrics():
+    import relatorio
+    pendentes = db.published_without_metrics() + relatorio.parceiros_sem_metricas()
+    for ig_id in pendentes[:80]:   # no máximo 80 leituras por rodada (limite da API)
         m = publish.media_insights(ig_id)
         if m:
             print(f"[métricas] {ig_id}: {m} -> score {db.save_metrics(ig_id, m):.1f}")
@@ -518,6 +520,16 @@ def cmd_insights(_):
         print(f"\nDesempenho por {campo} (score = engajamento por mil pessoas alcançadas):")
         for k, (avg, n) in stats:
             print(f"  {k:<14} {avg:7.1f}  ({n} posts)")
+
+
+def cmd_relatorio(args):
+    """Relatório semanal de desempenho (lê só o banco; as métricas vêm da API oficial do Instagram)."""
+    import relatorio
+    texto = relatorio.gerar(dias=args.dias)
+    destino = config.STATE_DIR / "relatorios" / (time.strftime("%Y-%m-%d") + ".md")
+    destino.parent.mkdir(parents=True, exist_ok=True)
+    destino.write_text(texto, encoding="utf-8")
+    print(texto)
 
 
 # ------------------------------------------------------------------ fila/review
@@ -812,6 +824,9 @@ def main():
     sub.add_parser("teste-upload").set_defaults(fn=cmd_teste_upload)
     sub.add_parser("check").set_defaults(fn=cmd_check)
     sub.add_parser("insights").set_defaults(fn=cmd_insights)
+    pr = sub.add_parser("relatorio")
+    pr.add_argument("--dias", type=int, default=7)
+    pr.set_defaults(fn=cmd_relatorio)
     e = sub.add_parser("errata")
     e.add_argument("post_id")
     e.add_argument("texto")

@@ -95,7 +95,7 @@ def test_aprendizado_favorece_o_que_engaja():
         con.execute("INSERT INTO posts (ts,fp,stems,headline,source,status,ig_id,note) VALUES (?,?,?,?,?,?,?,?)",
                     (time.time() - 90000, f"f{i}", "", "h", "s", "published", f"IG{i}", ""))
         con.execute("INSERT INTO meta VALUES (?,?,?,?,?)", (f"f{i}", ch, g, 4, "noticia"))
-        con.execute("INSERT INTO metricas VALUES (?,?,?,?,?,?,?,?)", (f"IG{i}", time.time(), 1000, 0, 0, 0, 0, sc))
+        con.execute("INSERT INTO metricas (ig_id, ts, reach, saved, shares, likes, comments, score) VALUES (?,?,?,?,?,?,?,?)", (f"IG{i}", time.time(), 1000, 0, 0, 0, 0, sc))
     con.commit()
     bom = main._bonus_desempenho({"chapeu": "ESPORTE", "gatilho": "emocao"})
     ruim = main._bonus_desempenho({"chapeu": "EMPREGO", "gatilho": "utilidade"})

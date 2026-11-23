@@ -1,0 +1,40 @@
+name: relatorio-semanal
+# Relatório de desempenho da semana (segunda, 8h43 de Campina Grande). Lê as métricas que o robô já
+# gravou da API oficial do Instagram; grava em state/relatorios/AAAA-MM-DD.md e no resumo do job.
+on:
+  schedule:
+    - cron: "43 11 * * 1"
+  workflow_dispatch:
+    inputs:
+      dias:
+        description: "período em dias"
+        default: "7"
+permissions:
+  contents: write
+concurrency:
+  group: relatorio
+  cancel-in-progress: false
+jobs:
+  relatorio:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -q -r requirements.txt
+      - name: Relatório
+        env:
+          DIAS: ${{ github.event.inputs.dias || '7' }}
+          MIX: ${{ vars.MIX }}
+        run: python main.py relatorio --dias "$DIAS" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Guardar
+        run: |
+          git config user.name "pbminuto-bot"
+          git config user.email "pbminuto-bot@users.noreply.github.com"
+          git add state/relatorios
+          git diff --cached --quiet && exit 0
+          git commit -qm "relatório $(date -u +%F)"
+          for i in 1 2 3; do git pull --rebase -q && git push -q && exit 0; sleep 10; done
+          exit 1
