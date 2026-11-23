@@ -438,13 +438,55 @@
    "status": "publicado",
    "nota": "18067577309795110",
    "categoria": "brasil"
+  },
+  "18103755947392994": {
+   "ts": 1795407765.0143874,
+   "status": "erro",
+   "nota": "não achei a faixa do parceiro na foto"
+  },
+  "18043841588892437": {
+   "ts": 1795407765.5544434,
+   "status": "erro",
+   "nota": "não achei a faixa do parceiro na foto"
+  },
+  "17997792861106562": {
+   "ts": 1795407783.8704169,
+   "status": "pulado",
+   "nota": "já está no Instagram:  Um homem foi preso ao furtar materiais públicos no Centro d"
+  },
+  "18415178734091856": {
+   "ts": 1795407790.5923693,
+   "status": "pulado",
+   "nota": "O conteúdo envolve violência sexual contra criança, o que se enquadra na regra de risco 'skip' para proteção de menores e sensibilidade do tema."
+  },
+  "18117718868624903": {
+   "ts": 1795407797.5191293,
+   "status": "pulado",
+   "nota": "O conteúdo é uma peça publicitária de um estabelecimento comercial, não se tratando de uma notícia de interesse público ou fato jornalístico."
+  },
+  "17874542907648696": {
+   "ts": 1795407822.081047,
+   "status": "pulado",
+   "nota": "mesmo fato já postado: Suspeitos executam homem de 41 anos a tiros no bairro Tibiri"
+  },
+  "18112614491094062": {
+   "ts": 1795407898.5041971,
+   "status": "pulado",
+   "nota": "mesmo fato já postado: Bombeiros controlam incêndio em terreno com materiais descar"
+  },
+  "18077184482743992": {
+   "ts": 1795408024.037919,
+   "status": "publicado",
+   "nota": "17999794803028413",
+   "categoria": "jp",
+   "story": "18419035945087391"
   }
  },
  "tentativas": {
-  "18103755947392994": 2,
-  "18043841588892437": 2
+  "18187616497423760": 1,
+  "18183860464434049": 1
  },
  "refazer": {},
- "aguardando": 1795406151.706799,
- "ultimo_tipo": "video"
+ "aguardando": 1795408064.6917477,
+ "ultimo_tipo": "imagem"
 }
