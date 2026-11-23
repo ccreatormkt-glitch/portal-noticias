@@ -510,10 +510,16 @@
    "ts": 1795431212.774316,
    "status": "na_fila",
    "nota": ""
+  },
+  "18143704393617315": {
+   "ts": 1795437253.3316329,
+   "status": "publicado",
+   "nota": "18111800228224807",
+   "categoria": "brasil"
   }
  },
  "tentativas": {},
  "refazer": {},
- "aguardando": 1795436405.9964833,
- "ultimo_tipo": "imagem"
+ "aguardando": 1795437263.2736504,
+ "ultimo_tipo": "video"
 }
