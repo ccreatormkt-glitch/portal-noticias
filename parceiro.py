@@ -24,6 +24,7 @@ Fluxo de cada rodada:
   python main.py parceiro-fila | parceiro-aprovar [--all|ID] | parceiro-descartar ID
 """
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -205,6 +206,11 @@ def ultimo_publicado(caminho: Path = None) -> float:
     return max([v.get("ts", 0) for v in vistos.values() if v.get("status") == "publicado"] or [0.0])
 
 
+# quanto tempo a notícia cede a vaga a um vídeo de parceiro que ainda não saiu (23/11: com 30 min,
+# uma rodada de parceiro lenta deixou o perfil 1h parado)
+ESPERA_PARCEIRO_MAX = int(os.environ.get("ESPERA_PARCEIRO_MAX", "600"))
+
+
 def vez_do_video(caminho: Path = None) -> bool:
     """Notícias e vídeos alternam: True quando há vídeo de parceiro esperando vaga (marcado na última
     meia hora) e o último post do perfil foi notícia. Aí a notícia cede a vaga e o vigia chama o parceiro."""
@@ -214,7 +220,7 @@ def vez_do_video(caminho: Path = None) -> bool:
         aguardando = float(json.loads(arq.read_text(encoding="utf-8")).get("aguardando") or 0)
     except Exception:
         return False
-    if time.time() - aguardando > 1800:
+    if time.time() - aguardando > ESPERA_PARCEIRO_MAX:   # vídeo não veio a tempo: a notícia segue
         return False
     return db.ultimo_publicado() >= ultimo_publicado(caminho)
 

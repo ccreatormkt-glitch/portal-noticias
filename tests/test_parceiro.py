@@ -491,3 +491,14 @@ def test_carrossel_do_noticiacertapb_usa_a_primeira_foto_e_pula_anuncio():
     assert parceiro.motivo_para_pular(anuncio, {}, agora, "noticiacertapb", "", tipo="carrossel") == "não é carrossel"
     p = parceiro.parceiros("noticiacertapb|d|imagem|carrossel|faixa=vermelha")[0]
     assert p["carrossel"] and p["imagem"]
+
+
+def test_noticia_so_cede_a_vaga_por_10_minutos(tmp_path, monkeypatch):
+    """Rodada de parceiro lenta não pode deixar o perfil parado (23/11: 1h sem post)."""
+    import db
+    monkeypatch.setattr(db, "ultimo_publicado", lambda: time.time() - 60)
+    arq = tmp_path / "p.json"
+    arq.write_text(json.dumps({"vistos": {}, "aguardando": time.time() - 300}), encoding="utf-8")
+    assert parceiro.vez_do_video(arq)
+    arq.write_text(json.dumps({"vistos": {}, "aguardando": time.time() - 700}), encoding="utf-8")
+    assert not parceiro.vez_do_video(arq)
