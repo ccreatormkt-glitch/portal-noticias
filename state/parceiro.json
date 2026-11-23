@@ -764,6 +764,41 @@
    "ts": 1795460661.1911826,
    "status": "erro",
    "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "17982322128138983": {
+   "ts": 1795461320.6439493,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos (adicione saldo em platform.openai.com > Billing); gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18033695684917592": {
+   "ts": 1795461350.3084657,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18186732688426443": {
+   "ts": 1795461422.5248768,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18130877686804458": {
+   "ts": 1795461443.0615125,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18160459240521046": {
+   "ts": 1795461460.6641693,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18111869228264675": {
+   "ts": 1795461477.3262057,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18603510793068948": {
+   "ts": 1795461493.9894638,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
   }
  },
  "tentativas": {
@@ -772,15 +807,9 @@
   "18131812798842168": 1,
   "18644532898026667": 2,
   "18119068550137942": 2,
-  "18130877686804458": 2,
-  "18160459240521046": 2,
-  "18111869228264675": 2,
-  "18603510793068948": 2,
-  "17982322128138983": 2,
-  "18033695684917592": 2,
-  "18186732688426443": 2,
-  "18118317712833967": 1,
-  "18081417791422141": 1
+  "18118317712833967": 2,
+  "18081417791422141": 2,
+  "17933524359425734": 1
  },
  "refazer": {},
  "aguardando": 0,
