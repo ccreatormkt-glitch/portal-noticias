@@ -927,6 +927,11 @@
    "ts": 1795473548.897918,
    "status": "erro",
    "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18145036150612232": {
+   "ts": 1795474474.6137903,
+   "status": "pulado",
+   "nota": "mesmo fato já postado: Caravana Iluminada da Coca-Cola passa por João Pessoa nesta "
   }
  },
  "tentativas": {
@@ -934,8 +939,7 @@
   "18110507768356123": 1,
   "18131812798842168": 1,
   "18644532898026667": 2,
-  "18119068550137942": 2,
-  "18145036150612232": 2
+  "18119068550137942": 2
  },
  "refazer": {},
  "aguardando": 0,
