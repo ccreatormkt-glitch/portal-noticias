@@ -362,7 +362,7 @@ def build_caption(card: dict, source_line: str = "") -> str:
         if t and t not in tags:
             tags.append(t)
     if tags:
-        partes.append(" ".join(f"#{t}" for t in tags[:7]))
+        partes.append(" ".join(f"#{t}" for t in tags[:5]))
     return "\n\n".join(partes)[:2200]
 
 

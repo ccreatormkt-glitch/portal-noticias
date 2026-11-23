@@ -165,3 +165,11 @@ Valem para tudo o que o sistema produz. Cada regra tem um teste que falha se ela
   exagero ou promessa que o texto não cumpre.
 - Teste A/B: A = fato primeiro, B = efeito no leitor primeiro. Alterna post a post (`AB_GANCHO=ab`);
   o relatório semanal compara o alcance. Para fixar a vencedora: variável `AB_GANCHO=A` ou `B`.
+
+## 15. SEO do Instagram (23/11/2026)
+- A busca do Instagram (e do Google) lê o texto: a primeira linha da legenda (antes do "mais", ~125
+  caracteres) traz cidade + tema como as pessoas digitam ("concurso em Campina Grande"), sem lista
+  de palavras-chave.
+- Hashtags viram rótulos: 3 a 5, minúsculas, locais primeiro (vale também para parceiros).
+- No perfil (manual, no app): nome "PB Minuto | Notícias de Campina Grande e João Pessoa" e bio com
+  Paraíba, Campina Grande e João Pessoa.

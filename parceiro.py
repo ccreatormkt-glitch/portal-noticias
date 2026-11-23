@@ -480,13 +480,15 @@ Regras:
 - chapeu: editoria em MAIÚSCULAS, uma destas: {editorias}.
 - titulo: a etiqueta que aparece na tela; frase informativa no presente, até 12 palavras e
   80 caracteres, sem ponto final, sem exclamação, específica (quem, o quê, onde).
-- legenda: 3 blocos separados por linha em branco: 1) o fato com 1 emoji no início;
+- legenda: 3 blocos separados por linha em branco: 1) o fato com 1 emoji no início, trazendo nos
+  primeiros 125 caracteres, de forma natural, cidade + tema como as pessoas buscam ("acidente em
+  Campina Grande", "chuva em João Pessoa");
   2) contexto em 2 a 4 frases simples; 3) uma chamada curta para comentar ou compartilhar.
   Sem hashtags e sem "siga" (o sistema acrescenta).
 - cidade: a cidade do fato ("Campina Grande", "João Pessoa" ou outra cidade da Paraíba); "Paraíba" se
   for o estado todo; "Brasil" se for nacional; o país, se for fora do Brasil.
 - abrangencia: onde o fato aconteceu: "paraiba", "brasil" ou "mundo".
-- hashtags: 5 a 7, sem '#', só letras minúsculas, locais primeiro.
+- hashtags: 3 a 5 rótulos do assunto, sem '#', só letras minúsculas, locais primeiro.
 - risco: "skip" para suicídio, crime sexual, menor identificável, acusação sem confirmação contra
   pessoa identificada ou boato; "cuidado" para polícia/acidente/morte (sem nomes de vítimas ou
   suspeitos, atribuindo à autoridade); "ok" para o resto.
@@ -560,7 +562,7 @@ def escrever(legenda_original: str, transcricao: str, tentativas: int = 3) -> di
     card["chapeu"] = card["chapeu"].strip().upper()
     if card["chapeu"] not in editor.EDITORIAS:
         card["chapeu"] = "CIDADE"
-    card["hashtags"] = [re.sub(r"[^\wÀ-ÿ]", "", str(h)).lower() for h in card.get("hashtags", [])][:7]
+    card["hashtags"] = [re.sub(r"[^\wÀ-ÿ]", "", str(h)).lower() for h in card.get("hashtags", [])][:5]
     card.setdefault("pontos", [])
     # regra do PB Minuto: todo texto passa pela skill STE80 Humanizer (sem voltar a copiar o original)
     if config.HUMANIZAR:

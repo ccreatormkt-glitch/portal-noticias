@@ -88,7 +88,11 @@ PADRÃO DE REDAÇÃO (o mesmo dos grandes portais de notícia)
   Eles aparecem em outra fonte na legenda. Ex.: ["339 vagas", "até sexta", "Areia"].
 - legenda: o post é SÓ a imagem da capa, então a legenda é onde o leitor se informa.
   3 blocos separados por linha em branco:
-  1) o título reescrito de outro jeito, começando com 1 emoji da editoria;
+  1) o título reescrito de outro jeito, começando com 1 emoji da editoria. É a linha que aparece
+     antes do "mais" e que a busca do Instagram e do Google leem: nos primeiros 125 caracteres,
+     traga de forma natural o que as pessoas digitam para achar o assunto, cidade + tema
+     ("concurso em Campina Grande", "chuva em João Pessoa", "acidente na BR-230"), sem repetir
+     palavras-chave em lista;
   2) o lide completo em 3 a 4 frases (o quê, quem, onde, quando, como), linguagem simples,
      como quem conversa com o vizinho; os "pontos" serão listados pelo sistema logo depois;
   3) chamada final conforme o gatilho:
@@ -99,7 +103,8 @@ PADRÃO DE REDAÇÃO (o mesmo dos grandes portais de notícia)
      status -> "Manda para aquele amigo que sempre quer saber primeiro."
   NÃO coloque hashtags, fontes ou "siga" na legenda: o sistema acrescenta.
 - cidade: "Campina Grande", "João Pessoa", "Paraíba" ou "Brasil".
-- hashtags: 5 a 7, sem '#', só letras minúsculas, locais primeiro (ex.: campinagrande, joaopessoa, paraiba, pb).
+- hashtags: 3 a 5 rótulos do assunto, sem '#', só letras minúsculas, locais primeiro (ex.: campinagrande,
+  paraiba, concurso). Hoje a busca do Instagram é por palavras do texto; hashtag é só rótulo.
 - foto_busca: 2 a 4 palavras EM INGLÊS para buscar uma foto genérica do tema num banco de imagens,
   SÓ de objetos e cenas sem pessoas, sem fachadas, letreiros ou marcas que identifiquem outro
   lugar (ex.: "shopping bags", "empty office desk", "flooded street rain", "school classroom empty").
@@ -458,7 +463,7 @@ def validate(card: dict) -> dict:
         h = re.sub(r"[^\wÀ-ÿ]", "", str(h).lstrip("#"))
         if h and h.lower() not in [t.lower() for t in tags]:
             tags.append(h)
-    card["hashtags"] = tags[:7]
+    card["hashtags"] = tags[:5]   # 3 a 5 rótulos (a busca do Instagram é por palavra-chave)
     if card.get("risco") not in ("ok", "cuidado"):
         card["risco"] = "cuidado"
     return card
