@@ -1242,6 +1242,41 @@
    "ts": 1795541556.2657342,
    "status": "erro",
    "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "17892661806471406": {
+   "ts": 1795543621.0001078,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18118577519594226": {
+   "ts": 1795543648.3961127,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "17927354121453801": {
+   "ts": 1795543665.5451682,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18159489376460036": {
+   "ts": 1795543690.8234518,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "17914231257305455": {
+   "ts": 1795543718.3034365,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "17999227263105420": {
+   "ts": 1795543735.80577,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "17992029711083077": {
+   "ts": 1795543882.8899937,
+   "status": "na_fila",
+   "nota": ""
   }
  },
  "tentativas": {
@@ -1255,21 +1290,15 @@
   "17990857899085614": 2,
   "17898522582683187": 2,
   "17888975883624024": 1,
-  "17892661806471406": 2,
-  "18118577519594226": 2,
-  "17927354121453801": 2,
-  "18159489376460036": 2,
-  "17914231257305455": 2,
-  "17999227263105420": 2,
-  "17992029711083077": 2,
-  "18150285904600904": 1,
+  "18150285904600904": 2,
   "17969389158230089": 1,
   "17945166117099342": 1,
   "18027955040876587": 1,
-  "18392455525238080": 1,
-  "18150922063568280": 1
+  "18392455525238080": 2,
+  "18150922063568280": 2,
+  "17996975838065399": 1
  },
  "refazer": {},
- "aguardando": 1795542888.7597387,
+ "aguardando": 0,
  "ultimo_tipo": "video"
 }
