@@ -1142,6 +1142,106 @@
    "categoria": "cg",
    "editoria": "POLÍCIA",
    "story": "18119587469614882"
+  },
+  "18118498586145957": {
+   "ts": 1795541112.2088156,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos (adicione saldo em platform.openai.com > Billing); gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18182851531453202": {
+   "ts": 1795541128.4133036,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18431425579155450": {
+   "ts": 1795541128.4136446,
+   "status": "pulado",
+   "nota": "possível collab/publi (\"publicidade\" na legenda)"
+  },
+  "18651585010003144": {
+   "ts": 1795541202.8089411,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18119129888596153": {
+   "ts": 1795541254.0563636,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18122294527960139": {
+   "ts": 1795541270.545737,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18110124233252990": {
+   "ts": 1795541286.720954,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18137992657657872": {
+   "ts": 1795541303.0092857,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "17979469935170682": {
+   "ts": 1795541319.2095726,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "17978900798940329": {
+   "ts": 1795541343.9770021,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18168829576428859": {
+   "ts": 1795541361.9466448,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "17937479292146971": {
+   "ts": 1795541378.2377727,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18054898103820579": {
+   "ts": 1795541394.6298282,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18025519481954099": {
+   "ts": 1795541455.4416783,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "17957850741082688": {
+   "ts": 1795541480.1360047,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18121741556326656": {
+   "ts": 1795541491.413123,
+   "status": "pulado",
+   "nota": "O material é propaganda comercial de uma pizzaria, não se tratando de notícia ou fato de interesse público para o portal."
+  },
+  "18081811757758854": {
+   "ts": 1795541507.668921,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "17973429002962317": {
+   "ts": 1795541524.145814,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "17948020473087028": {
+   "ts": 1795541540.4978256,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "17922536808529757": {
+   "ts": 1795541556.2657342,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
   }
  },
  "tentativas": {
@@ -1155,34 +1255,21 @@
   "17990857899085614": 2,
   "17898522582683187": 2,
   "17888975883624024": 1,
-  "18118498586145957": 2,
-  "18182851531453202": 2,
-  "18651585010003144": 2,
-  "18119129888596153": 2,
-  "18122294527960139": 2,
-  "18110124233252990": 2,
-  "18137992657657872": 2,
-  "17979469935170682": 2,
-  "17978900798940329": 2,
-  "18168829576428859": 2,
-  "17937479292146971": 2,
-  "18054898103820579": 2,
-  "18025519481954099": 2,
-  "17957850741082688": 2,
-  "18121741556326656": 2,
-  "18081811757758854": 2,
-  "17973429002962317": 2,
-  "17948020473087028": 2,
-  "17922536808529757": 2,
-  "17892661806471406": 1,
-  "18118577519594226": 1,
-  "17927354121453801": 1,
-  "18159489376460036": 1,
-  "17914231257305455": 1,
-  "17999227263105420": 1,
-  "17992029711083077": 1
+  "17892661806471406": 2,
+  "18118577519594226": 2,
+  "17927354121453801": 2,
+  "18159489376460036": 2,
+  "17914231257305455": 2,
+  "17999227263105420": 2,
+  "17992029711083077": 2,
+  "18150285904600904": 1,
+  "17969389158230089": 1,
+  "17945166117099342": 1,
+  "18027955040876587": 1,
+  "18392455525238080": 1,
+  "18150922063568280": 1
  },
  "refazer": {},
- "aguardando": 1795539752.415672,
+ "aguardando": 0,
  "ultimo_tipo": "video"
 }
