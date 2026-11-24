@@ -937,6 +937,11 @@
    "ts": 1795481458.734296,
    "status": "erro",
    "nota": "openai: OpenAI sem créditos (adicione saldo em platform.openai.com > Billing); gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18428793889159341": {
+   "ts": 1795485781.2004342,
+   "status": "pulado",
+   "nota": "possível collab/publi (\"parceria com\" na legenda)"
   }
  },
  "tentativas": {
