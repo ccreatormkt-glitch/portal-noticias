@@ -966,6 +966,11 @@
    "categoria": "jp",
    "editoria": "POLÍCIA",
    "story": "18102701933544487"
+  },
+  "18646042996003253": {
+   "ts": 1795517077.5670712,
+   "status": "na_fila",
+   "nota": ""
   }
  },
  "tentativas": {
@@ -976,6 +981,6 @@
   "18119068550137942": 2
  },
  "refazer": {},
- "aguardando": 1795516275.8802862,
+ "aguardando": 0,
  "ultimo_tipo": "video"
 }
