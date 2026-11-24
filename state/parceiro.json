@@ -942,6 +942,14 @@
    "ts": 1795485781.2004342,
    "status": "pulado",
    "nota": "possível collab/publi (\"parceria com\" na legenda)"
+  },
+  "18130936942910393": {
+   "ts": 1795500501.2510366,
+   "status": "publicado",
+   "nota": "18020556152745735",
+   "categoria": "cg",
+   "editoria": "POLÍCIA",
+   "story": "18345909724278233"
   }
  },
  "tentativas": {
@@ -952,6 +960,6 @@
   "18119068550137942": 2
  },
  "refazer": {},
- "aguardando": 1795489421.2102246,
- "ultimo_tipo": "imagem"
+ "aguardando": 1795500542.5643005,
+ "ultimo_tipo": "video"
 }
