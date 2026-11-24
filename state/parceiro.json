@@ -1277,6 +1277,21 @@
    "ts": 1795543882.8899937,
    "status": "na_fila",
    "nota": ""
+  },
+  "18150285904600904": {
+   "ts": 1795546111.8710783,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos (adicione saldo em platform.openai.com > Billing); gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18392455525238080": {
+   "ts": 1795546378.1791608,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18150922063568280": {
+   "ts": 1795546394.8413122,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
   }
  },
  "tentativas": {
@@ -1290,15 +1305,20 @@
   "17990857899085614": 2,
   "17898522582683187": 2,
   "17888975883624024": 1,
-  "18150285904600904": 2,
-  "17969389158230089": 1,
-  "17945166117099342": 1,
-  "18027955040876587": 1,
-  "18392455525238080": 2,
-  "18150922063568280": 2,
-  "17996975838065399": 1
+  "17969389158230089": 2,
+  "17945166117099342": 2,
+  "18027955040876587": 2,
+  "17996975838065399": 2,
+  "18143580214625014": 1,
+  "18638265436044938": 1,
+  "18025196567729233": 1,
+  "18134732458755350": 1,
+  "17876510052602009": 1,
+  "17918432409514681": 1,
+  "17961663441290590": 1,
+  "18120024353106054": 1
  },
  "refazer": {},
- "aguardando": 1795544702.4179666,
+ "aguardando": 0,
  "ultimo_tipo": "video"
 }
