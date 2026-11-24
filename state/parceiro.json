@@ -958,6 +958,14 @@
    "categoria": "jp",
    "editoria": "SAÚDE",
    "story": "17957957685283297"
+  },
+  "18016388553459135": {
+   "ts": 1795507045.9183588,
+   "status": "publicado",
+   "nota": "17941471620126019",
+   "categoria": "jp",
+   "editoria": "POLÍCIA",
+   "story": "18102701933544487"
   }
  },
  "tentativas": {
@@ -968,6 +976,6 @@
   "18119068550137942": 2
  },
  "refazer": {},
- "aguardando": 1795504503.3287065,
- "ultimo_tipo": "imagem"
+ "aguardando": 0,
+ "ultimo_tipo": "video"
 }
