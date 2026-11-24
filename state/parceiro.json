@@ -978,6 +978,23 @@
    "nota": "18650215771024304",
    "categoria": "brasil",
    "editoria": "BRASIL"
+  },
+  "18135209167747911": {
+   "ts": 1795520388.8167176,
+   "status": "na_fila",
+   "nota": ""
+  },
+  "18194025214412221": {
+   "ts": 1795520468.68689,
+   "status": "na_fila",
+   "nota": ""
+  },
+  "18222946159346042": {
+   "ts": 1795520731.0593054,
+   "status": "publicado",
+   "nota": "18045870581838766",
+   "categoria": "mundo",
+   "editoria": "MUNDO"
   }
  },
  "tentativas": {
@@ -988,6 +1005,6 @@
   "18119068550137942": 2
  },
  "refazer": {},
- "aguardando": 1795519627.094321,
+ "aguardando": 1795520732.4489841,
  "ultimo_tipo": "video"
 }

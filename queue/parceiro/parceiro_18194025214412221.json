@@ -1,0 +1,52 @@
+{
+ "skip": false,
+ "motivo": "",
+ "risco": "cuidado",
+ "format": "noticia",
+ "chapeu": "POLÍCIA",
+ "titulo": "Homem de 33 anos é morto a tiros em Mandacaru",
+ "linha_fina": "Polícia Civil investiga o homicídio e busca pelos atiradores",
+ "resumo": "Um homem de 33 anos morreu após ser baleado na noite desta segunda-feira. O crime ocorreu em uma rua de Mandacaru. A Polícia Civil apura o caso.",
+ "pontos": [
+  "Vítima morava na mesma rua do ataque",
+  "Polícia Civil investiga o crime",
+  "Suspeitos ainda não foram presos"
+ ],
+ "destaques": [
+  "33 anos",
+  "Mandacaru",
+  "Polícia Civil"
+ ],
+ "legenda": "🚨 Homicídio em Mandacaru, João Pessoa\n\nUm homem de 33 anos morreu baleado na noite desta segunda-feira. O crime aconteceu na rua onde a vítima morava.\n\nA Polícia Civil busca os autores e a motivação do ataque. Familiares não souberam explicar o motivo do crime.\n\nComo está a segurança na sua região?",
+ "cidade": "João Pessoa",
+ "hashtags": [
+  "joaopessoa",
+  "paraiba",
+  "mandacaru",
+  "policia",
+  "seguranca"
+ ],
+ "foto_busca": "police tape crime scene",
+ "foto_local": "Bairro de Mandacaru João Pessoa",
+ "imagem_prompt": "empty street in a residential neighborhood at night, yellow police tape stretched across the road, soft street lighting, cinematic atmosphere, wide angle shot",
+ "gatilho": "identificacao",
+ "potencial": 4,
+ "formato": "noticia",
+ "_variante": "B",
+ "original": true,
+ "humanizado": true,
+ "_origem": {
+  "id": "18194025214412221",
+  "permalink": "https://www.instagram.com/p/DgHzrv3kSiX/",
+  "timestamp": "2026-11-24T11:05:36+0000",
+  "parceiro": "noticiacertapb"
+ },
+ "_credito": "",
+ "_ilustrativa": false,
+ "_revisar": [
+  "O texto original menciona que o crime ocorreu na 'Avenida Caramuru', enquanto o texto novo omite o nome da via, referindo-se apenas a 'uma rua' ou 'rua onde a vítima morava'.",
+  "O texto original não especifica a fonte da informação sobre o segundo assassinato (o motoboy), apenas cita o nome da avenida."
+ ],
+ "_video": "parceiro_18194025214412221.mp4",
+ "_capa": "parceiro_18194025214412221_capa_reels.jpg"
+}
