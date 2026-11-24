@@ -1003,6 +1003,14 @@
    "categoria": "pb",
    "editoria": "POLÍCIA",
    "story": "17881177461568054"
+  },
+  "18649214002061934": {
+   "ts": 1795527992.4127688,
+   "status": "publicado",
+   "nota": "18143252644634630",
+   "categoria": "cg",
+   "editoria": "POLÍTICA",
+   "story": "18100403162405669"
   }
  },
  "tentativas": {
@@ -1038,6 +1046,6 @@
   "18110542211256102": 1
  },
  "refazer": {},
- "aguardando": 0,
- "ultimo_tipo": "imagem"
+ "aguardando": 1795528087.221434,
+ "ultimo_tipo": "video"
 }
