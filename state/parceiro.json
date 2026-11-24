@@ -971,6 +971,13 @@
    "ts": 1795517077.5670712,
    "status": "na_fila",
    "nota": ""
+  },
+  "18117754163029914": {
+   "ts": 1795518810.2871158,
+   "status": "publicado",
+   "nota": "18650215771024304",
+   "categoria": "brasil",
+   "editoria": "BRASIL"
   }
  },
  "tentativas": {
@@ -981,6 +988,6 @@
   "18119068550137942": 2
  },
  "refazer": {},
- "aguardando": 0,
+ "aguardando": 1795518811.2217834,
  "ultimo_tipo": "video"
 }
