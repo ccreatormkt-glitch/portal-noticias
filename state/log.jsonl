@@ -677,3 +677,6 @@
 {"ts": "2026-11-24T06:02:23", "event": "pulado", "headline": "CVM suspende ações do Banco de Brasília por falta de balanços", "source": "Agência Brasil, Portal CZN e +4", "ig_id": "", "note": "mesmo fato já postado: Tarciana Medeiros, líder do Banco do Brasil, expõe ataques r"}
 {"ts": "2026-11-24T07:12:57", "event": "gerado", "headline": "Temporal bloqueia vias e derruba vegetação na Grande São Paulo", "source": "CNN Brasil", "ig_id": "", "note": ""}
 {"ts": "2026-11-24T07:13:42", "event": "published", "headline": "Temporal bloqueia vias e derruba vegetação na Grande São Paulo", "source": "CNN Brasil", "ig_id": "18094705532215232", "note": ""}
+{"ts": "2026-11-24T08:59:59", "event": "gerado", "headline": "Governo da Paraíba lança ação permanente em 5 frentes contra o crime", "source": "Poder Paraíba, Se Liga PB e +12", "ig_id": "", "note": ""}
+{"ts": "2026-11-24T09:00:44", "event": "published", "headline": "Governo da Paraíba lança ação permanente em 5 frentes contra o crime", "source": "Poder Paraíba, Se Liga PB e +12", "ig_id": "18261591880307969", "note": ""}
+{"ts": "2026-11-24T09:01:25", "event": "story", "headline": "Governo da Paraíba lança ação permanente em 5 frentes contra o crime", "source": "", "ig_id": "18190378705419098", "note": ""}
