@@ -1535,6 +1535,14 @@
    "ts": 1795575724.9427588,
    "status": "erro",
    "nota": "ERROR: [Instagram] DgJVw_UM7Ex: This content isn't available to everyone: It can't be seen by certain audiences."
+  },
+  "18128871811809866": {
+   "ts": 1795604106.5459158,
+   "status": "publicado",
+   "nota": "17994307688859670",
+   "categoria": "jp",
+   "editoria": "BRASIL",
+   "story": "18026980649707408"
   }
  },
  "tentativas": {
@@ -1554,7 +1562,7 @@
   "18143580214625014": 1,
   "18638265436044938": 1,
   "18025196567729233": 1,
-  "18128871811809866": 2
+  "18098056565690249": 1
  },
  "refazer": {},
  "aguardando": 0,
