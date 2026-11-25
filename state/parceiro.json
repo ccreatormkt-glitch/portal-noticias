@@ -1355,6 +1355,186 @@
    "ts": 1795573654.4779894,
    "status": "erro",
    "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18122952037766449": {
+   "ts": 1795574926.1260543,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos (adicione saldo em platform.openai.com > Billing); gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18417079465095447": {
+   "ts": 1795574942.8660111,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "17999907224838003": {
+   "ts": 1795574959.4869885,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18102490748666001": {
+   "ts": 1795574976.3303232,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "17959434342276113": {
+   "ts": 1795574994.8348496,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18438230719148921": {
+   "ts": 1795575011.7780535,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18159052693472881": {
+   "ts": 1795575031.6043668,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18120572716993866": {
+   "ts": 1795575051.1823049,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18059474273807499": {
+   "ts": 1795575075.092312,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "17958495489319559": {
+   "ts": 1795575091.337726,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18487933117119835": {
+   "ts": 1795575110.714943,
+   "status": "pulado",
+   "nota": "O material é apenas propaganda comercial de uma arena esportiva privada, sem nenhum fato jornalístico ou de utilidade pública."
+  },
+  "18105042491354522": {
+   "ts": 1795575127.2129848,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18120533552016602": {
+   "ts": 1795575151.5841093,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18236424958324202": {
+   "ts": 1795575168.173847,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18652476424061498": {
+   "ts": 1795575184.6909394,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18129902116909830": {
+   "ts": 1795575201.2930999,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18480830263141126": {
+   "ts": 1795575217.7306936,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18136491860501384": {
+   "ts": 1795575234.169919,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18137758315775155": {
+   "ts": 1795575250.9336538,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "17972434677351766": {
+   "ts": 1795575267.5331109,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "17899532442424769": {
+   "ts": 1795575283.9286249,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18137029549824990": {
+   "ts": 1795575300.4950066,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "17998189265848549": {
+   "ts": 1795575317.966322,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18037919393909964": {
+   "ts": 1795575319.4343817,
+   "status": "erro",
+   "nota": "post sem texto ou antigo demais"
+  },
+  "18082028366416412": {
+   "ts": 1795575346.3722303,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18122771452970020": {
+   "ts": 1795575362.6770396,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "17960041437280579": {
+   "ts": 1795575386.8605928,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18041886584850131": {
+   "ts": 1795575417.0683978,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18185425249438496": {
+   "ts": 1795575441.7840683,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18380088010212309": {
+   "ts": 1795575487.3103192,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "17893427958617813": {
+   "ts": 1795575508.7823186,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18115727696614942": {
+   "ts": 1795575601.6943662,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18100887080680001": {
+   "ts": 1795575651.3263948,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18502241827096435": {
+   "ts": 1795575698.6253755,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18419022322095603": {
+   "ts": 1795575723.9642975,
+   "status": "erro",
+   "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "18176270653415889": {
+   "ts": 1795575724.9427588,
+   "status": "erro",
+   "nota": "ERROR: [Instagram] DgJVw_UM7Ex: This content isn't available to everyone: It can't be seen by certain audiences."
   }
  },
  "tentativas": {
@@ -1374,43 +1554,7 @@
   "18143580214625014": 1,
   "18638265436044938": 1,
   "18025196567729233": 1,
-  "18122952037766449": 2,
-  "18417079465095447": 2,
-  "17999907224838003": 2,
-  "18102490748666001": 2,
-  "17959434342276113": 2,
-  "18438230719148921": 2,
-  "18159052693472881": 2,
-  "18120572716993866": 2,
-  "18059474273807499": 2,
-  "17958495489319559": 2,
-  "18487933117119835": 2,
-  "18105042491354522": 2,
-  "18120533552016602": 2,
-  "18236424958324202": 2,
-  "18652476424061498": 2,
-  "18129902116909830": 2,
-  "18480830263141126": 2,
-  "18136491860501384": 2,
-  "18137758315775155": 2,
-  "17972434677351766": 2,
-  "17899532442424769": 2,
-  "18137029549824990": 2,
-  "17998189265848549": 2,
-  "18037919393909964": 2,
-  "18082028366416412": 2,
-  "18122771452970020": 2,
-  "17960041437280579": 2,
-  "18041886584850131": 2,
-  "18185425249438496": 2,
-  "18380088010212309": 2,
-  "17893427958617813": 2,
-  "18115727696614942": 2,
-  "18100887080680001": 2,
-  "18502241827096435": 2,
-  "18419022322095603": 2,
-  "18176270653415889": 2,
-  "18128871811809866": 1
+  "18128871811809866": 2
  },
  "refazer": {},
  "aguardando": 0,
