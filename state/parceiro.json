@@ -382,20 +382,10 @@
    "status": "pulado",
    "nota": "texto ainda parecido com a fonte"
   },
-  "18348681061287667": {
-   "ts": 1795388625.6911998,
-   "status": "na_fila",
-   "nota": ""
-  },
   "18110006539976688": {
    "ts": 1795388655.5838857,
    "status": "pulado",
    "nota": "IA: O conteúdo trata-se de desinformação e teorias da conspiração sem fundamento, violando as diretrizes de veracidade do PB Minuto."
-  },
-  "18170452465469910": {
-   "ts": 1795393208.114473,
-   "status": "na_fila",
-   "nota": ""
   },
   "18647513179025884": {
    "ts": 1795393248.8407934,
@@ -967,27 +957,12 @@
    "editoria": "POLÍCIA",
    "story": "18102701933544487"
   },
-  "18646042996003253": {
-   "ts": 1795517077.5670712,
-   "status": "na_fila",
-   "nota": ""
-  },
   "18117754163029914": {
    "ts": 1795518810.2871158,
    "status": "publicado",
    "nota": "18650215771024304",
    "categoria": "brasil",
    "editoria": "BRASIL"
-  },
-  "18135209167747911": {
-   "ts": 1795520388.8167176,
-   "status": "na_fila",
-   "nota": ""
-  },
-  "18194025214412221": {
-   "ts": 1795520468.68689,
-   "status": "na_fila",
-   "nota": ""
   },
   "18222946159346042": {
    "ts": 1795520731.0593054,
@@ -1273,11 +1248,6 @@
    "status": "erro",
    "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
   },
-  "17992029711083077": {
-   "ts": 1795543882.8899937,
-   "status": "na_fila",
-   "nota": ""
-  },
   "18150285904600904": {
    "ts": 1795546111.8710783,
    "status": "erro",
@@ -1292,6 +1262,54 @@
    "ts": 1795546394.8413122,
    "status": "erro",
    "nota": "openai: OpenAI sem créditos; gemini: Gemini indisponível (gemini-flash-latest: limite de uso (429))"
+  },
+  "17992029711083077": {
+   "ts": 1795567122.2928905,
+   "status": "publicado",
+   "nota": "18121901120087955",
+   "categoria": "pb",
+   "editoria": "POLÍCIA",
+   "story": "17916953064491796"
+  },
+  "18135209167747911": {
+   "ts": 1795567199.5828462,
+   "status": "publicado",
+   "nota": "18104160512062129",
+   "categoria": "jp",
+   "editoria": "POLÍCIA",
+   "story": "18380222161245812"
+  },
+  "18170452465469910": {
+   "ts": 1795567281.0744593,
+   "status": "publicado",
+   "nota": "18132824908830985",
+   "categoria": "cg",
+   "editoria": "POLÍCIA",
+   "story": "18360361243222261"
+  },
+  "18194025214412221": {
+   "ts": 1795567425.4832463,
+   "status": "publicado",
+   "nota": "18117997370133923",
+   "categoria": "jp",
+   "editoria": "POLÍCIA",
+   "story": "18399826642165876"
+  },
+  "18348681061287667": {
+   "ts": 1795567532.4152853,
+   "status": "publicado",
+   "nota": "18398622388167030",
+   "categoria": "jp",
+   "editoria": "POLÍCIA",
+   "story": "18380686819212967"
+  },
+  "18646042996003253": {
+   "ts": 1795567651.0506184,
+   "status": "publicado",
+   "nota": "18099666827668899",
+   "categoria": "pb",
+   "editoria": "POLÍCIA",
+   "story": "18023025347960514"
   }
  },
  "tentativas": {
