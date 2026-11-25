@@ -1543,6 +1543,14 @@
    "categoria": "jp",
    "editoria": "BRASIL",
    "story": "18026980649707408"
+  },
+  "18092632310286450": {
+   "ts": 1795638356.1231651,
+   "status": "publicado",
+   "nota": "18668341408059758",
+   "categoria": "pb",
+   "editoria": "POLÍTICA",
+   "story": "18102536978555464"
   }
  },
  "tentativas": {
@@ -1565,6 +1573,6 @@
   "18098056565690249": 1
  },
  "refazer": {},
- "aguardando": 1795613775.9346268,
- "ultimo_tipo": "video"
+ "aguardando": 1795638400.0924315,
+ "ultimo_tipo": "imagem"
 }
