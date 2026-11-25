@@ -708,3 +708,6 @@
 {"ts": "2026-11-24T18:22:33", "event": "published", "headline": "Brasil corre risco de recessão sem corte de gastos, avisa economista", "source": "BBC News Brasil", "ig_id": "17903151264655319", "note": ""}
 {"ts": "2026-11-24T18:46:07", "event": "pulado", "headline": "Campina Grande abre pré-matrícula online para rede municipal de ensino em 2027", "source": "", "ig_id": "", "note": "repetida: Rede municipal de CG abre pré-matrícula on-line nesta quarta"}
 {"ts": "2026-11-24T20:22:09", "event": "boletim", "ig_id": "18242467243320031", "headline": "Bom dia, Paraíba 2026-11-24"}
+{"ts": "2026-11-25T12:37:41", "event": "pulado", "headline": "Governo libera R$ 3,43 bilhões do Orçamento após ajuste fiscal", "source": "", "ig_id": "", "note": "texto ainda parecido com a fonte"}
+{"ts": "2026-11-25T12:44:08", "event": "gerado", "headline": "Obras na praia de Ponta Negra em Natal somam R$ 145 milhões", "source": "Portal CZN, Agência Brasil", "ig_id": "", "note": ""}
+{"ts": "2026-11-25T12:46:07", "event": "published", "headline": "Obras na praia de Ponta Negra em Natal somam R$ 145 milhões", "source": "Portal CZN, Agência Brasil", "ig_id": "17916665523561339", "note": ""}
