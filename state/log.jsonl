@@ -723,3 +723,8 @@
 {"ts": "2026-11-26T04:59:21", "event": "published", "headline": "Banco Central ordena corte no limite de cartão para usuários recorrentes do rotativo", "source": "Resenha Politika, G1 e +1", "ig_id": "18489059713114105", "note": ""}
 {"ts": "2026-11-26T05:44:50", "event": "gerado", "headline": "Imigrante é preso nos EUA dias após ganhar prêmio de US$ 1 milhão", "source": "g1, CNN Brasil", "ig_id": "", "note": ""}
 {"ts": "2026-11-26T05:45:33", "event": "published", "headline": "Imigrante é preso nos EUA dias após ganhar prêmio de US$ 1 milhão", "source": "g1, CNN Brasil", "ig_id": "17937042249151177", "note": ""}
+{"ts": "2026-11-26T15:02:56", "event": "pulado", "headline": "Homem é preso pela PRF com quase 100 kg de maconha em Campina Grande", "source": "", "ig_id": "", "note": "texto ainda parecido com a fonte"}
+{"ts": "2026-11-26T15:04:57", "event": "pulado", "headline": "Manutenção da Cagepa suspende água em Campina Grande e mais 7 cidades nesta quinta-feira", "source": "", "ig_id": "", "note": "texto ainda parecido com a fonte"}
+{"ts": "2026-11-26T15:12:23", "event": "gerado", "headline": "Cinemas da Paraíba estreiam Entrando Numa Grande Fria e Enfeitiçadas nesta quinta", "source": "CBN Paraíba, g1 Paraíba e +2", "ig_id": "", "note": ""}
+{"ts": "2026-11-26T15:13:15", "event": "published", "headline": "Cinemas da Paraíba estreiam Entrando Numa Grande Fria e Enfeitiçadas nesta quinta", "source": "CBN Paraíba, g1 Paraíba e +2", "ig_id": "18420733684081529", "note": ""}
+{"ts": "2026-11-26T15:13:50", "event": "story", "headline": "Cinemas da Paraíba estreiam Entrando Numa Grande Fria e Enfeitiçadas nesta quinta", "source": "", "ig_id": "18387538672233807", "note": ""}
