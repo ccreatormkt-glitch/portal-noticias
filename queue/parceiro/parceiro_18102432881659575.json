@@ -1,0 +1,51 @@
+{
+ "skip": false,
+ "motivo": "",
+ "risco": "cuidado",
+ "formato": "o_que_se_sabe",
+ "chapeu": "POLÍCIA",
+ "titulo": "Polícia prende homem com 98,8 kg de maconha na BR-230 em Campina Grande",
+ "linha_fina": "Suspeito de 25 anos escondia a droga em embalagens de alimentos e nos bancos do carro",
+ "resumo": "A Polícia Rodoviária Federal abordou o veículo no quilômetro 135 da BR-230. Os agentes acharam a droga escondida no estofado e entre mantimentos.",
+ "pontos": [
+  "Flagrante no quilômetro 135 da BR-230",
+  "Droga escondida em alimentos e bancos",
+  "Homem de 25 anos preso"
+ ],
+ "destaques": [
+  "98,8 kg de maconha",
+  "BR-230",
+  "Campina Grande"
+ ],
+ "legenda": "🚨 PRF retira quase 100 kg de maconha de circulação na BR-230 em Campina Grande.\n\nPoliciais rodoviários federais prenderam um homem de 25 anos na quarta-feira (25). Ele transportava 98,8 quilos de maconha na rodovia.\n\nA fiscalização ocorreu no quilômetro 135. Os agentes acharam a droga escondida entre embalagens de alimentos e o estofado do carro.\n\nManda para aquele amigo que sempre quer saber primeiro.",
+ "cidade": "Campina Grande",
+ "hashtags": [
+  "campinagrande",
+  "paraiba",
+  "policia",
+  "br230"
+ ],
+ "foto_busca": "highway police car",
+ "foto_local": "BR-230 Campina Grande",
+ "imagem_prompt": "police patrol car parked on the side of a wide highway at twilight, blue lights flashing softly, wide angle view",
+ "gatilho": "status",
+ "potencial": 4,
+ "_variante": "B",
+ "original": true,
+ "humanizado": true,
+ "_origem": {
+  "id": "18102432881659575",
+  "permalink": "https://www.instagram.com/p/DgM-00XsZKK/",
+  "timestamp": "2026-11-26T11:19:12+0000",
+  "parceiro": "destaques.dodia"
+ },
+ "_credito": "",
+ "_ilustrativa": false,
+ "_revisar": [
+  "número 100 não está no post original",
+  "O texto novo afirma que a droga estava escondida 'no estofado' do carro, enquanto o original diz que estava 'no banco traseiro' e 'dentro das embalagens' de farinha de trigo, sem mencionar que a droga",
+  "O texto novo omite que o motorista não possuía habilitação e que tentou fugir da abordagem, fatos relevantes presentes no original."
+ ],
+ "_video": "parceiro_18102432881659575.mp4",
+ "_capa": "parceiro_18102432881659575_capa_reels.jpg"
+}

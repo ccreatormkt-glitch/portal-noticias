@@ -1,0 +1,48 @@
+{
+ "skip": false,
+ "motivo": "",
+ "risco": "ok",
+ "formato": "noticia",
+ "chapeu": "POLÍTICA",
+ "titulo": "Justiça manda ex-prefeito e ex-secretário de Riachão do Bacamarte devolverem R$ 22 mil",
+ "linha_fina": "Ex-gestores descontaram valores dos servidores municipais e não repassaram aos órgãos responsáveis",
+ "resumo": "A 2ª Vara Mista condenou os ex-gestores Erivaldo Guedes Amaral e Erivaldo Junior Soares Amaral. Eles têm que devolver R$ 22.203,50 aos cofres públicos. O Ministério Público da Paraíba provou a falta de repasse dos descontos dos servidores.",
+ "pontos": [
+  "Devolução de R$ 22,2 mil aos cofres públicos",
+  "Condenação pela 2ª Vara Mista",
+  "Falta de repasse dos descontos dos servidores"
+ ],
+ "destaques": [
+  "R$ 22 mil",
+  "Riachão do Bacamarte"
+ ],
+ "legenda": "⚖️ Justiça ordena devolução de verbas em Riachão do Bacamarte\n\nA 2ª Vara Mista condenou Erivaldo Guedes Amaral e Erivaldo Junior Soares Amaral. Os dois ex-gestores devem devolver R$ 22,2 mil ao município.\n\nO Ministério Público da Paraíba provou que os descontos nos salários dos servidores não foram repassados. Por isso, a decisão exige o ressarcimento aos cofres públicos.\n\nVocê acompanha as contas públicas da sua cidade? Comente e mande para os amigos.",
+ "cidade": "Paraíba",
+ "hashtags": [
+  "riachaodobacamarte",
+  "paraiba",
+  "justica",
+  "mppb"
+ ],
+ "foto_busca": "gavel on wooden table",
+ "foto_local": "",
+ "imagem_prompt": "a wooden gavel resting on a stack of official legal documents on a desk, soft professional lighting, neutral background",
+ "gatilho": "status",
+ "potencial": 3,
+ "_variante": "B",
+ "original": true,
+ "humanizado": true,
+ "_origem": {
+  "id": "18396074227236250",
+  "permalink": "https://www.instagram.com/p/DgM5bnoN-8A/",
+  "timestamp": "2026-11-26T10:32:05+0000",
+  "parceiro": "bombaparaiba_"
+ },
+ "_credito": "",
+ "_ilustrativa": false,
+ "_revisar": [
+  "número 22,2 não está no post original"
+ ],
+ "_video": "parceiro_18396074227236250.mp4",
+ "_capa": "parceiro_18396074227236250_capa_reels.jpg"
+}
