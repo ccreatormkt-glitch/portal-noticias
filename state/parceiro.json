@@ -1648,6 +1648,11 @@
    "nota": "18141515440710057",
    "categoria": "brasil",
    "editoria": "ECONOMIA"
+  },
+  "17934967563166705": {
+   "ts": 1795737143.8467581,
+   "status": "pulado",
+   "nota": "tema proibido (filtro fixo)"
   }
  },
  "tentativas": {
@@ -1713,6 +1718,6 @@
   "18129800989925668": 1
  },
  "refazer": {},
- "aguardando": 1795731638.6789854,
+ "aguardando": 1795737146.8331633,
  "ultimo_tipo": "video"
 }
