@@ -1,0 +1,50 @@
+{
+ "skip": false,
+ "motivo": "",
+ "risco": "cuidado",
+ "formato": "noticia",
+ "chapeu": "POLÍCIA",
+ "titulo": "PRF apreende quase 100 kg de maconha na BR-230 em Campina Grande",
+ "linha_fina": "Homem de 25 anos foi preso durante fiscalização de rotina na rodovia",
+ "resumo": "A Polícia Rodoviária Federal encontrou 98,8 kg de maconha em um carro no quilômetro 135 da BR-230. O motorista foi preso em flagrante nesta quarta-feira.",
+ "pontos": [
+  "Apreensão de 98,8 kg de maconha",
+  "Homem de 25 anos preso",
+  "Fiscalização ocorreu na BR-230"
+ ],
+ "destaques": [
+  "98,8 kg",
+  "BR-230",
+  "Campina Grande"
+ ],
+ "legenda": "🚨 Polícia Rodoviária Federal apreende quase 100 kg de maconha em Campina Grande\n\nA PRF fazia uma fiscalização de rotina na BR-230, no quilômetro 135. Os agentes abordaram um carro e encontraram 98,8 quilos de maconha.\n\nO motorista tem 25 anos. Ele foi preso em flagrante no local e levado para a delegacia.\n\nManda para aquele amigo que sempre quer saber primeiro.",
+ "cidade": "Campina Grande",
+ "hashtags": [
+  "campinagrande",
+  "paraiba",
+  "prf",
+  "policia",
+  "br230"
+ ],
+ "foto_busca": "police patrol car on highway",
+ "foto_local": "BR-230 Campina Grande",
+ "imagem_prompt": "A police car parked on the side of a highway with blurred traffic in the background, cinematic lighting, realistic style.",
+ "gatilho": "status",
+ "potencial": 4,
+ "_variante": "B",
+ "original": true,
+ "humanizado": true,
+ "_origem": {
+  "id": "18438026605194995",
+  "permalink": "https://www.instagram.com/p/DgNXBSmEXrh/",
+  "timestamp": "2026-11-26T14:50:35+0000",
+  "parceiro": "noticiacertapb"
+ },
+ "_credito": "",
+ "_ilustrativa": false,
+ "_revisar": [
+  "número 100 não está no post original"
+ ],
+ "_video": "parceiro_18438026605194995.mp4",
+ "_capa": "parceiro_18438026605194995_capa_reels.jpg"
+}

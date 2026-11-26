@@ -1,0 +1,52 @@
+{
+ "skip": false,
+ "motivo": "",
+ "risco": "cuidado",
+ "formato": "o_que_se_sabe",
+ "chapeu": "POLÍCIA",
+ "titulo": "Homem é resgatado com vida após ser torturado por criminosos em Bayeux",
+ "linha_fina": "Vítima foi encontrada no bairro Mário Andreazza com ferimentos graves em um dos ouvidos",
+ "resumo": "Um homem foi localizado vivo após sofrer tortura em Bayeux. Ele foi sequestrado por criminosos que o confundiram com um integrante de facção.",
+ "pontos": [
+  "Vítima foi sequestrada no bairro Mário Andreazza",
+  "Homem sofreu perfuração no ouvido com objeto",
+  "Caso é investigado pelas autoridades locais"
+ ],
+ "destaques": [
+  "resgatado com vida",
+  "Bayeux",
+  "torturado"
+ ],
+ "legenda": "🚨 Homem é encontrado com vida após sequestro e tortura em Bayeux\n\nUm homem foi localizado após ser vítima de um sequestro no bairro Mário Andreazza, em Bayeux. Ele foi encontrado com ferimentos graves. O ouvido da vítima foi perfurado por um objeto pontiagudo.\n\nOs criminosos cometeram a violência. Eles confundiram o homem com um integrante de um grupo rival. As forças de segurança investigam o caso.\n\nJá passou por uma situação de insegurança no seu bairro?",
+ "cidade": "Bayeux",
+ "hashtags": [
+  "bayeux",
+  "joaopessoa",
+  "paraiba",
+  "policia",
+  "seguranca"
+ ],
+ "foto_busca": "police tape crime scene",
+ "foto_local": "",
+ "imagem_prompt": "A dark, moody street scene in a residential neighborhood at dusk, police tape in the foreground, blurred city lights in the background, cinematic lighting, high contrast.",
+ "gatilho": "identificacao",
+ "potencial": 4,
+ "_variante": "A",
+ "original": true,
+ "humanizado": true,
+ "_origem": {
+  "id": "18274917370307301",
+  "permalink": "https://www.instagram.com/p/DgNFqHONqqk/",
+  "timestamp": "2026-11-26T12:18:56+0000",
+  "parceiro": "bombaparaiba_"
+ },
+ "_credito": "",
+ "_ilustrativa": false,
+ "_revisar": [
+  "O texto novo afirma que o caso é investigado pelas autoridades locais, informação que não consta no post original (o original diz que não havia identificação dos criminosos, mas não menciona investiga",
+  "O texto novo diz que a vítima foi encontrada no bairro Mário Andreazza, enquanto o original diz que ele foi sequestrado lá, mas não especifica onde foi encontrado, apenas que conseguiu voltar para cas",
+  "O texto novo omite o nome da vítima (Manoel) e a fonte da informação (repórter David Martins/TV Correio)."
+ ],
+ "_video": "parceiro_18274917370307301.mp4",
+ "_capa": "parceiro_18274917370307301_capa_reels.jpg"
+}

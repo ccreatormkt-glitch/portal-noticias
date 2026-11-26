@@ -1,0 +1,51 @@
+{
+ "skip": false,
+ "motivo": "",
+ "risco": "cuidado",
+ "formato": "o_que_se_sabe",
+ "chapeu": "POLÍCIA",
+ "titulo": "Motociclista de 24 anos morre em acidente no Acesso Oeste em João Pessoa",
+ "linha_fina": "Batida entre moto e caminhão ocorreu na noite de quarta-feira no sentido Bayeux",
+ "resumo": "Um motociclista de 24 anos morreu após bater em um caminhão no Acesso Oeste. O jovem seguia para Pernambuco. O motorista do caminhão fugiu do local.",
+ "pontos": [
+  "Rapaz de 24 anos morreu no local",
+  "Acidente aconteceu no Acesso Oeste",
+  "Motorista do caminhão fugiu"
+ ],
+ "destaques": [
+  "24 anos",
+  "Acesso Oeste"
+ ],
+ "legenda": "🚨 Tragédia no Acesso Oeste em João Pessoa\n\nUm rapaz de 24 anos morreu em um acidente na noite de quarta-feira. A batida aconteceu no Acesso Oeste, em João Pessoa.\n\nO motociclista seguia em direção a Bayeux. Um caminhão atingiu a moto. O jovem viajava sozinho rumo a Pernambuco.\n\nA Polícia Rodoviária Federal apura o caso. O motorista do caminhão fugiu e ainda não foi identificado.\n\nVocê costuma transitar por esse trecho da rodovia?",
+ "cidade": "João Pessoa",
+ "hashtags": [
+  "joaopessoa",
+  "paraiba",
+  "acidente",
+  "transito",
+  "prf"
+ ],
+ "foto_busca": "motorcycle on highway at night",
+ "foto_local": "Acesso Oeste João Pessoa",
+ "imagem_prompt": "A dark highway at night with blurred vehicle lights in the distance, moody atmosphere, cinematic lighting, wide angle shot of an empty road",
+ "gatilho": "identificacao",
+ "potencial": 4,
+ "_variante": "B",
+ "original": true,
+ "humanizado": true,
+ "_origem": {
+  "id": "18122829257049877",
+  "permalink": "https://www.instagram.com/p/DgM_VhQMYWk/",
+  "timestamp": "2026-11-26T11:23:40+0000",
+  "parceiro": "destaques.dodia"
+ },
+ "_credito": "",
+ "_ilustrativa": false,
+ "_revisar": [
+  "O texto original não afirma que o motorista do veículo de grande porte fugiu, mas sim que ele parou após ver um reflexo e foi informado do acidente. O texto novo inventa a informação de que o motorist",
+  "O texto original menciona que o veículo de grande porte não foi identificado, mas não confirma que se tratava de um caminhão, apenas um 'veículo de grande porte'.",
+  "O texto original não deixa claro se o motorista do veículo que atingiu a vítima foi o mesmo que parou para verificar a situação ou se o veículo causador evadiu-se do local."
+ ],
+ "_video": "parceiro_18122829257049877.mp4",
+ "_capa": "parceiro_18122829257049877_capa_reels.jpg"
+}
