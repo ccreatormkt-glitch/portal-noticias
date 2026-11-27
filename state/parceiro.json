@@ -1709,6 +1709,29 @@
    "categoria": "pb",
    "editoria": "POLÍCIA",
    "story": "18122803985055512"
+  },
+  "18094745519241491": {
+   "ts": 1795818824.2873163,
+   "status": "pulado",
+   "nota": "tema proibido (filtro fixo)"
+  },
+  "18645156292027724": {
+   "ts": 1795818878.0392585,
+   "status": "pulado",
+   "nota": "mesmo fato já postado: Suspeitos executam homem de 41 anos a tiros no bairro Tibiri"
+  },
+  "18110260784299795": {
+   "ts": 1795818901.6592247,
+   "status": "pulado",
+   "nota": "mesmo fato já postado: PF apura furto de máquinas da Codevasf levadas no Conde"
+  },
+  "18080861846437962": {
+   "ts": 1795819072.8498416,
+   "status": "publicado",
+   "nota": "18260802721307902",
+   "categoria": "jp",
+   "editoria": "CONCURSO",
+   "story": "18376604593208682"
   }
  },
  "tentativas": {
@@ -1782,9 +1805,15 @@
   "18667546783043683": 1,
   "17996126664078836": 1,
   "18151751212566124": 1,
-  "18120417803104544": 1
+  "18120417803104544": 1,
+  "18081703733734892": 1,
+  "17977713468173345": 1,
+  "17962663770258792": 1,
+  "17982550575153701": 1,
+  "17990426178110368": 1,
+  "18111345266213505": 1
  },
  "refazer": {},
- "aguardando": 1795808771.673419,
- "ultimo_tipo": "video"
+ "aguardando": 1795819148.006973,
+ "ultimo_tipo": "imagem"
 }
