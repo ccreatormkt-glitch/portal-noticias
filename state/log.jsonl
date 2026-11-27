@@ -742,3 +742,8 @@
 {"ts": "2026-11-27T08:10:31", "event": "published", "headline": "Inglaterra: mulher recupera sepultura após corpo de desconhecido ser enterrado por engano", "source": "g1, BBC News Brasil", "ig_id": "18123574208088864", "note": ""}
 {"ts": "2026-11-27T10:08:58", "event": "gerado", "headline": "Campanha eleitoral na Espanha termina antes da votação de domingo", "source": "g1", "ig_id": "", "note": ""}
 {"ts": "2026-11-27T10:09:44", "event": "published", "headline": "Campanha eleitoral na Espanha termina antes da votação de domingo", "source": "g1", "ig_id": "17926965294220669", "note": ""}
+{"ts": "2026-11-27T18:53:48", "event": "pulado", "headline": "Operação policial prende dois suspeitos de tráfico e apreende 4,5 kg de cocaína em Patos - Paraíba - Notícia", "source": "", "ig_id": "", "note": "mesmo fato já postado: Falsos motoboys matam morador de 29 anos no Santo Antônio em"}
+{"ts": "2026-11-27T18:57:22", "event": "pulado", "headline": "Mulher em situação de vulnerabilidade social tem bebê no chão da Feira Central de Campina Grande; VÍDEO", "source": "", "ig_id": "", "note": "texto ainda parecido com a fonte"}
+{"ts": "2026-11-27T19:08:49", "event": "gerado", "headline": "Campina Grande inicia homenagens a Nossa Senhora da Conceição neste domingo", "source": "g1 Paraíba, G1 e +4", "ig_id": "", "note": ""}
+{"ts": "2026-11-27T19:09:47", "event": "published", "headline": "Campina Grande inicia homenagens a Nossa Senhora da Conceição neste domingo", "source": "g1 Paraíba, G1 e +4", "ig_id": "18116945030131782", "note": ""}
+{"ts": "2026-11-27T19:10:31", "event": "story", "headline": "Campina Grande inicia homenagens a Nossa Senhora da Conceição neste domingo", "source": "", "ig_id": "18101770811556490", "note": ""}
