@@ -1696,6 +1696,19 @@
    "categoria": "pb",
    "editoria": "EMPREGO",
    "story": "18121272554094919"
+  },
+  "18132437209867972": {
+   "ts": 1795788033.4946024,
+   "status": "pulado",
+   "nota": "já está no Instagram:  Pequenos negócios na Paraíba sustentam a economia e criam e"
+  },
+  "17898073599525135": {
+   "ts": 1795788372.4325464,
+   "status": "publicado",
+   "nota": "18175015642479925",
+   "categoria": "pb",
+   "editoria": "POLÍCIA",
+   "story": "18122803985055512"
   }
  },
  "tentativas": {
@@ -1772,6 +1785,6 @@
   "18120417803104544": 1
  },
  "refazer": {},
- "aguardando": 1795774282.26635,
- "ultimo_tipo": "imagem"
+ "aguardando": 1795788461.8658292,
+ "ultimo_tipo": "video"
 }
