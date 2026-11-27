@@ -148,3 +148,4 @@ materia:https://www.resenhapolitika.com.br/wp-content/uploads/2026/11/IMG_9312.j
 pixabay-video:28014
 pixabay-video:239964
 materia:https://s2-g1.glbimg.com/HYctX7B8XBWnw9iSe9JDboIR3PM=/1700x0/filters:format(jpeg)/https://i.s3.glbimg.com/v1/AUTH_59edd422c0c84a879bd37670ae4f538a/internal_photos/bs/2026/B/B/ccBewPRgmS988rcpEs7g/fotojet-2026-11-26t201315.385.jpg
+materia:https://s2-g1.glbimg.com/B91ZecgfQKFIh1fXpSwXDBWbDOc=/8192x0/filters:format(jpeg)/https://i.s3.glbimg.com/v1/AUTH_59edd422c0c84a879bd37670ae4f538a/internal_photos/bs/2026/3/o/KjBxJ9TCmhK9AA3Ag31A/2026-11-26t204736z-1156398756-rc2wvoamkv4o-rtrmadp-3-spain-election-debate.jpg
