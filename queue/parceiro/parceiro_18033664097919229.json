@@ -1,0 +1,50 @@
+{
+ "skip": false,
+ "motivo": "",
+ "risco": "cuidado",
+ "formato": "noticia",
+ "chapeu": "POLÍTICA",
+ "titulo": "Esposa de secretário e nora de prefeito em Casserengue ganha R$ 750 do Bolsa Família",
+ "linha_fina": "Jeiciany Silva Santos integra a lista de beneficiários do programa federal",
+ "resumo": "Registros do governo federal mostram que Jeiciany Silva Santos recebe R$ 750 mensais. Ela é casada com o secretário de Administração e nora do prefeito de Casserengue.",
+ "pontos": [
+  "Repasse mensal soma R$ 750",
+  "Jeiciany Silva Santos é nora do prefeito",
+  "Esposo exerce o cargo de secretário de Administração"
+ ],
+ "destaques": [
+  "R$ 750",
+  "Casserengue",
+  "Bolsa Família"
+ ],
+ "legenda": "💰 Bolsa Família atende nora de prefeito em Casserengue\n\nDados oficiais mostram que Jeiciany Silva Santos recebe R$ 750 mensais do programa. Ela é casada com o secretário de Administração e nora do prefeito da cidade.\n\nO auxílio atende famílias de baixa renda. O caso levanta dúvidas sobre os critérios de seleção do governo.\n\nQual a sua opinião sobre o caso? Compartilhe com seus amigos.",
+ "cidade": "Paraíba",
+ "hashtags": [
+  "casserengue",
+  "paraiba",
+  "bolsafamilia",
+  "politica"
+ ],
+ "foto_busca": "money coins on table",
+ "foto_local": "",
+ "imagem_prompt": "a stack of coins on a wooden table with blurred office background, soft natural lighting, high quality",
+ "gatilho": "debate",
+ "potencial": 5,
+ "_variante": "A",
+ "original": true,
+ "humanizado": true,
+ "_origem": {
+  "id": "18033664097919229",
+  "permalink": "https://www.instagram.com/p/DgNj3FLN4-6/",
+  "timestamp": "2026-11-26T16:42:50+0000",
+  "parceiro": "bombaparaiba_"
+ },
+ "_credito": "",
+ "_ilustrativa": false,
+ "_revisar": [
+  "O texto novo indica 'Cidade: Paraíba', mas o original refere-se a 'Casserengue', que é um município do estado da Paraíba, e não a cidade de Paraíba.",
+  "O texto original não especifica a fonte dos dados (apenas cita 'segundo a apuração'), enquanto o texto novo afirma que são 'Registros do governo federal' e 'Dados oficiais', o que pode ser uma extrapo"
+ ],
+ "_video": "parceiro_18033664097919229.mp4",
+ "_capa": "parceiro_18033664097919229_capa_reels.jpg"
+}
