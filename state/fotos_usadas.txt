@@ -153,3 +153,4 @@ pixabay-video:84530
 materia:https://rotapb.com.br/wp-content/uploads/2026/11/8fca3c9d-329f-4bb4-a0fa-0b3f5289e5a7.jpeg
 materia:https://paraibaja.com.br/wp-content/uploads/2026/11/mp-procon-na-black-friday-1795824911321-xx66.webp
 pixabay:4884852
+pixabay-video:79303
