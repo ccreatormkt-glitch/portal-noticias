@@ -2031,6 +2031,24 @@
    "nota": "17973614501960860",
    "categoria": "mundo",
    "editoria": "MUNDO"
+  },
+  "17917491480490961": {
+   "ts": 1795889021.0915976,
+   "status": "pulado",
+   "nota": "mesmo fato já postado: PM prende suspeito de esfaquear homem na zona rural de Serra"
+  },
+  "18122483032988755": {
+   "ts": 1795889049.621246,
+   "status": "pulado",
+   "nota": "mesmo fato já postado: MP-Procon notifica 17 comércios na PB por falhas na Black Fr"
+  },
+  "18042882707889976": {
+   "ts": 1795889304.02268,
+   "status": "publicado",
+   "nota": "18106305248530042",
+   "categoria": "cg",
+   "editoria": "CULTURA",
+   "story": "18239811382323010"
   }
  },
  "tentativas": {
@@ -2125,6 +2143,6 @@
   "18151848805565130": 1
  },
  "refazer": {},
- "aguardando": 1795887658.080295,
+ "aguardando": 1795889339.094435,
  "ultimo_tipo": "video"
 }
