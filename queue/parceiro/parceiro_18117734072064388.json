@@ -1,0 +1,48 @@
+{
+ "skip": false,
+ "motivo": "",
+ "risco": "ok",
+ "formato": "noticia",
+ "chapeu": "CLIMA",
+ "titulo": "Governo da Paraíba decreta emergência em 87 municípios devido à seca",
+ "linha_fina": "Estado amplia lista de cidades que sofrem com a falta de chuvas",
+ "resumo": "O governo estadual oficializou nesta sexta-feira o reconhecimento de emergência em 87 municípios. A decisão auxilia as prefeituras no combate aos danos provocados pela seca prolongada.",
+ "pontos": [
+  "87 municípios em emergência",
+  "Falta de chuvas motiva a medida",
+  "Governo estadual oferece suporte"
+ ],
+ "destaques": [],
+ "legenda": "☀️ Paraíba contabiliza 87 cidades em emergência pela seca.\n\nO governo estadual atualizou nesta sexta-feira a lista de municípios sob decreto de emergência. As 87 cidades enfrentam problemas graves pela falta de chuvas.\n\nO decreto inclui novos locais. Entre eles estão Puxinanã, Nova Palmeira e São João do Rio do Peixe. O reconhecimento oficial ajuda as prefeituras a buscar recursos contra a seca.\n\nComo você avalia as ações de enfrentamento à seca no estado?",
+ "cidade": "Paraíba",
+ "hashtags": [
+  "paraiba",
+  "seca",
+  "estiagem",
+  "clima",
+  "governodaparaiba"
+ ],
+ "foto_busca": "dry cracked earth",
+ "foto_local": "",
+ "imagem_prompt": "aerial view of dry cracked land in a rural area during a sunny day, high contrast, realistic style",
+ "gatilho": "debate",
+ "potencial": 4,
+ "_variante": "A",
+ "original": true,
+ "humanizado": true,
+ "_origem": {
+  "id": "18117734072064388",
+  "permalink": "https://www.instagram.com/p/DgSIXL7FoYV/",
+  "timestamp": "2026-11-28T11:18:42+0000",
+  "parceiro": "noticiacertapb"
+ },
+ "_credito": "",
+ "_ilustrativa": false,
+ "_revisar": [
+  "O texto novo afirma que o 'Governo da Paraíba decreta emergência', enquanto o original menciona 'reconhecimento federal da situação de emergência', o que altera a origem da autoridade do decreto.",
+  "O texto novo omite a informação de que existem outros municípios em emergência por motivos diferentes (temporais e deslizamentos), focando apenas na seca.",
+  "O texto novo não menciona a fonte original (Portal Correio) citada no post original."
+ ],
+ "_video": "parceiro_18117734072064388.mp4",
+ "_capa": "parceiro_18117734072064388_capa_reels.jpg"
+}

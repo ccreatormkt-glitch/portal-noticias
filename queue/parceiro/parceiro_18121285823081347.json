@@ -1,0 +1,51 @@
+{
+ "skip": false,
+ "motivo": "",
+ "risco": "cuidado",
+ "formato": "o_que_se_sabe",
+ "chapeu": "POLÍCIA",
+ "titulo": "Dois homens morrem na Grande João Pessoa neste sábado",
+ "linha_fina": "Polícia investiga as causas das mortes registradas em locais diferentes da região metropolitana",
+ "resumo": "Um corpo foi achado sob a passarela da BR-101, entre o Jardim Veneza e o bairro dos Novais. Outra vítima apareceu em um ponto diferente da Grande João Pessoa durante a manhã.",
+ "pontos": [
+  "Vítima da BR-101 tinha marcas de ferimentos",
+  "Testemunhas viram o homem pular muros antes de morrer",
+  "Polícia Civil investiga os dois casos"
+ ],
+ "destaques": [
+  "Grande João Pessoa",
+  "BR-101",
+  "Polícia Civil"
+ ],
+ "legenda": "🚨 Polícia apura mortes na Grande João Pessoa neste sábado\n\nEquipes acharam dois corpos em locais diferentes da região metropolitana nesta manhã. Um homem estava sob a passarela da BR-101, entre o Jardim Veneza e o bairro dos Novais. Ele tinha marcas de ferimentos pelo corpo.\n\nTestemunhas viram essa vítima pular muros antes de morrer. A Polícia Civil trabalha para identificar os homens e descobrir a causa das mortes.\n\nVocê tem informações sobre estes casos?",
+ "cidade": "João Pessoa",
+ "hashtags": [
+  "joaopessoa",
+  "paraiba",
+  "policia",
+  "noticias"
+ ],
+ "foto_busca": "police tape crime scene",
+ "foto_local": "BR-101 João Pessoa",
+ "imagem_prompt": "empty highway underpass with concrete pillars, morning light, cinematic atmosphere, no people",
+ "gatilho": "status",
+ "potencial": 4,
+ "_variante": "B",
+ "original": true,
+ "humanizado": true,
+ "_origem": {
+  "id": "18121285823081347",
+  "permalink": "https://www.instagram.com/p/DgSjPRbhEFc/",
+  "timestamp": "2026-11-28T15:13:36+0000",
+  "parceiro": "bombaparaiba_"
+ },
+ "_credito": "",
+ "_ilustrativa": false,
+ "_revisar": [
+  "O texto novo omite completamente as informações sobre o segundo corpo encontrado em Bayeux (mãos amarradas, marcas de tiros na cabeça e suspeita de crime na noite anterior), tratando-o apenas de forma",
+  "O texto novo afirma que a Polícia Civil investiga os dois casos, mas o original especifica que a suspeita sobre o horário do crime em Bayeux partiu da Polícia Militar.",
+  "O texto novo não menciona a fonte da informação (Portal Correio) citada no post original."
+ ],
+ "_video": "parceiro_18121285823081347.mp4",
+ "_capa": "parceiro_18121285823081347_capa_reels.jpg"
+}
