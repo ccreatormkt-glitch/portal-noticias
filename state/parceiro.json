@@ -2001,6 +2001,29 @@
    "nota": "18135469087683629",
    "categoria": "brasil",
    "editoria": "MUNDO"
+  },
+  "18097312697703392": {
+   "ts": 1795884659.6398554,
+   "status": "pulado",
+   "nota": "mesmo fato já postado: Batida entre moto e carreta mata condutor na BR-116 em Cacho"
+  },
+  "18145323379719391": {
+   "ts": 1795884667.7013254,
+   "status": "pulado",
+   "nota": "O material recebido é apenas uma peça publicitária de uma hamburgueria, sem qualquer valor jornalístico ou fato de interesse público para o portal."
+  },
+  "17958014250318217": {
+   "ts": 1795884967.0698614,
+   "status": "pulado",
+   "nota": "mesmo fato já postado: Adolescente de 15 anos mata o pai após briga no bairro Jatob"
+  },
+  "18024271709952899": {
+   "ts": 1795885147.0642476,
+   "status": "publicado",
+   "nota": "18002742588030711",
+   "categoria": "pb",
+   "editoria": "EDUCAÇÃO",
+   "story": "17918187636473055"
   }
  },
  "tentativas": {
@@ -2091,9 +2114,10 @@
   "18002757308826703": 1,
   "18141975076626814": 1,
   "18128756239916116": 1,
-  "18123435880968590": 2
+  "18123435880968590": 2,
+  "18151848805565130": 1
  },
  "refazer": {},
- "aguardando": 1795884023.4603655,
- "ultimo_tipo": "video"
+ "aguardando": 1795885195.5268002,
+ "ultimo_tipo": "imagem"
 }
