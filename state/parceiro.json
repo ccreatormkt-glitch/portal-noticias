@@ -2024,6 +2024,13 @@
    "categoria": "pb",
    "editoria": "EDUCAÇÃO",
    "story": "17918187636473055"
+  },
+  "18120737957059899": {
+   "ts": 1795886645.8658774,
+   "status": "publicado",
+   "nota": "17973614501960860",
+   "categoria": "mundo",
+   "editoria": "MUNDO"
   }
  },
  "tentativas": {
@@ -2118,6 +2125,6 @@
   "18151848805565130": 1
  },
  "refazer": {},
- "aguardando": 1795885853.659504,
- "ultimo_tipo": "imagem"
+ "aguardando": 1795886652.65933,
+ "ultimo_tipo": "video"
 }
