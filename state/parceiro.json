@@ -1819,6 +1819,188 @@
    "categoria": "pb",
    "editoria": "CULTURA",
    "story": "18106802921373554"
+  },
+  "18125591767821928": {
+   "ts": 1795882664.3401964,
+   "status": "erro",
+   "nota": "post sem texto ou antigo demais"
+  },
+  "18106288919559361": {
+   "ts": 1795882669.3321674,
+   "status": "erro",
+   "nota": "post sem texto ou antigo demais"
+  },
+  "18120455768023972": {
+   "ts": 1795882674.9798067,
+   "status": "erro",
+   "nota": "post sem texto ou antigo demais"
+  },
+  "17935118829164436": {
+   "ts": 1795882676.0132298,
+   "status": "erro",
+   "nota": "post sem texto ou antigo demais"
+  },
+  "18194033497417470": {
+   "ts": 1795882680.846745,
+   "status": "erro",
+   "nota": "post sem texto ou antigo demais"
+  },
+  "18171072259470239": {
+   "ts": 1795882686.4672008,
+   "status": "erro",
+   "nota": "post sem texto ou antigo demais"
+  },
+  "17981554578133117": {
+   "ts": 1795882692.258682,
+   "status": "erro",
+   "nota": "post sem texto ou antigo demais"
+  },
+  "18188197120421705": {
+   "ts": 1795882697.2990913,
+   "status": "erro",
+   "nota": "post sem texto ou antigo demais"
+  },
+  "18351619555249950": {
+   "ts": 1795882702.9109101,
+   "status": "erro",
+   "nota": "post sem texto ou antigo demais"
+  },
+  "18198801991401215": {
+   "ts": 1795882703.95187,
+   "status": "erro",
+   "nota": "post sem texto ou antigo demais"
+  },
+  "17930899542193983": {
+   "ts": 1795882708.7895014,
+   "status": "erro",
+   "nota": "post sem texto ou antigo demais"
+  },
+  "18003985542033673": {
+   "ts": 1795882713.684159,
+   "status": "erro",
+   "nota": "post sem texto ou antigo demais"
+  },
+  "18612467059070753": {
+   "ts": 1795882715.3499632,
+   "status": "erro",
+   "nota": "post sem texto ou antigo demais"
+  },
+  "18108505784128617": {
+   "ts": 1795882716.2455766,
+   "status": "erro",
+   "nota": "post sem texto ou antigo demais"
+  },
+  "18145974613612933": {
+   "ts": 1795882717.1251245,
+   "status": "erro",
+   "nota": "post sem texto ou antigo demais"
+  },
+  "18124796810278743": {
+   "ts": 1795882717.91828,
+   "status": "erro",
+   "nota": "post sem texto ou antigo demais"
+  },
+  "18097299572661566": {
+   "ts": 1795882718.7556167,
+   "status": "erro",
+   "nota": "post sem texto ou antigo demais"
+  },
+  "18145128094611010": {
+   "ts": 1795882719.6786375,
+   "status": "erro",
+   "nota": "post sem texto ou antigo demais"
+  },
+  "18024104069727953": {
+   "ts": 1795882720.5680392,
+   "status": "erro",
+   "nota": "post sem texto ou antigo demais"
+  },
+  "18122298541770879": {
+   "ts": 1795882721.7115111,
+   "status": "erro",
+   "nota": "post sem texto ou antigo demais"
+  },
+  "18108696860007655": {
+   "ts": 1795882722.722521,
+   "status": "erro",
+   "nota": "post sem texto ou antigo demais"
+  },
+  "18099426245480718": {
+   "ts": 1795882723.639352,
+   "status": "erro",
+   "nota": "post sem texto ou antigo demais"
+  },
+  "18132836986838808": {
+   "ts": 1795882724.5281258,
+   "status": "erro",
+   "nota": "post sem texto ou antigo demais"
+  },
+  "18164188795514508": {
+   "ts": 1795882725.3680532,
+   "status": "erro",
+   "nota": "post sem texto ou antigo demais"
+  },
+  "18403365169161366": {
+   "ts": 1795882726.2799149,
+   "status": "erro",
+   "nota": "post sem texto ou antigo demais"
+  },
+  "17997547296048153": {
+   "ts": 1795882727.1134548,
+   "status": "erro",
+   "nota": "post sem texto ou antigo demais"
+  },
+  "17934699531164769": {
+   "ts": 1795882728.8516297,
+   "status": "erro",
+   "nota": "post sem texto ou antigo demais"
+  },
+  "18084543194448834": {
+   "ts": 1795882729.4909973,
+   "status": "erro",
+   "nota": "post sem texto ou antigo demais"
+  },
+  "18104906849455998": {
+   "ts": 1795882730.3390405,
+   "status": "erro",
+   "nota": "post sem texto ou antigo demais"
+  },
+  "18135349894794873": {
+   "ts": 1795882731.3937347,
+   "status": "erro",
+   "nota": "post sem texto ou antigo demais"
+  },
+  "18088421279339103": {
+   "ts": 1795882732.2313554,
+   "status": "erro",
+   "nota": "post sem texto ou antigo demais"
+  },
+  "17923546716465490": {
+   "ts": 1795882733.9931636,
+   "status": "erro",
+   "nota": "post sem texto ou antigo demais"
+  },
+  "18122659979018539": {
+   "ts": 1795882734.814799,
+   "status": "erro",
+   "nota": "post sem texto ou antigo demais"
+  },
+  "17963631009347137": {
+   "ts": 1795882740.0487647,
+   "status": "pulado",
+   "nota": "O material recebido é apenas conteúdo publicitário e promocional de um estabelecimento privado, sem fato jornalístico."
+  },
+  "18359582542267658": {
+   "ts": 1795882926.7663524,
+   "status": "na_fila",
+   "nota": ""
+  },
+  "18343399012274585": {
+   "ts": 1795883086.8880427,
+   "status": "publicado",
+   "nota": "18135469087683629",
+   "categoria": "brasil",
+   "editoria": "MUNDO"
   }
  },
  "tentativas": {
@@ -1899,32 +2081,6 @@
   "17982550575153701": 2,
   "17990426178110368": 2,
   "18111345266213505": 2,
-  "18125591767821928": 2,
-  "18106288919559361": 2,
-  "18120455768023972": 2,
-  "17935118829164436": 2,
-  "18194033497417470": 2,
-  "18171072259470239": 2,
-  "17981554578133117": 2,
-  "18188197120421705": 2,
-  "18351619555249950": 2,
-  "18198801991401215": 2,
-  "17930899542193983": 2,
-  "18003985542033673": 2,
-  "18612467059070753": 2,
-  "18108505784128617": 2,
-  "18145974613612933": 2,
-  "18124796810278743": 2,
-  "18097299572661566": 2,
-  "18145128094611010": 2,
-  "18024104069727953": 2,
-  "18122298541770879": 2,
-  "18108696860007655": 2,
-  "18099426245480718": 2,
-  "18132836986838808": 2,
-  "18164188795514508": 2,
-  "18403365169161366": 2,
-  "17997547296048153": 2,
   "18135561544803075": 1,
   "17971646217236636": 1,
   "17994571721862438": 1,
@@ -1935,16 +2091,9 @@
   "18002757308826703": 1,
   "18141975076626814": 1,
   "18128756239916116": 1,
-  "18123435880968590": 2,
-  "17934699531164769": 2,
-  "18084543194448834": 2,
-  "18104906849455998": 2,
-  "18135349894794873": 2,
-  "18088421279339103": 2,
-  "17923546716465490": 2,
-  "18122659979018539": 2
+  "18123435880968590": 2
  },
  "refazer": {},
- "aguardando": 1795882053.658828,
+ "aguardando": 1795883089.1565204,
  "ultimo_tipo": "video"
 }

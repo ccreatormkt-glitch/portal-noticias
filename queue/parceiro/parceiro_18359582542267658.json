@@ -1,0 +1,50 @@
+{
+ "skip": false,
+ "motivo": "",
+ "risco": "ok",
+ "formato": "noticia",
+ "chapeu": "POLÍTICA",
+ "titulo": "Fábio Ramalho aponta força de Adriano Galdino para presidir a ALPB em 2029",
+ "linha_fina": "Deputado de oposição projeta reeleição de Galdino no comando da Assembleia Legislativa",
+ "resumo": "O deputado Fábio Ramalho acredita na vitória de Adriano Galdino para a presidência da Assembleia Legislativa. Ele projeta o gestor no comando da Casa no período de 2029 a 2030.",
+ "pontos": [
+  "A declaração foi feita em entrevista nesta sexta-feira",
+  "Galdino mantém base de apoio entre os deputados",
+  "A previsão vale para o ciclo de 2029 a 2030"
+ ],
+ "destaques": [
+  "Adriano Galdino",
+  "ALPB"
+ ],
+ "legenda": "🏛️ Deputado analisa sucessão na presidência da Assembleia Legislativa da Paraíba\n\nO deputado estadual Fábio Ramalho afirmou nesta sexta-feira que Adriano Galdino deve permanecer na presidência da Assembleia Legislativa. O parlamentar avalia que o atual presidente tem votos suficientes para o cargo.\n\nGaldino deve comandar a Casa no período de 2029 a 2030. O deputado destacou a articulação política do colega para continuar no posto.\n\nComo você avalia essa movimentação na ALPB?",
+ "cidade": "Paraíba",
+ "hashtags": [
+  "paraiba",
+  "alpb",
+  "politica",
+  "joaopessoa"
+ ],
+ "foto_busca": "parliament building interior",
+ "foto_local": "Assembleia Legislativa da Paraíba",
+ "imagem_prompt": "modern legislative hall with wooden benches and soft lighting, professional atmosphere, wide angle shot",
+ "gatilho": "debate",
+ "potencial": 3,
+ "_variante": "B",
+ "original": true,
+ "humanizado": true,
+ "_origem": {
+  "id": "18359582542267658",
+  "permalink": "https://www.instagram.com/p/DgSLYbNkYfy/",
+  "timestamp": "2026-11-28T11:45:05+0000",
+  "parceiro": "noticiacertapb"
+ },
+ "_credito": "",
+ "_ilustrativa": false,
+ "_revisar": [
+  "O texto original menciona que o deputado Fábio Ramalho é integrante da oposição, enquanto o texto novo omite essa informação política relevante.",
+  "O texto original cita que a eleição da Mesa Diretora para o primeiro biênio está prevista para 1º de fevereiro de 2027, detalhe omitido no texto novo.",
+  "O texto original menciona a indicação de Wilson Filho para o primeiro biênio (2027-2028), informação ausente no texto novo."
+ ],
+ "_video": "parceiro_18359582542267658.mp4",
+ "_capa": "parceiro_18359582542267658_capa_reels.jpg"
+}
