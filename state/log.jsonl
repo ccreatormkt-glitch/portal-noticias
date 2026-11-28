@@ -762,3 +762,7 @@
 {"ts": "2026-11-28T10:19:21", "event": "published", "headline": "Conta de luz continua sem taxa extra em dezembro, diz Aneel", "source": "Portal CZN, Big PB e +3", "ig_id": "18457754848121372", "note": ""}
 {"ts": "2026-11-28T12:18:47", "event": "gerado", "headline": "Fala de Lula sobre saúde de FHC gera críticas da Fundação FHC", "source": "PB Agora, Poder360 e +1", "ig_id": "", "note": ""}
 {"ts": "2026-11-28T12:19:53", "event": "published", "headline": "Fala de Lula sobre saúde de FHC gera críticas da Fundação FHC", "source": "PB Agora, Poder360 e +1", "ig_id": "18122871232956174", "note": ""}
+{"ts": "2026-11-28T12:37:29", "event": "pulado", "headline": "Litoral da Paraíba tem dois trechos impróprios para banho neste sábado", "source": "", "ig_id": "", "note": "repetida: Sudema aprova banho em 55 praias no litoral da Paraíba"}
+{"ts": "2026-11-28T12:39:28", "event": "gerado", "headline": "Polícia de João Pessoa prende pais suspeitos de trancar mulher há 15 anos", "source": "g1 Paraíba, Jornal da Paraíba e +6", "ig_id": "", "note": ""}
+{"ts": "2026-11-28T12:40:22", "event": "published", "headline": "Polícia de João Pessoa prende pais suspeitos de trancar mulher há 15 anos", "source": "g1 Paraíba, Jornal da Paraíba e +6", "ig_id": "17923794474243134", "note": ""}
+{"ts": "2026-11-28T12:40:59", "event": "story", "headline": "Polícia de João Pessoa prende pais suspeitos de trancar mulher há 15 anos", "source": "", "ig_id": "17973908055190445", "note": ""}
